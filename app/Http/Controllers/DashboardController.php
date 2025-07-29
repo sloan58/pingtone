@@ -91,21 +91,25 @@ class DashboardController extends Controller
         ];
 
         // Get monthly trends (simulated data)
+        $phonesPrevious = max(0, $totalPhones - rand(5, 15));
+        $linesPrevious = max(0, $totalLines - rand(3, 10));
+        $usersPrevious = max(0, $totalUsers - rand(2, 8));
+        
         $monthlyTrends = [
             'phones' => [
                 'current' => $totalPhones,
-                'previous' => max(0, $totalPhones - rand(5, 15)),
-                'change_percentage' => $totalPhones > 0 ? round((($totalPhones - max(0, $totalPhones - rand(5, 15))) / max(1, $totalPhones - rand(5, 15)) * 100, 1) : 0
+                'previous' => $phonesPrevious,
+                'change_percentage' => $phonesPrevious > 0 ? round((($totalPhones - $phonesPrevious) / $phonesPrevious) * 100, 1) : 0
             ],
             'lines' => [
                 'current' => $totalLines,
-                'previous' => max(0, $totalLines - rand(3, 10)),
-                'change_percentage' => $totalLines > 0 ? round((($totalLines - max(0, $totalLines - rand(3, 10))) / max(1, $totalLines - rand(3, 10)) * 100, 1) : 0
+                'previous' => $linesPrevious,
+                'change_percentage' => $linesPrevious > 0 ? round((($totalLines - $linesPrevious) / $linesPrevious) * 100, 1) : 0
             ],
             'users' => [
                 'current' => $totalUsers,
-                'previous' => max(0, $totalUsers - rand(2, 8)),
-                'change_percentage' => $totalUsers > 0 ? round((($totalUsers - max(0, $totalUsers - rand(2, 8))) / max(1, $totalUsers - rand(2, 8)) * 100, 1) : 0
+                'previous' => $usersPrevious,
+                'change_percentage' => $usersPrevious > 0 ? round((($totalUsers - $usersPrevious) / $usersPrevious) * 100, 1) : 0
             ]
         ];
 

@@ -1,3 +1,26 @@
+export interface NavItem {
+    title: string;
+    href: string;
+    icon: any;
+}
+
+export interface BreadcrumbItem {
+    title: string;
+    href?: string;
+}
+
+export interface SharedData {
+    auth: {
+        user: {
+            name: string;
+            email: string;
+            avatar?: string;
+        };
+    };
+    sidebarOpen: boolean;
+    [key: string]: any;
+}
+
 export interface Phone {
     id: number;
     pkid: string;
@@ -72,4 +95,4 @@ export interface Line {
         busy_trigger: string;
         ring_settings?: string;
     };
-} 
+}
