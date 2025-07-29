@@ -1,0 +1,72 @@
+# PingTone Application
+
+This is a Laravel application with React/Inertia frontend that recreates the NDM application functionality.
+
+## Development Setup
+
+### Backend
+- The application is available via Laravel Herd at: `pingtone.test`
+- Database migrations are already set up and run
+- Models and controllers are in place for UCM, Phone, and Line entities
+
+### Frontend
+- React/Inertia.js application with TypeScript
+- Tailwind CSS with TweakCN theme
+- Run `npm run dev` to start the Vite development server
+- The frontend will be available at the same domain as the backend
+
+## Key Features
+
+### Database Structure
+- **UCMs**: Unified Communications Managers
+- **Phones**: Cisco IP phones with device configurations
+- **Lines**: Directory numbers and call routing
+- **Device Lines**: Pivot table for phone-line relationships
+
+### Frontend Components
+- Dashboard: Main overview page
+- Phones Index: List all phones with status and details
+- Authenticated Layout: Navigation and layout wrapper
+
+### Styling
+- Uses TweakCN theme with custom CSS variables
+- Tailwind CSS for utility classes
+- Responsive design with proper dark mode support
+
+## Development Workflow
+
+1. Start the frontend: `npm run dev`
+2. Access the application at: `pingtone.test`
+3. The backend is served by Laravel Herd automatically
+
+## File Structure
+
+```
+pingtone/
+├── app/
+│   ├── Http/Controllers/PhoneController.php
+│   ├── Models/Phone.php, Line.php, Ucm.php
+│   └── Http/Middleware/HandleInertiaRequests.php
+├── database/migrations/
+│   ├── create_ucms_table.php
+│   ├── create_phones_table.php
+│   ├── create_lines_table.php
+│   └── create_device_line_table.php
+├── resources/
+│   ├── js/
+│   │   ├── Pages/Dashboard.tsx
+│   │   ├── Pages/Phones/Index.tsx
+│   │   ├── Layouts/AuthenticatedLayout.tsx
+│   │   └── types/index.ts
+│   ├── css/app.css (TweakCN theme)
+│   └── views/app.blade.php
+├── routes/web.php
+└── tailwind.config.js
+```
+
+## Next Steps
+
+- Add more CRUD operations for phones
+- Implement user authentication
+- Add more NDM features (users, device profiles, etc.)
+- Enhance the UI with shadcn/ui components 
