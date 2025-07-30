@@ -173,23 +173,29 @@ class Ucm extends Model
     /**
      * Fetch and update the UCM version using getCCMVersion API
      *
-     * @return string
+     * @return string|null
      */
-    public function updateVersionFromApi(): string
+    public function updateVersionFromApi(): ?string
     {
         try {
             $axlApi = $this->axlApi();
             $version = $axlApi->getCCMVersion();
 
-            $this->update(['version' => $version]);
+            if ($version) {
+                $this->update(['version' => $version]);
+                return $version;
+            }
 
-            return $version;
+            logger()->warning(__METHOD__ . ': No version returned from API', [
+                'ucm_id' => $this->id,
+            ]);
+            return null;
         } catch (Exception $e) {
             logger()->error(__METHOD__ . ': Failed to update version from API', [
                 'ucm_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
-            return '';
+            return null;
         }
     }
 }

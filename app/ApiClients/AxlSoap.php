@@ -18,9 +18,17 @@ use Illuminate\Support\Facades\Log;
  */
 class AxlSoap extends SoapClient
 {
-    private Ucm $ucm;
-    private string $wsdlPath;
-    private string $serviceUrl;
+    protected Ucm $ucm;
+
+    // Pagination and retry tracking
+    private bool $paginatingRequests = false;
+    private int $skipRows = 0;
+    private int $suggestedRows = 0;
+    private int $loop = 0;
+    private int $iterations = 0;
+    private int $totalRows = 0;
+    private int $tries = 0;
+    private int $maxTries = 3;
 
     /**
      * @throws Exception
@@ -28,27 +36,33 @@ class AxlSoap extends SoapClient
     public function __construct(Ucm $ucm)
     {
         $this->ucm = $ucm;
-        $this->wsdlPath = $this->getWsdlPath();
-        $this->serviceUrl = $this->getServiceUrl();
 
-        parent::__construct($this->wsdlPath, $this->getSoapOptions());
-        $this->__setLocation($this->serviceUrl);
+        parent::__construct(
+            $this->getWsdlPath(),
+            $this->getSoapOptions()
+        );
     }
 
     /**
-     * Get CCM version from the UCM server
+     * Get the CCM version from the UCM
+     * @return string|null
      */
     public function getCCMVersion(): ?string
     {
-        try {
-            Log::info("Getting CCM version from {$this->ucm->name}");
+        Log::info("Getting CCM version from {$this->ucm->name}", [
+            'hostname' => $this->ucm->hostname,
+            'username' => $this->ucm->username,
+            'schema_version' => $this->ucm->schema_version,
+            'wsdl_path' => $this->getWsdlPath(),
+            'service_url' => $this->getServiceUrl(),
+        ]);
 
-            $response = $this->__soapCall('getCCMVersion', [
-                'getCCMVersion' => ['']
+        try {
+            $res = $this->__soapCall('getCCMVersion', [
+                'getCCMVersion' => []
             ]);
 
-            $version = $response->return->componentVersion->version ?? null;
-
+            $version = $res->return->componentVersion->version;
             Log::info("Successfully retrieved version: {$version}");
 
             return $version;
@@ -58,12 +72,17 @@ class AxlSoap extends SoapClient
                 'ucm' => $this->ucm->name,
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
+                'debug_info' => $this->getDebugInfo(),
             ]);
+
+            // For version detection, we don't want to retry indefinitely
+            // Just log and return null
             return null;
         } catch (Exception $e) {
             Log::error("Unexpected error getting CCM version", [
                 'ucm' => $this->ucm->name,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
             return null;
         }
@@ -76,14 +95,20 @@ class AxlSoap extends SoapClient
      * @param array $listObject The search criteria and returned tags
      * @param string $responseProperty The property name in the response (e.g., 'recordingProfile')
      * @param string $collectionName The MongoDB collection name
-     * @param array $filterStructure The filter structure to use (e.g., ['ucm_id' => 'ucm_id', 'pkid' => 'pkid'])
-     * @param array $hint The MongoDB index hint to use (e.g., ['ucm_id' => 1, 'pkid' => 1])
+     * @param array $filterStructure The filter structure to use (e.g., ['ucm_id' => 'ucm_id', 'name' => 'name'])
+     * @param array $hint The MongoDB index hint to use (e.g., ['ucm_id' => 1, 'name' => 1])
      * @return void
      * @throws SoapFault
      */
     public function listUcmObjects(string $methodName, array $listObject, string $responseProperty, string $collectionName, array $filterStructure, array $hint): void
     {
         Log::info("{$this->ucm->name}: Syncing {$responseProperty}");
+
+        // Add pagination parameters if we're in pagination mode
+        if ($this->paginatingRequests) {
+            $listObject['skipRecords'] = $this->skipRows;
+            $listObject['first'] = $this->suggestedRows;
+        }
 
         Log::info("{$this->ucm->name}: Set list object", $listObject);
 
@@ -121,12 +146,7 @@ class AxlSoap extends SoapClient
             Log::info("{$this->ucm->name}: {$responseProperty} sync completed");
 
         } catch (SoapFault $e) {
-            Log::error("SOAP fault syncing {$responseProperty}", [
-                'ucm' => $this->ucm->name,
-                'faultcode' => $e->faultcode,
-                'faultstring' => $e->faultstring,
-            ]);
-            throw $e;
+            $this->handleAxlApiError($e, $methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint);
         } catch (Exception $e) {
             Log::error("Unexpected error syncing {$responseProperty}", [
                 'ucm' => $this->ucm->name,
@@ -134,6 +154,137 @@ class AxlSoap extends SoapClient
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Handle AXL API Errors
+     * Determine if we should throttle, paginate, or retry with backoff
+     *
+     * @param SoapFault $e
+     * @param string $methodName
+     * @param array $listObject
+     * @param string $responseProperty
+     * @param string $collectionName
+     * @param array $filterStructure
+     * @param array $hint
+     * @return void
+     * @throws SoapFault
+     */
+    public function handleAxlApiError(SoapFault $e, string $methodName, array $listObject, string $responseProperty, string $collectionName, array $filterStructure, array $hint): void
+    {
+        // Check for throttling/query too large error
+        if (str_contains($e->faultstring, 'Query request too large')) {
+            Log::info("{$this->ucm->name}: Received AXL throttle response - implementing pagination");
+
+            // Extract numbers from the error message for pagination
+            preg_match_all('/[0-9]+/', $e->faultstring, $matches);
+            if (count($matches[0]) >= 2) {
+                $this->totalRows = (int)$matches[0][0];
+                $this->suggestedRows = (int)floor($matches[0][1] / 5);
+                $this->paginatingRequests = true;
+                $this->iterations = (int)floor($this->totalRows / $this->suggestedRows) + 1;
+                $this->loop = 1;
+
+                Log::info("{$this->ucm->name}: Starting pagination", [
+                    'totalRows' => $this->totalRows,
+                    'suggestedRows' => $this->suggestedRows,
+                    'iterations' => $this->iterations,
+                ]);
+
+                // Process all pages
+                while ($this->loop <= $this->iterations) {
+                    Log::info("{$this->ucm->name}: Processing page {$this->loop} of {$this->iterations}", [
+                        'skipRows' => $this->skipRows,
+                        'suggestedRows' => $this->suggestedRows,
+                    ]);
+
+                    $this->listUcmObjects($methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint);
+
+                    $this->skipRows += $this->suggestedRows;
+                    $this->loop++;
+                }
+
+                $this->resetPagination();
+                return;
+            }
+        }
+
+        // Check for authentication errors (don't retry these)
+        if (str_contains($e->faultstring, 'Authentication failed') ||
+            str_contains($e->faultstring, 'Invalid credentials') ||
+            str_contains($e->faultstring, 'Access denied')) {
+            Log::error("{$this->ucm->name}: Authentication error - not retrying", [
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+            ]);
+            throw $e;
+        }
+
+        // Check for connection errors (retry with backoff)
+        if (str_contains($e->faultstring, 'Connection refused') ||
+            str_contains($e->faultstring, 'Connection timeout') ||
+            str_contains($e->faultstring, 'Network is unreachable')) {
+            Log::warning("{$this->ucm->name}: Connection error detected", [
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+                'tries' => $this->tries,
+            ]);
+        }
+
+        // Handle other SOAP errors with exponential backoff
+        Log::error("{$this->ucm->name}: Received AXL error response", [
+            'faultcode' => $e->faultcode,
+            'faultstring' => $e->faultstring,
+            'tries' => $this->tries,
+            'method' => $methodName,
+        ]);
+
+        $this->tries++;
+        if ($this->tries > $this->maxTries) {
+            Log::error("{$this->ucm->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
+                'method' => $methodName,
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+            ]);
+            throw $e;
+        }
+
+        $sleepSeconds = $this->tries * 10; // Exponential backoff: 10s, 20s, 30s
+
+        Log::info("{$this->ucm->name}: Retrying after {$sleepSeconds} seconds", [
+            'maxTries' => $this->maxTries,
+            'tries' => $this->tries,
+            'sleep' => $sleepSeconds,
+            'method' => $methodName,
+        ]);
+
+        sleep($sleepSeconds);
+
+        // Retry the same operation
+        $this->listUcmObjects($methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint);
+    }
+
+    /**
+     * Reset pagination state after successful completion
+     */
+    private function resetPagination(): void
+    {
+        $this->skipRows = 0;
+        $this->loop = 0;
+        $this->paginatingRequests = false;
+        $this->totalRows = 0;
+        $this->iterations = 0;
+        $this->tries = 0; // Reset retry counter on successful pagination
+    }
+
+    /**
+     * Reset retry state for new operations
+     * Call this before starting a new sync operation
+     */
+    public function resetRetryState(): void
+    {
+        $this->tries = 0;
+        $this->resetPagination();
     }
 
     /**
@@ -156,7 +307,19 @@ class AxlSoap extends SoapClient
      */
     private function getServiceUrl(): string
     {
-        return "https://{$this->ucm->hostname}:8443/axl/";
+        // Use IP address directly to avoid DNS issues
+        $hostname = $this->ucm->hostname;
+        if (filter_var($hostname, FILTER_VALIDATE_IP)) {
+            return "https://{$hostname}:8443/axl/";
+        }
+        
+        // If it's a hostname, try to resolve it
+        $ip = gethostbyname($hostname);
+        if ($ip && $ip !== $hostname) {
+            return "https://{$ip}:8443/axl/";
+        }
+        
+        return "https://{$hostname}:8443/axl/";
     }
 
     /**
@@ -173,6 +336,7 @@ class AxlSoap extends SoapClient
             'connection_timeout' => 30,         // Reasonable timeout
             'features' => SOAP_SINGLE_ELEMENT_ARRAYS, // Critical for XML parsing
             'stream_context' => $this->getStreamContext(),
+            'location' => $this->getServiceUrl(), // Explicitly set the service location
         ];
     }
 
@@ -184,10 +348,15 @@ class AxlSoap extends SoapClient
         return stream_context_create([
             'http' => [
                 'timeout' => 30,
+                'user_agent' => 'Pingtone-AXL-Client/1.0',
             ],
             'ssl' => [
                 'verify_peer' => false,         // Handle self-signed certs
                 'verify_peer_name' => false,
+                'allow_self_signed' => true,
+                'crypto_method' => STREAM_CRYPTO_METHOD_TLS_CLIENT,
+                'ciphers' => 'DEFAULT',
+                'security_level' => 0,
             ],
         ]);
     }

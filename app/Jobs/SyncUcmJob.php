@@ -2,16 +2,17 @@
 
 namespace App\Jobs;
 
+use Throwable;
+use Exception;
 use App\Models\Ucm;
 use App\Models\SyncHistory;
-use App\Models\RecordingProfile;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SyncUcmJob implements ShouldQueue
 {
@@ -54,12 +55,15 @@ class SyncUcmJob implements ShouldQueue
 
             // Get the AXL API client
             $axlApi = $this->ucm->axlApi();
+            
+            // Reset retry state for new sync operation
+            $axlApi->resetRetryState();
 
             // Update version first
             $version = $this->ucm->updateVersionFromApi();
 
             if (!$version) {
-                throw new \Exception('Version detection failed');
+                throw new Exception('Version detection failed');
             }
 
             // Sync Recording Profiles
@@ -68,7 +72,7 @@ class SyncUcmJob implements ShouldQueue
                 'listRecordingProfile',
                 [
                     'searchCriteria' => ['name' => '%'],
-                    'returnedTags' => ['name' => ''],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
                 ],
                 'recordingProfile',
                 'recording_profiles',
@@ -94,7 +98,7 @@ class SyncUcmJob implements ShouldQueue
                 'last_sync_at' => now(),
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("UCM sync failed", [
                 'ucm_id' => $this->ucm->id,
                 'error' => $e->getMessage(),
@@ -116,7 +120,7 @@ class SyncUcmJob implements ShouldQueue
     /**
      * Handle a job failure.
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         Log::error("UCM sync job failed permanently", [
             'ucm_id' => $this->ucm->id,
@@ -130,4 +134,4 @@ class SyncUcmJob implements ShouldQueue
             'error' => $exception->getMessage(),
         ]);
     }
-} 
+}
