@@ -6,6 +6,9 @@ use Throwable;
 use Exception;
 use App\Models\Ucm;
 use App\Models\SyncHistory;
+use App\Models\RecordingProfile;
+use App\Models\VoicemailProfile;
+use App\Models\PhoneModel;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -81,6 +84,33 @@ class SyncUcmJob implements ShouldQueue
             );
             $this->ucm->recordingProfiles()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncRecordingProfiles completed");
+
+            // Sync Voicemail Profiles
+            $start = now();
+            $axlApi->listUcmObjects(
+                'listVoicemailProfile',
+                [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ],
+                'voiceMailProfile',
+                'voicemail_profiles',
+                ['ucm_id' => 'ucm_id', 'name' => 'name'],
+                ['ucm_id' => 1, 'name' => 1]
+            );
+            $this->ucm->voicemailProfiles()->where('updated_at', '<', $start)->delete();
+            Log::info("{$this->ucm->name}: syncVoicemailProfiles completed");
+
+            // Sync Phone Models (using SQL query)
+            $start = now();
+            $axlApi->executeSqlQuery(
+                'SELECT name FROM typemodel WHERE tkclass = 1',
+                'phone_models',
+                ['ucm_id' => 'ucm_id', 'name' => 'name'],
+                ['ucm_id' => 1, 'name' => 1]
+            );
+            $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
+            Log::info("{$this->ucm->name}: syncPhoneModels completed");
 
             Log::info("UCM sync completed successfully", [
                 'ucm_id' => $this->ucm->id,

@@ -83,6 +83,22 @@ class Ucm extends Model
     }
 
     /**
+     * Get the voicemail profiles associated with this UCM.
+     */
+    public function voicemailProfiles(): HasMany
+    {
+        return $this->hasMany(VoicemailProfile::class);
+    }
+
+    /**
+     * Get the phone models associated with this UCM.
+     */
+    public function phoneModels(): HasMany
+    {
+        return $this->hasMany(PhoneModel::class);
+    }
+
+    /**
      * Get the sync history for this UCM.
      */
     public function syncHistory(): MorphMany

@@ -362,6 +362,74 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Execute SQL query and store results in MongoDB
+     *
+     * @param string $sql The SQL query to execute
+     * @param string $collectionName The MongoDB collection name
+     * @param array $filterStructure The filter structure to use
+     * @param array $hint The MongoDB index hint to use
+     * @return void
+     * @throws SoapFault
+     */
+    public function executeSqlQuery(string $sql, string $collectionName, array $filterStructure, array $hint): void
+    {
+        Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
+
+        try {
+            $res = $this->__soapCall('executeSQLQuery', [
+                'executeSQLQuery' => [
+                    'sql' => $sql,
+                ]
+            ]);
+
+            Log::info("{$this->ucm->name}: Processing SQL query results");
+
+            if (isset($res->return->row)) {
+                foreach ($res->return->row as $record) {
+                    $recordArray = (array) $record;
+                    $update = [
+                        ...$recordArray,
+                        'ucm_id' => $this->ucm->id,
+                        'updated_at' => new UTCDateTime(now())
+                    ];
+
+                    $filter = [];
+                    foreach ($filterStructure as $filterKey => $updateKey) {
+                        $filter[$filterKey] = $update[$updateKey];
+                    }
+
+                    $collection = \DB::connection('mongodb')->getCollection($collectionName);
+                    $collection->updateOne($filter, ['$set' => $update], ['upsert' => true, 'hint' => $hint]);
+                }
+
+                Log::info("{$this->ucm->name}: Stored {$collectionName} data", [
+                    'count' => count($res->return->row),
+                ]);
+            }
+
+            Log::info("{$this->ucm->name}: SQL query execution completed");
+
+        } catch (SoapFault $e) {
+            Log::error("SOAP fault executing SQL query", [
+                'ucm' => $this->ucm->name,
+                'sql' => $sql,
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+                'debug_info' => $this->getDebugInfo(),
+            ]);
+            throw $e;
+        } catch (Exception $e) {
+            Log::error("Unexpected error executing SQL query", [
+                'ucm' => $this->ucm->name,
+                'sql' => $sql,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Get debug information for troubleshooting
      */
     public function getDebugInfo(): array
