@@ -30,6 +30,13 @@ class SyncHistory extends Model
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = [
+        'formatted_duration',
+    ];
+
+    /**
      * Get the parent syncable model.
      */
     public function syncable(): MorphTo
