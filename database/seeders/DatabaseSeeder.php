@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'pingtone',
             'password' => 'password',
             'is_active' => true,
+            'schema_version' => '15.0'
         ]);
 
         // Create sample user
