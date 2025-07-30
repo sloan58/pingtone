@@ -146,7 +146,7 @@ class AxlSoap extends SoapClient
             Log::info("{$this->ucm->name}: {$responseProperty} sync completed");
 
         } catch (SoapFault $e) {
-            $this->handleAxlApiError($e, $methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint);
+            $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint]);
         } catch (Exception $e) {
             Log::error("Unexpected error syncing {$responseProperty}", [
                 'ucm' => $this->ucm->name,
@@ -170,13 +170,13 @@ class AxlSoap extends SoapClient
      * @return void
      * @throws SoapFault
      */
-    public function handleAxlApiError(SoapFault $e, string $methodName, array $listObject, string $responseProperty, string $collectionName, array $filterStructure, array $hint): void
+    public function handleAxlApiError(SoapFault $e, array $args = null): void
     {
-        // Check for throttling/query too large error
-        if (str_contains($e->faultstring, 'Query request too large')) {
-            Log::info("{$this->ucm->name}: Received AXL throttle response - implementing pagination");
+        $method = debug_backtrace()[1]['function'];
 
-            // Extract numbers from the error message for pagination
+        // Handle "Query request too large" errors with pagination
+        if (str_contains($e->faultstring, 'Query request too large')) {
+            Log::info("{$this->ucm->name}: Received throttle response - implementing pagination");
             preg_match_all('/[0-9]+/', $e->faultstring, $matches);
             if (count($matches[0]) >= 2) {
                 $this->totalRows = (int)$matches[0][0];
@@ -184,26 +184,20 @@ class AxlSoap extends SoapClient
                 $this->paginatingRequests = true;
                 $this->iterations = (int)floor($this->totalRows / $this->suggestedRows) + 1;
                 $this->loop = 1;
-
                 Log::info("{$this->ucm->name}: Starting pagination", [
                     'totalRows' => $this->totalRows,
                     'suggestedRows' => $this->suggestedRows,
                     'iterations' => $this->iterations,
                 ]);
-
-                // Process all pages
                 while ($this->loop <= $this->iterations) {
                     Log::info("{$this->ucm->name}: Processing page {$this->loop} of {$this->iterations}", [
                         'skipRows' => $this->skipRows,
                         'suggestedRows' => $this->suggestedRows,
                     ]);
-
-                    $this->listUcmObjects($methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint);
-
+                    $this->{$method}(...$args);
                     $this->skipRows += $this->suggestedRows;
                     $this->loop++;
                 }
-
                 $this->resetPagination();
                 return;
             }
@@ -236,13 +230,13 @@ class AxlSoap extends SoapClient
             'faultcode' => $e->faultcode,
             'faultstring' => $e->faultstring,
             'tries' => $this->tries,
-            'method' => $methodName,
+            'method' => $method,
         ]);
 
         $this->tries++;
         if ($this->tries > $this->maxTries) {
             Log::error("{$this->ucm->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
-                'method' => $methodName,
+                'method' => $method,
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
             ]);
@@ -255,13 +249,13 @@ class AxlSoap extends SoapClient
             'maxTries' => $this->maxTries,
             'tries' => $this->tries,
             'sleep' => $sleepSeconds,
-            'method' => $methodName,
+            'method' => $method,
         ]);
 
         sleep($sleepSeconds);
 
         // Retry the same operation
-        $this->listUcmObjects($methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint);
+        $this->{$method}(...$args);
     }
 
     /**
@@ -412,7 +406,7 @@ class AxlSoap extends SoapClient
             Log::info("{$this->ucm->name}: SQL query execution completed");
 
         } catch (SoapFault $e) {
-            $this->handleSqlApiError($e, $sql, $collectionName, $filterStructure, $hint);
+            $this->handleAxlApiError($e, [$sql, $collectionName, $filterStructure, $hint]);
         } catch (Exception $e) {
             Log::error("Unexpected error executing SQL query", [
                 'ucm' => $this->ucm->name,
@@ -442,95 +436,7 @@ class AxlSoap extends SoapClient
         return $query;
     }
 
-    /**
-     * Handle SQL API errors with pagination and retry logic
-     *
-     * @param SoapFault $e The SOAP fault
-     * @param string $sql The original SQL query
-     * @param string $collectionName The MongoDB collection name
-     * @param array $filterStructure The filter structure
-     * @param array $hint The MongoDB index hint
-     * @return void
-     * @throws SoapFault
-     */
-    private function handleSqlApiError(SoapFault $e, string $sql, string $collectionName, array $filterStructure, array $hint): void
-    {
-        if (str_contains($e->faultstring, 'Query request too large')) {
-            Log::info("{$this->ucm->name}: Received SQL throttle response - implementing pagination");
-            preg_match_all('/[0-9]+/', $e->faultstring, $matches);
-            if (count($matches[0]) >= 2) {
-                $this->totalRows = (int)$matches[0][0];
-                $this->suggestedRows = (int)floor($matches[0][1] / 5);
-                $this->paginatingRequests = true;
-                $this->iterations = (int)floor($this->totalRows / $this->suggestedRows) + 1;
-                $this->loop = 1;
-                Log::info("{$this->ucm->name}: Starting SQL pagination", [
-                    'totalRows' => $this->totalRows,
-                    'suggestedRows' => $this->suggestedRows,
-                    'iterations' => $this->iterations,
-                ]);
-                while ($this->loop <= $this->iterations) {
-                    Log::info("{$this->ucm->name}: Processing SQL page {$this->loop} of {$this->iterations}", [
-                        'skipRows' => $this->skipRows,
-                        'suggestedRows' => $this->suggestedRows,
-                    ]);
-                    $this->executeSqlQuery($sql, $collectionName, $filterStructure, $hint);
-                    $this->skipRows += $this->suggestedRows;
-                    $this->loop++;
-                }
-                $this->resetPagination();
-                return;
-            }
-        }
 
-        if (str_contains($e->faultstring, 'Authentication failed') ||
-            str_contains($e->faultstring, 'Invalid credentials') ||
-            str_contains($e->faultstring, 'Access denied')) {
-            Log::error("{$this->ucm->name}: Authentication error - not retrying", [
-                'faultcode' => $e->faultcode,
-                'faultstring' => $e->faultstring,
-            ]);
-            throw $e;
-        }
-
-        if (str_contains($e->faultstring, 'Connection refused') ||
-            str_contains($e->faultstring, 'Connection timeout') ||
-            str_contains($e->faultstring, 'Network is unreachable')) {
-            Log::warning("{$this->ucm->name}: Connection error detected", [
-                'faultcode' => $e->faultcode,
-                'faultstring' => $e->faultstring,
-                'tries' => $this->tries,
-            ]);
-        }
-
-        Log::error("{$this->ucm->name}: Received SQL error response", [
-            'faultcode' => $e->faultcode,
-            'faultstring' => $e->faultstring,
-            'tries' => $this->tries,
-            'sql' => $sql,
-        ]);
-
-        $this->tries++;
-        if ($this->tries > $this->maxTries) {
-            Log::error("{$this->ucm->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
-                'sql' => $sql,
-                'faultcode' => $e->faultcode,
-                'faultstring' => $e->faultstring,
-            ]);
-            throw $e;
-        }
-
-        $sleepSeconds = $this->tries * 10;
-        Log::info("{$this->ucm->name}: Retrying SQL query after {$sleepSeconds} seconds", [
-            'maxTries' => $this->maxTries,
-            'tries' => $this->tries,
-            'sleep' => $sleepSeconds,
-            'sql' => $sql,
-        ]);
-
-        sleep($sleepSeconds);
-        $this->executeSqlQuery($sql, $collectionName, $filterStructure, $hint);
-    }
 
     /**
      * Get debug information for troubleshooting
