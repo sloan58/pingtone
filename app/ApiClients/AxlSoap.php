@@ -100,7 +100,7 @@ class AxlSoap extends SoapClient
      * @return void
      * @throws SoapFault
      */
-    public function listUcmObjects(string $methodName, array $listObject, string $responseProperty, string $collectionName, array $filterStructure, array $hint): void
+    public function listUcmObjects(string $methodName, array $listObject, string $responseProperty, callable $dataHandler): void
     {
         Log::info("{$this->ucm->name}: Syncing {$responseProperty}");
 
@@ -119,34 +119,16 @@ class AxlSoap extends SoapClient
 
             Log::info("{$this->ucm->name}: Processing {$responseProperty} data");
 
-            foreach ($res->return->{$responseProperty} as $record) {
-                $recordArray = (array) $record;
+            if (isset($res->return->{$responseProperty})) {
+                $dataHandler($res->return->{$responseProperty}, $this->ucm);
 
-                $update = [
-                    ...$recordArray,
-                    'ucm_id' => $this->ucm->id,
-                    'updated_at' => new UTCDateTime(now())
-                ];
-
-                // Build filter using the specified structure
-                $filter = array_map(function ($updateKey) use ($update) {
-                    return $update[$updateKey];
-                }, $filterStructure);
-
-                $collection = DB::connection('mongodb')->getCollection($collectionName);
-                $collection->updateOne($filter, ['$set' => $update], ['upsert' => true, 'hint' => $hint]);
-            }
-
-            if (!empty($res->return->{$responseProperty})) {
-                Log::info("{$this->ucm->name}: Stored {$collectionName} data", [
+                Log::info("{$this->ucm->name}: {$responseProperty} sync completed", [
                     'count' => count($res->return->{$responseProperty}),
                 ]);
             }
 
-            Log::info("{$this->ucm->name}: {$responseProperty} sync completed");
-
         } catch (SoapFault $e) {
-            $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty, $collectionName, $filterStructure, $hint]);
+            $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty, $dataHandler]);
         } catch (Exception $e) {
             Log::error("Unexpected error syncing {$responseProperty}", [
                 'ucm' => $this->ucm->name,
@@ -356,16 +338,14 @@ class AxlSoap extends SoapClient
     }
 
     /**
-     * Execute SQL query and store results in MongoDB
+     * Execute SQL query and pass results to callback
      *
      * @param string $sql The SQL query to execute
-     * @param string $collectionName The MongoDB collection name
-     * @param array $filterStructure The filter structure to use
-     * @param array $hint The MongoDB index hint to use
+     * @param callable $dataHandler The callback to handle the data
      * @return void
      * @throws SoapFault
      */
-    public function executeSqlQuery(string $sql, string $collectionName, array $filterStructure, array $hint): void
+    public function executeSqlQuery(string $sql, callable $dataHandler): void
     {
         Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
 
@@ -382,31 +362,15 @@ class AxlSoap extends SoapClient
             Log::info("{$this->ucm->name}: Processing SQL query results");
 
             if (isset($res->return->row)) {
-                foreach ($res->return->row as $record) {
-                    $recordArray = (array) $record;
-                    $update = [
-                        ...$recordArray,
-                        'ucm_id' => $this->ucm->id,
-                        'updated_at' => new UTCDateTime(now())
-                    ];
+                $dataHandler($res->return->row, $this->ucm);
 
-                    $filter = array_map(function ($updateKey) use ($update) {
-                        return $update[$updateKey];
-                    }, $filterStructure);
-
-                    $collection = \DB::connection('mongodb')->getCollection($collectionName);
-                    $collection->updateOne($filter, ['$set' => $update], ['upsert' => true, 'hint' => $hint]);
-                }
-
-                Log::info("{$this->ucm->name}: Stored {$collectionName} data", [
+                Log::info("{$this->ucm->name}: SQL query execution completed", [
                     'count' => count($res->return->row),
                 ]);
             }
 
-            Log::info("{$this->ucm->name}: SQL query execution completed");
-
         } catch (SoapFault $e) {
-            $this->handleAxlApiError($e, [$sql, $collectionName, $filterStructure, $hint]);
+            $this->handleAxlApiError($e, [$sql, $dataHandler]);
         } catch (Exception $e) {
             Log::error("Unexpected error executing SQL query", [
                 'ucm' => $this->ucm->name,

@@ -78,9 +78,7 @@ class SyncUcmJob implements ShouldQueue
                     'returnedTags' => ['name' => '', 'uuid' => ''],
                 ],
                 'recordingProfile',
-                'recording_profiles',
-                ['ucm_id' => 'ucm_id', 'name' => 'name'],
-                ['ucm_id' => 1, 'name' => 1]
+                [RecordingProfile::class, 'storeUcmData']
             );
             $this->ucm->recordingProfiles()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncRecordingProfiles completed");
@@ -94,9 +92,7 @@ class SyncUcmJob implements ShouldQueue
                     'returnedTags' => ['name' => '', 'uuid' => ''],
                 ],
                 'voiceMailProfile',
-                'voicemail_profiles',
-                ['ucm_id' => 'ucm_id', 'name' => 'name'],
-                ['ucm_id' => 1, 'name' => 1]
+                [VoicemailProfile::class, 'storeUcmData']
             );
             $this->ucm->voicemailProfiles()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncVoicemailProfiles completed");
@@ -105,9 +101,7 @@ class SyncUcmJob implements ShouldQueue
             $start = now();
             $axlApi->executeSqlQuery(
                 'SELECT name FROM typemodel WHERE tkclass = 1',
-                'phone_models',
-                ['ucm_id' => 'ucm_id', 'name' => 'name'],
-                ['ucm_id' => 1, 'name' => 1]
+                [PhoneModel::class, 'storeUcmData']
             );
             $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncPhoneModels completed");
