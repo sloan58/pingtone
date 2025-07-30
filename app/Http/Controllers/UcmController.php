@@ -58,17 +58,21 @@ class UcmController extends Controller
 
             // Test API connection and get actual version
             $apiVersion = null;
-            $connectionSuccess = false;
             
             try {
                 Log::info("Testing API connection for UCM: {$ucm->name}");
                 $apiVersion = $ucm->updateVersionFromApi();
-                $connectionSuccess = true;
                 
                 if ($apiVersion) {
                     Log::info("Successfully detected version: {$apiVersion}");
+                    $message = "UCM server created successfully. API version detected: {$apiVersion}";
+                    $toastType = 'success';
+                    $toastTitle = 'UCM Server Created Successfully';
                 } else {
                     Log::warning("API connection successful but no version detected");
+                    $message = "UCM server created successfully. API connection established but version detection failed.";
+                    $toastType = 'warning';
+                    $toastTitle = 'UCM Server Created with Warning';
                 }
             } catch (\Exception $apiException) {
                 Log::error('API connection failed during UCM creation', [
@@ -76,20 +80,6 @@ class UcmController extends Controller
                     'error' => $apiException->getMessage(),
                 ]);
                 
-                // Still create the UCM but mark it as inactive
-                $ucm->update(['is_active' => false]);
-            }
-
-            // Determine success message based on API test results
-            if ($connectionSuccess && $apiVersion) {
-                $message = "UCM server created successfully. API version detected: {$apiVersion}";
-                $toastType = 'success';
-                $toastTitle = 'UCM Server Created Successfully';
-            } elseif ($connectionSuccess) {
-                $message = "UCM server created successfully. API connection established but version detection failed.";
-                $toastType = 'warning';
-                $toastTitle = 'UCM Server Created with Warning';
-            } else {
                 $message = "UCM server created but API connection failed. Please check credentials and network connectivity.";
                 $toastType = 'error';
                 $toastTitle = 'UCM Server Created with Connection Error';
@@ -191,7 +181,6 @@ class UcmController extends Controller
             Log::info("Testing API connection for UCM: {$ucm->name}");
             
             $apiVersion = $ucm->updateVersionFromApi();
-            $connectionSuccess = true;
             
             if ($apiVersion) {
                 Log::info("Successfully detected version: {$apiVersion}");
@@ -216,9 +205,6 @@ class UcmController extends Controller
                 'ucm_id' => $ucm->id,
                 'error' => $e->getMessage(),
             ]);
-            
-            // Mark as inactive if connection fails
-            $ucm->update(['is_active' => false]);
             
             return redirect()->back()
                 ->with('toast', [

@@ -29,7 +29,6 @@ interface Ucm {
     last_sync_at: string | null;
     sync_status: string;
     latest_sync_status: string | null;
-    is_active: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -144,8 +143,8 @@ export default function UcmIndex({ ucms }: Props) {
                                 <TableRow>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Hostname</TableHead>
-                                    <TableHead>Version</TableHead>
-                                    <TableHead>Connection</TableHead>
+                                    <TableHead>Schema Version</TableHead>
+                                    <TableHead>Detected Version</TableHead>
                                     <TableHead>Sync Status</TableHead>
                                     <TableHead>Last Sync</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -157,25 +156,14 @@ export default function UcmIndex({ ucms }: Props) {
                                         <TableCell className="font-medium">{ucm.name}</TableCell>
                                         <TableCell>{ucm.hostname}</TableCell>
                                         <TableCell>
-                                            <div className="flex items-center space-x-2">
-                                                <Badge variant="outline">{ucm.schema_version}</Badge>
-                                                {ucm.version && <Badge variant="secondary">{ucm.version}</Badge>}
-                                            </div>
+                                            <Badge variant="outline">{ucm.schema_version}</Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex items-center space-x-2">
-                                                {ucm.is_active ? (
-                                                    <Badge variant="default" className="bg-green-600">
-                                                        <CheckCircle className="mr-1 h-3 w-3" />
-                                                        Connected
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="destructive">
-                                                        <XCircle className="mr-1 h-3 w-3" />
-                                                        Disconnected
-                                                    </Badge>
-                                                )}
-                                            </div>
+                                            {ucm.version ? (
+                                                <Badge variant="secondary">{ucm.version}</Badge>
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">Not detected</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center space-x-2">
