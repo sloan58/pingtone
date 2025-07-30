@@ -3,14 +3,11 @@
 namespace App\Models;
 
 use App\Enums\SyncStatusEnum;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class SyncHistory extends Model
 {
-    use HasFactory;
-
     /**
      * The attributes that are mass assignable.
      */
@@ -102,7 +99,7 @@ class SyncHistory extends Model
 
         $minutes = floor($this->duration / 60);
         $seconds = $this->duration % 60;
-        
+
         return "{$minutes}m {$seconds}s";
     }
-} 
+}

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Ucm;
 use App\Models\SyncHistory;
+use App\Jobs\SyncUcmJob;
+use App\Enums\SyncStatusEnum;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -31,16 +33,28 @@ class SyncHistoryController extends Controller
      */
     public function startSync(Ucm $ucm)
     {
+        // Check if there's already a sync in progress
+        $activeSync = $ucm->syncHistory()
+            ->where('status', SyncStatusEnum::SYNCING)
+            ->first();
+
+        if ($activeSync) {
+            return redirect()->back()
+                ->with('toast', [
+                    'type' => 'warning',
+                    'title' => 'Sync Already in Progress',
+                    'message' => 'A sync operation is already running for ' . $ucm->name
+                ]);
+        }
+
         // Create a new sync history entry
         $syncHistory = $ucm->syncHistory()->create([
             'sync_start_time' => now(),
-            'status' => 'syncing',
+            'status' => SyncStatusEnum::SYNCING,
         ]);
 
-        // TODO: Dispatch a job to perform the actual sync
-        // For now, we'll just mark it as completed after a delay
-        // In a real implementation, you'd dispatch a job like:
-        // dispatch(new SyncUcmJob($ucm, $syncHistory));
+        // Dispatch the sync job
+        dispatch(new SyncUcmJob($ucm, $syncHistory));
 
         return redirect()->back()
             ->with('toast', [

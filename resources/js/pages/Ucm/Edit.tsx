@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { ArrowLeft, History, RefreshCw, Save } from 'lucide-react';
 
 interface Ucm {
     id: number;
@@ -16,6 +17,7 @@ interface Ucm {
     username: string;
     schema_version: string | null;
     version: string | null;
+    last_sync_at: string | null;
 }
 
 interface ApiVersion {
@@ -158,6 +160,63 @@ export default function UcmEdit({ ucm, apiVersions }: Props) {
                                 </Button>
                             </div>
                         </form>
+                    </CardContent>
+                </Card>
+
+                {/* Sync Section */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Synchronization</CardTitle>
+                        <CardDescription>Manage data synchronization with this UCM server</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* Current Status */}
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium">Current Version</Label>
+                                <div className="flex items-center space-x-2">
+                                    {ucm.version ? (
+                                        <Badge variant="secondary">{ucm.version}</Badge>
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">Not detected</span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium">Last Sync</Label>
+                                <div className="text-sm text-muted-foreground">
+                                    {ucm.last_sync_at ? new Date(ucm.last_sync_at).toLocaleString() : 'Never'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sync Actions */}
+                        <div className="flex items-center space-x-4">
+                            <Button
+                                onClick={() => {
+                                    router.post(`/ucm/${ucm.id}/sync`);
+                                }}
+                                variant="outline"
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Start Sync
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    router.post(`/ucm/${ucm.id}/test-connection`);
+                                }}
+                                variant="outline"
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Test Connection
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <a href={`/ucm/${ucm.id}/sync-history`}>
+                                    <History className="mr-2 h-4 w-4" />
+                                    View Sync History
+                                </a>
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

@@ -215,6 +215,14 @@ export default function UcmIndex({ ucms }: Props) {
                                                         <RefreshCw className="mr-2 h-4 w-4" />
                                                         Test Connection
                                                     </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => {
+                                                            router.post(`/ucm/${ucm.id}/sync`);
+                                                        }}
+                                                    >
+                                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                                        Start Sync
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild>
