@@ -312,13 +312,13 @@ class AxlSoap extends SoapClient
         if (filter_var($hostname, FILTER_VALIDATE_IP)) {
             return "https://{$hostname}:8443/axl/";
         }
-        
+
         // If it's a hostname, try to resolve it
         $ip = gethostbyname($hostname);
         if ($ip && $ip !== $hostname) {
             return "https://{$ip}:8443/axl/";
         }
-        
+
         return "https://{$hostname}:8443/axl/";
     }
 
@@ -375,10 +375,13 @@ class AxlSoap extends SoapClient
     {
         Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
 
+        // Format SQL query with pagination if needed
+        $formattedSql = $this->formatSqlQuery($sql);
+
         try {
             $res = $this->__soapCall('executeSQLQuery', [
                 'executeSQLQuery' => [
-                    'sql' => $sql,
+                    'sql' => $formattedSql,
                 ]
             ]);
 
@@ -393,10 +396,9 @@ class AxlSoap extends SoapClient
                         'updated_at' => new UTCDateTime(now())
                     ];
 
-                    $filter = [];
-                    foreach ($filterStructure as $filterKey => $updateKey) {
-                        $filter[$filterKey] = $update[$updateKey];
-                    }
+                    $filter = array_map(function ($updateKey) use ($update) {
+                        return $update[$updateKey];
+                    }, $filterStructure);
 
                     $collection = \DB::connection('mongodb')->getCollection($collectionName);
                     $collection->updateOne($filter, ['$set' => $update], ['upsert' => true, 'hint' => $hint]);
@@ -410,14 +412,7 @@ class AxlSoap extends SoapClient
             Log::info("{$this->ucm->name}: SQL query execution completed");
 
         } catch (SoapFault $e) {
-            Log::error("SOAP fault executing SQL query", [
-                'ucm' => $this->ucm->name,
-                'sql' => $sql,
-                'faultcode' => $e->faultcode,
-                'faultstring' => $e->faultstring,
-                'debug_info' => $this->getDebugInfo(),
-            ]);
-            throw $e;
+            $this->handleSqlApiError($e, $sql, $collectionName, $filterStructure, $hint);
         } catch (Exception $e) {
             Log::error("Unexpected error executing SQL query", [
                 'ucm' => $this->ucm->name,
@@ -427,6 +422,114 @@ class AxlSoap extends SoapClient
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Format SQL query with pagination parameters if needed
+     *
+     * @param string $query The original SQL query
+     * @return string The formatted SQL query
+     */
+    private function formatSqlQuery(string $query): string
+    {
+        if ($this->paginatingRequests) {
+            return preg_replace(
+                '/^SELECT\s(.*)/i',
+                "SELECT SKIP {$this->skipRows} FIRST {$this->suggestedRows} $1",
+                $query
+            );
+        }
+        return $query;
+    }
+
+    /**
+     * Handle SQL API errors with pagination and retry logic
+     *
+     * @param SoapFault $e The SOAP fault
+     * @param string $sql The original SQL query
+     * @param string $collectionName The MongoDB collection name
+     * @param array $filterStructure The filter structure
+     * @param array $hint The MongoDB index hint
+     * @return void
+     * @throws SoapFault
+     */
+    private function handleSqlApiError(SoapFault $e, string $sql, string $collectionName, array $filterStructure, array $hint): void
+    {
+        if (str_contains($e->faultstring, 'Query request too large')) {
+            Log::info("{$this->ucm->name}: Received SQL throttle response - implementing pagination");
+            preg_match_all('/[0-9]+/', $e->faultstring, $matches);
+            if (count($matches[0]) >= 2) {
+                $this->totalRows = (int)$matches[0][0];
+                $this->suggestedRows = (int)floor($matches[0][1] / 5);
+                $this->paginatingRequests = true;
+                $this->iterations = (int)floor($this->totalRows / $this->suggestedRows) + 1;
+                $this->loop = 1;
+                Log::info("{$this->ucm->name}: Starting SQL pagination", [
+                    'totalRows' => $this->totalRows,
+                    'suggestedRows' => $this->suggestedRows,
+                    'iterations' => $this->iterations,
+                ]);
+                while ($this->loop <= $this->iterations) {
+                    Log::info("{$this->ucm->name}: Processing SQL page {$this->loop} of {$this->iterations}", [
+                        'skipRows' => $this->skipRows,
+                        'suggestedRows' => $this->suggestedRows,
+                    ]);
+                    $this->executeSqlQuery($sql, $collectionName, $filterStructure, $hint);
+                    $this->skipRows += $this->suggestedRows;
+                    $this->loop++;
+                }
+                $this->resetPagination();
+                return;
+            }
+        }
+
+        if (str_contains($e->faultstring, 'Authentication failed') ||
+            str_contains($e->faultstring, 'Invalid credentials') ||
+            str_contains($e->faultstring, 'Access denied')) {
+            Log::error("{$this->ucm->name}: Authentication error - not retrying", [
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+            ]);
+            throw $e;
+        }
+
+        if (str_contains($e->faultstring, 'Connection refused') ||
+            str_contains($e->faultstring, 'Connection timeout') ||
+            str_contains($e->faultstring, 'Network is unreachable')) {
+            Log::warning("{$this->ucm->name}: Connection error detected", [
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+                'tries' => $this->tries,
+            ]);
+        }
+
+        Log::error("{$this->ucm->name}: Received SQL error response", [
+            'faultcode' => $e->faultcode,
+            'faultstring' => $e->faultstring,
+            'tries' => $this->tries,
+            'sql' => $sql,
+        ]);
+
+        $this->tries++;
+        if ($this->tries > $this->maxTries) {
+            Log::error("{$this->ucm->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
+                'sql' => $sql,
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+            ]);
+            throw $e;
+        }
+
+        $sleepSeconds = $this->tries * 10;
+        Log::info("{$this->ucm->name}: Retrying SQL query after {$sleepSeconds} seconds", [
+            'maxTries' => $this->maxTries,
+            'tries' => $this->tries,
+            'sleep' => $sleepSeconds,
+            'sql' => $sql,
+        ]);
+
+        sleep($sleepSeconds);
+        $this->executeSqlQuery($sql, $collectionName, $filterStructure, $hint);
     }
 
     /**
