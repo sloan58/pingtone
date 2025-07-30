@@ -42,7 +42,19 @@ export default function UcmCreate({ apiVersions }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         console.log('Submitting form data:', data); // Debug
-        post('/ucm');
+
+        // Show a toast indicating that API testing is in progress
+        post('/ucm', {
+            onStart: () => {
+                console.log('Starting UCM creation with API test...');
+            },
+            onSuccess: () => {
+                console.log('UCM creation completed');
+            },
+            onError: (errors) => {
+                console.error('UCM creation failed:', errors);
+            },
+        });
     };
 
     return (
@@ -68,7 +80,10 @@ export default function UcmCreate({ apiVersions }: Props) {
                 <Card>
                     <CardHeader>
                         <CardTitle>UCM Server Details</CardTitle>
-                        <CardDescription>Enter the connection details for your UCM server</CardDescription>
+                        <CardDescription>
+                            Enter the connection details for your UCM server. The system will automatically test the API connection and detect the
+                            server version.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -145,7 +160,7 @@ export default function UcmCreate({ apiVersions }: Props) {
                             <div className="flex justify-end">
                                 <Button type="submit" disabled={processing}>
                                     <Save className="mr-2 h-4 w-4" />
-                                    {processing ? 'Creating...' : 'Create UCM Server'}
+                                    {processing ? 'Creating & Testing API...' : 'Create UCM Server'}
                                 </Button>
                             </div>
                         </form>

@@ -22,6 +22,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('ucm', UcmController::class);
     
+    // UCM API test route
+    Route::post('/ucm/{ucm}/test-connection', [UcmController::class, 'testConnection'])->name('ucm.test-connection');
+    
     // Sync History routes
     Route::get('/ucm/{ucm}/sync-history', [SyncHistoryController::class, 'index'])->name('ucm.sync-history');
     Route::post('/ucm/{ucm}/sync', [SyncHistoryController::class, 'startSync'])->name('ucm.sync.start');

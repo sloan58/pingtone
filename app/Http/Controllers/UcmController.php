@@ -53,13 +53,53 @@ class UcmController extends Controller
             // Debug: Log the validated data
             Log::info('UCM store validated data', $validated);
 
+            // Create the UCM record first
             $ucm = Ucm::create($validated);
+
+            // Test API connection and get actual version
+            $apiVersion = null;
+            $connectionSuccess = false;
+            
+            try {
+                Log::info("Testing API connection for UCM: {$ucm->name}");
+                $apiVersion = $ucm->updateVersionFromApi();
+                $connectionSuccess = true;
+                
+                if ($apiVersion) {
+                    Log::info("Successfully detected version: {$apiVersion}");
+                } else {
+                    Log::warning("API connection successful but no version detected");
+                }
+            } catch (\Exception $apiException) {
+                Log::error('API connection failed during UCM creation', [
+                    'ucm_id' => $ucm->id,
+                    'error' => $apiException->getMessage(),
+                ]);
+                
+                // Still create the UCM but mark it as inactive
+                $ucm->update(['is_active' => false]);
+            }
+
+            // Determine success message based on API test results
+            if ($connectionSuccess && $apiVersion) {
+                $message = "UCM server created successfully. API version detected: {$apiVersion}";
+                $toastType = 'success';
+                $toastTitle = 'UCM Server Created Successfully';
+            } elseif ($connectionSuccess) {
+                $message = "UCM server created successfully. API connection established but version detection failed.";
+                $toastType = 'warning';
+                $toastTitle = 'UCM Server Created with Warning';
+            } else {
+                $message = "UCM server created but API connection failed. Please check credentials and network connectivity.";
+                $toastType = 'error';
+                $toastTitle = 'UCM Server Created with Connection Error';
+            }
 
             return redirect()->route('ucm.index')
                 ->with('toast', [
-                    'type' => 'success',
-                    'title' => 'UCM Server Created',
-                    'message' => 'UCM server created successfully.'
+                    'type' => $toastType,
+                    'title' => $toastTitle,
+                    'message' => $message
                 ]);
         } catch (\Exception $e) {
             Log::error('Failed to create UCM server', [
@@ -138,6 +178,53 @@ class UcmController extends Controller
                     'type' => 'error',
                     'title' => 'Failed to Update UCM Server',
                     'message' => 'An error occurred while updating the UCM server. Please try again.'
+                ]);
+        }
+    }
+
+    /**
+     * Test the API connection for a UCM server.
+     */
+    public function testConnection(Ucm $ucm): RedirectResponse
+    {
+        try {
+            Log::info("Testing API connection for UCM: {$ucm->name}");
+            
+            $apiVersion = $ucm->updateVersionFromApi();
+            $connectionSuccess = true;
+            
+            if ($apiVersion) {
+                Log::info("Successfully detected version: {$apiVersion}");
+                $message = "API connection successful. Version detected: {$apiVersion}";
+                $toastType = 'success';
+                $toastTitle = 'Connection Test Successful';
+            } else {
+                Log::warning("API connection successful but no version detected");
+                $message = "API connection successful but version detection failed.";
+                $toastType = 'warning';
+                $toastTitle = 'Connection Test with Warning';
+            }
+            
+            return redirect()->back()
+                ->with('toast', [
+                    'type' => $toastType,
+                    'title' => $toastTitle,
+                    'message' => $message
+                ]);
+        } catch (\Exception $e) {
+            Log::error('API connection test failed', [
+                'ucm_id' => $ucm->id,
+                'error' => $e->getMessage(),
+            ]);
+            
+            // Mark as inactive if connection fails
+            $ucm->update(['is_active' => false]);
+            
+            return redirect()->back()
+                ->with('toast', [
+                    'type' => 'error',
+                    'title' => 'Connection Test Failed',
+                    'message' => 'API connection failed. Please check credentials and network connectivity.'
                 ]);
         }
     }

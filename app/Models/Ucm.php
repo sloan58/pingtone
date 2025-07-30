@@ -25,6 +25,7 @@ class Ucm extends Model
         'schema_version',
         'version',
         'last_sync_at',
+        'is_active',
     ];
 
     /**

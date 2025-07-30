@@ -29,6 +29,7 @@ interface Ucm {
     last_sync_at: string | null;
     sync_status: string;
     latest_sync_status: string | null;
+    is_active: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -144,6 +145,7 @@ export default function UcmIndex({ ucms }: Props) {
                                     <TableHead>Name</TableHead>
                                     <TableHead>Hostname</TableHead>
                                     <TableHead>Version</TableHead>
+                                    <TableHead>Connection</TableHead>
                                     <TableHead>Sync Status</TableHead>
                                     <TableHead>Last Sync</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -158,6 +160,21 @@ export default function UcmIndex({ ucms }: Props) {
                                             <div className="flex items-center space-x-2">
                                                 <Badge variant="outline">{ucm.schema_version}</Badge>
                                                 {ucm.version && <Badge variant="secondary">{ucm.version}</Badge>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center space-x-2">
+                                                {ucm.is_active ? (
+                                                    <Badge variant="default" className="bg-green-600">
+                                                        <CheckCircle className="mr-1 h-3 w-3" />
+                                                        Connected
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="destructive">
+                                                        <XCircle className="mr-1 h-3 w-3" />
+                                                        Disconnected
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -201,6 +218,14 @@ export default function UcmIndex({ ucms }: Props) {
                                                             <History className="mr-2 h-4 w-4" />
                                                             Sync History
                                                         </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => {
+                                                            router.post(`/ucm/${ucm.id}/test-connection`);
+                                                        }}
+                                                    >
+                                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                                        Test Connection
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
                                                         <AlertDialog>
