@@ -71,38 +71,36 @@ class SyncUcmJob implements ShouldQueue
 
             // Sync Recording Profiles
             $start = now();
-            $axlApi->listUcmObjects(
+            $recordingProfiles = $axlApi->listUcmObjects(
                 'listRecordingProfile',
                 [
                     'searchCriteria' => ['name' => '%'],
                     'returnedTags' => ['name' => '', 'uuid' => ''],
                 ],
-                'recordingProfile',
-                [RecordingProfile::class, 'storeUcmData']
+                'recordingProfile'
             );
+            RecordingProfile::storeUcmData($recordingProfiles, $this->ucm);
             $this->ucm->recordingProfiles()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncRecordingProfiles completed");
 
             // Sync Voicemail Profiles
             $start = now();
-            $axlApi->listUcmObjects(
+            $voicemailProfiles = $axlApi->listUcmObjects(
                 'listVoicemailProfile',
                 [
                     'searchCriteria' => ['name' => '%'],
                     'returnedTags' => ['name' => '', 'uuid' => ''],
                 ],
-                'voiceMailProfile',
-                [VoicemailProfile::class, 'storeUcmData']
+                'voiceMailProfile'
             );
+            VoicemailProfile::storeUcmData($voicemailProfiles, $this->ucm);
             $this->ucm->voicemailProfiles()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncVoicemailProfiles completed");
 
             // Sync Phone Models (using SQL query)
             $start = now();
-            $axlApi->executeSqlQuery(
-                'SELECT name FROM typemodel WHERE tkclass = 1',
-                [PhoneModel::class, 'storeUcmData']
-            );
+            $phoneModels = $axlApi->executeSqlQuery('SELECT name FROM typemodel WHERE tkclass = 1');
+            PhoneModel::storeUcmData($phoneModels, $this->ucm);
             $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncPhoneModels completed");
 

@@ -100,7 +100,7 @@ class AxlSoap extends SoapClient
      * @return void
      * @throws SoapFault
      */
-    public function listUcmObjects(string $methodName, array $listObject, string $responseProperty, callable $dataHandler): void
+    public function listUcmObjects(string $methodName, array $listObject, string $responseProperty): array
     {
         Log::info("{$this->ucm->name}: Syncing {$responseProperty}");
 
@@ -120,15 +120,17 @@ class AxlSoap extends SoapClient
             Log::info("{$this->ucm->name}: Processing {$responseProperty} data");
 
             if (isset($res->return->{$responseProperty})) {
-                $dataHandler($res->return->{$responseProperty}, $this->ucm);
-
+                $data = $res->return->{$responseProperty};
                 Log::info("{$this->ucm->name}: {$responseProperty} sync completed", [
-                    'count' => count($res->return->{$responseProperty}),
+                    'count' => count($data),
                 ]);
+                return $data;
             }
 
+            return [];
+
         } catch (SoapFault $e) {
-            $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty, $dataHandler]);
+            $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty]);
         } catch (Exception $e) {
             Log::error("Unexpected error syncing {$responseProperty}", [
                 'ucm' => $this->ucm->name,
@@ -345,7 +347,7 @@ class AxlSoap extends SoapClient
      * @return void
      * @throws SoapFault
      */
-    public function executeSqlQuery(string $sql, callable $dataHandler): void
+    public function executeSqlQuery(string $sql): array
     {
         Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
 
@@ -362,15 +364,17 @@ class AxlSoap extends SoapClient
             Log::info("{$this->ucm->name}: Processing SQL query results");
 
             if (isset($res->return->row)) {
-                $dataHandler($res->return->row, $this->ucm);
-
+                $data = $res->return->row;
                 Log::info("{$this->ucm->name}: SQL query execution completed", [
-                    'count' => count($res->return->row),
+                    'count' => count($data),
                 ]);
+                return $data;
             }
 
+            return [];
+
         } catch (SoapFault $e) {
-            $this->handleAxlApiError($e, [$sql, $dataHandler]);
+            $this->handleAxlApiError($e, [$sql]);
         } catch (Exception $e) {
             Log::error("Unexpected error executing SQL query", [
                 'ucm' => $this->ucm->name,
