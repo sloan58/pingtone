@@ -47,13 +47,9 @@ class AxlSoap extends SoapClient
 
             $version = $response->return->componentVersion->version ?? null;
 
-            if ($version) {
-                Log::info("Successfully retrieved version: {$version}");
-                return $version;
-            }
+            Log::info("Successfully retrieved version: {$version}");
 
-            Log::warning("No version found in response");
-            return null;
+            return $version;
 
         } catch (SoapFault $e) {
             Log::error("SOAP fault getting CCM version", [

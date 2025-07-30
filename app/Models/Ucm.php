@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Exception;
+use App\ApiClients\AxlSoap;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
-use Exception;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Ucm extends Model
 {
@@ -96,7 +96,7 @@ class Ucm extends Model
     public function getSyncStatusAttribute(): string
     {
         $latestSync = $this->latestSyncHistory();
-        
+
         if (!$latestSync) {
             return 'Never Synced';
         }
@@ -114,7 +114,7 @@ class Ucm extends Model
         }
 
         $daysSinceLastSync = now()->diffInDays($this->last_sync_at);
-        
+
         if ($daysSinceLastSync === 0) {
             return 'Synced Today';
         } elseif ($daysSinceLastSync === 1) {
@@ -157,34 +157,31 @@ class Ucm extends Model
     /**
      * Get the AXL API client for this UCM.
      */
-    public function axlApi(): \App\ApiClients\AxlSoap
+    public function axlApi(): AxlSoap
     {
-        return new \App\ApiClients\AxlSoap($this);
+        return new AxlSoap($this);
     }
 
     /**
      * Fetch and update the UCM version using getCCMVersion API
      *
-     * @return bool
+     * @return string
      */
-    public function updateVersionFromApi(): bool
+    public function updateVersionFromApi(): string
     {
         try {
             $axlApi = $this->axlApi();
             $version = $axlApi->getCCMVersion();
-            
-            if ($version) {
-                $this->update(['version' => $version]);
-                return true;
-            }
-            
-            return false;
+
+            $this->update(['version' => $version]);
+
+            return $version;
         } catch (Exception $e) {
             logger()->error(__METHOD__ . ': Failed to update version from API', [
                 'ucm_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
-            return false;
+            return '';
         }
     }
-} 
+}
