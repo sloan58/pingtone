@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Ucm;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -11,8 +13,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        Ucm::create([
+            'name' => 'Karmatek',
+            'hostname' => '192.168.1.10',
+            'username' => 'pingtone',
+            'password' => 'password',
+            'is_active' => true,
+        ]);
+
+        // Create sample user
+        User::updateOrCreate(['email' => 'admin@pingtone.com'], [
+            'name' => 'Admin',
+            'password' => bcrypt('password'),
+        ]);
+
         $this->call([
-            DashboardSeeder::class,
             UcmSeeder::class,
             SyncHistorySeeder::class,
         ]);
