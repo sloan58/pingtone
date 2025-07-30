@@ -9,15 +9,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class SyncHistory extends Model
 {
     /**
-     * The connection name for the model.
-     */
-    protected $connection = 'mongodb';
-
-    /**
-     * The collection associated with the model.
-     */
-    protected $collection = 'sync_histories';
-    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [

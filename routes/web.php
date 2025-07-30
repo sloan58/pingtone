@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\UcmController;
 use App\Http\Controllers\SyncHistoryController;
-use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -31,8 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/sync-history/{syncHistory}/complete', [SyncHistoryController::class, 'completeSync'])->name('sync-history.complete');
     Route::patch('/sync-history/{syncHistory}/fail', [SyncHistoryController::class, 'failSync'])->name('sync-history.fail');
     
-    // Phone routes (placeholder for future development)
-    Route::resource('phones', PhoneController::class);
+
 });
 
 Route::get('/test-toast', function () {

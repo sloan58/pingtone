@@ -2,25 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Phone extends Model
 {
-    use HasFactory;
-
-    /**
-     * The connection name for the model.
-     */
-    protected $connection = 'mongodb';
-
-    /**
-     * The collection associated with the model.
-     */
-    protected $collection = 'phones';
-
     protected $fillable = [
         'pkid',
         'name',
@@ -80,4 +67,4 @@ class Phone extends Model
             ])
             ->withTimestamps();
     }
-} 
+}

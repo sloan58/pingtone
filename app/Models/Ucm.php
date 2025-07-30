@@ -4,26 +4,13 @@ namespace App\Models;
 
 use Exception;
 use App\ApiClients\AxlSoap;
-use Illuminate\Support\Facades\Storage;
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Ucm extends Model
 {
-    use HasFactory;
-
-    /**
-     * The connection name for the model.
-     */
-    protected $connection = 'mongodb';
-
-    /**
-     * The collection associated with the model.
-     */
-    protected $collection = 'ucms';
-
     /**
      * The attributes that are mass assignable.
      */
@@ -151,7 +138,7 @@ class Ucm extends Model
         $versions = Storage::disk('wsdl')->directories();
 
         // Sort versions numerically in descending order
-        usort($versions, function($a, $b) {
+        usort($versions, function ($a, $b) {
             return version_compare($b, $a); // Reverse order for descending
         });
 

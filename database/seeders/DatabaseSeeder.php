@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            DashboardSeeder::class,
             UcmSeeder::class,
             SyncHistorySeeder::class,
         ]);
