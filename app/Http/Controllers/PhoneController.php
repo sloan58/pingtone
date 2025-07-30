@@ -17,7 +17,7 @@ class PhoneController extends Controller
             ->orderBy('name')
             ->paginate(20);
 
-        return Inertia::render('phones/index', [
+        return Inertia::render('Phones/Index', [
             'phones' => $phones,
         ]);
     }
@@ -29,7 +29,7 @@ class PhoneController extends Controller
     {
         $phone->load(['ucm', 'lines']);
 
-        return Inertia::render('phones/show', [
+        return Inertia::render('Phones/Show', [
             'phone' => $phone,
         ]);
     }

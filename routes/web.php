@@ -1,12 +1,12 @@
 <?php
 
+use App\Http\Controllers\UcmController;
+use App\Http\Controllers\SyncHistoryController;
+use App\Http\Controllers\PhoneController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
-Route::get('/', function () {
-    return redirect()->route('login');
-})->name('home');
 
 Route::get('/welcome', function () {
     return Inertia::render('Welcome', [
@@ -17,13 +17,29 @@ Route::get('/welcome', function () {
     ]);
 })->name('welcome');
 
-Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::middleware('auth')->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::resource('ucm', UcmController::class);
+    
+    // Sync History routes
+    Route::get('/ucm/{ucm}/sync-history', [SyncHistoryController::class, 'index'])->name('ucm.sync-history');
+    Route::post('/ucm/{ucm}/sync', [SyncHistoryController::class, 'startSync'])->name('ucm.sync.start');
+    Route::patch('/sync-history/{syncHistory}/complete', [SyncHistoryController::class, 'completeSync'])->name('sync-history.complete');
+    Route::patch('/sync-history/{syncHistory}/fail', [SyncHistoryController::class, 'failSync'])->name('sync-history.fail');
+    
+    // Phone routes (placeholder for future development)
+    Route::resource('phones', PhoneController::class);
+});
 
-
-
+Route::get('/test-toast', function () {
+    return redirect()->route('ucm.index')
+        ->with('toast', [
+            'type' => 'success',
+            'title' => 'Test Toast',
+            'message' => 'This is a test toast notification to verify the system is working.'
+        ]);
+})->name('test.toast');
 
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';
