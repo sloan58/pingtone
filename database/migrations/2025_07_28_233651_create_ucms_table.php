@@ -13,12 +13,14 @@ return new class extends Migration
     {
         Schema::create('ucms', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('hostname');
+            $table->string('name')->unique();
+            $table->string('hostname')->unique();
             $table->string('username');
-            $table->string('password');
+            $table->text('password');
+            $table->string('schema_version')->nullable();
             $table->string('version')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->timestamp('last_sync_at')->nullable();
             $table->timestamps();
         });
     }

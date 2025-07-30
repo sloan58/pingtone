@@ -60,6 +60,11 @@ return [
             'report' => false,
         ],
 
+        'wsdl' => [
+            'driver' => 'local',
+            'root' => storage_path('axl'),
+        ],
+
     ],
 
     /*
