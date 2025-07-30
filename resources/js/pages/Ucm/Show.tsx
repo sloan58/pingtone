@@ -1,9 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle, Database, Edit, Hash, History, Loader2, Phone, RefreshCw, XCircle } from 'lucide-react';
 
 interface Ucm {
@@ -20,11 +21,22 @@ interface Ucm {
     updated_at: string;
 }
 
-interface Props {
-    ucm: Ucm;
+interface SyncHistoryEntry {
+    id: number;
+    sync_start_time: string;
+    sync_end_time: string | null;
+    status: 'syncing' | 'completed' | 'failed';
+    error: string | null;
+    formatted_duration: string | null;
+    created_at: string;
 }
 
-export default function UcmShow({ ucm }: Props) {
+interface Props {
+    ucm: Ucm;
+    syncHistory: SyncHistoryEntry[];
+}
+
+export default function UcmShow({ ucm, syncHistory }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'UCM Servers',
@@ -187,11 +199,23 @@ export default function UcmShow({ ucm }: Props) {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center space-x-4">
-                            <Button variant="outline" asChild>
-                                <Link href={`/ucm/${ucm.id}/sync-history`}>
-                                    <History className="mr-2 h-4 w-4" />
-                                    View Sync History
-                                </Link>
+                            <Button
+                                onClick={() => {
+                                    router.post(`/ucm/${ucm.id}/sync`);
+                                }}
+                                variant="outline"
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Start Sync
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    router.post(`/ucm/${ucm.id}/test-connection`);
+                                }}
+                                variant="outline"
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                Test Connection
                             </Button>
                             <Button variant="outline" asChild>
                                 <Link href={`/ucm/${ucm.id}/phones`}>
@@ -206,6 +230,61 @@ export default function UcmShow({ ucm }: Props) {
                                 </Link>
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Sync History */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Recent Sync History</CardTitle>
+                        <CardDescription>Latest sync operations for this UCM server</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {syncHistory.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8">
+                                <History className="mb-4 h-12 w-12 text-muted-foreground" />
+                                <h3 className="mb-2 text-lg font-semibold">No Sync History</h3>
+                                <p className="text-center text-muted-foreground">No sync operations have been performed for this UCM server yet.</p>
+                            </div>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Started</TableHead>
+                                        <TableHead>Duration</TableHead>
+                                        <TableHead>Error</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {syncHistory.map((entry) => (
+                                        <TableRow key={entry.id}>
+                                            <TableCell>
+                                                <div className="flex items-center space-x-2">
+                                                    {getSyncStatusIcon(entry.status)}
+                                                    {getSyncStatusBadge(entry.status)}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm">{new Date(entry.sync_start_time).toLocaleString()}</div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm text-muted-foreground">{entry.formatted_duration || 'In Progress...'}</div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {entry.error ? (
+                                                    <div className="max-w-xs truncate text-sm text-red-600" title={entry.error}>
+                                                        {entry.error}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground">-</span>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
                     </CardContent>
                 </Card>
             </div>

@@ -113,8 +113,14 @@ class UcmController extends Controller
      */
     public function show(Ucm $ucm): Response
     {
+        $syncHistory = $ucm->syncHistory()
+            ->orderBy('sync_start_time', 'desc')
+            ->limit(10)
+            ->get();
+
         return Inertia::render('Ucm/Show', [
             'ucm' => $ucm,
+            'syncHistory' => $syncHistory,
         ]);
     }
 
