@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { Link, router } from '@inertiajs/react';
-import { CheckCircle, Edit, Eye, History, Loader2, MoreHorizontal, RefreshCw, Server, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle, Edit, History, Loader2, MoreHorizontal, RefreshCw, Server, Trash2, XCircle } from 'lucide-react';
 
 interface Ucm {
     id: number;
@@ -189,12 +189,6 @@ export default function UcmIndex({ ucms }: Props) {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem asChild>
-                                                        <Link href={`/ucm/${ucm.id}`}>
-                                                            <Eye className="mr-2 h-4 w-4" />
-                                                            View
-                                                        </Link>
-                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
                                                         <Link href={`/ucm/${ucm.id}/edit`}>
                                                             <Edit className="mr-2 h-4 w-4" />

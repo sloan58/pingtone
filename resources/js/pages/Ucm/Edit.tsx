@@ -4,11 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, History, RefreshCw, Save } from 'lucide-react';
+import { ArrowLeft, CheckCircle, History, Loader2, RefreshCw, Save, XCircle } from 'lucide-react';
 
 interface Ucm {
     id: number;
@@ -20,6 +21,16 @@ interface Ucm {
     last_sync_at: string | null;
 }
 
+interface SyncHistoryEntry {
+    id: number;
+    sync_start_time: string;
+    sync_end_time: string | null;
+    status: 'syncing' | 'completed' | 'failed';
+    error: string | null;
+    formatted_duration: string | null;
+    created_at: string;
+}
+
 interface ApiVersion {
     [key: string]: string;
 }
@@ -27,6 +38,7 @@ interface ApiVersion {
 interface Props {
     ucm: Ucm;
     apiVersions: ApiVersion;
+    syncHistory: SyncHistoryEntry[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -40,7 +52,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function UcmEdit({ ucm, apiVersions }: Props) {
+export default function UcmEdit({ ucm, apiVersions, syncHistory }: Props) {
     useToast(); // Add toast hook
 
     const { data, setData, put, processing, errors } = useForm({
@@ -54,6 +66,40 @@ export default function UcmEdit({ ucm, apiVersions }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         put(`/ucm/${ucm.id}`);
+    };
+
+    const getSyncStatusIcon = (status: string) => {
+        switch (status) {
+            case 'syncing':
+                return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />;
+            case 'completed':
+                return <CheckCircle className="h-4 w-4 text-green-600" />;
+            case 'failed':
+                return <XCircle className="h-4 w-4 text-red-600" />;
+            default:
+                return <RefreshCw className="h-4 w-4 text-muted-foreground" />;
+        }
+    };
+
+    const getSyncStatusBadge = (status: string) => {
+        switch (status) {
+            case 'syncing':
+                return (
+                    <Badge variant="outline" className="text-blue-600">
+                        Syncing...
+                    </Badge>
+                );
+            case 'completed':
+                return (
+                    <Badge variant="default" className="bg-green-600">
+                        Completed
+                    </Badge>
+                );
+            case 'failed':
+                return <Badge variant="destructive">Failed</Badge>;
+            default:
+                return <Badge variant="outline">Unknown</Badge>;
+        }
     };
 
     return (
@@ -210,12 +256,59 @@ export default function UcmEdit({ ucm, apiVersions }: Props) {
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 Test Connection
                             </Button>
-                            <Button variant="outline" asChild>
-                                <a href={`/ucm/${ucm.id}/sync-history`}>
-                                    <History className="mr-2 h-4 w-4" />
-                                    View Sync History
-                                </a>
-                            </Button>
+                        </div>
+
+                        {/* Sync History Table */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-medium">Recent Sync History</h4>
+                            </div>
+                            {syncHistory.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-4">
+                                    <History className="mb-2 h-8 w-8 text-muted-foreground" />
+                                    <p className="text-sm text-muted-foreground">No sync operations yet</p>
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Started</TableHead>
+                                            <TableHead>Duration</TableHead>
+                                            <TableHead>Error</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {syncHistory.map((entry) => (
+                                            <TableRow key={entry.id}>
+                                                <TableCell>
+                                                    <div className="flex items-center space-x-2">
+                                                        {getSyncStatusIcon(entry.status)}
+                                                        {getSyncStatusBadge(entry.status)}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm">{new Date(entry.sync_start_time).toLocaleString()}</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        {entry.formatted_duration || 'In Progress...'}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {entry.error ? (
+                                                        <div className="max-w-xs truncate text-sm text-red-600" title={entry.error}>
+                                                            {entry.error}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-sm text-muted-foreground">-</span>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

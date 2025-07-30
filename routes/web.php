@@ -20,7 +20,7 @@ Route::get('/welcome', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::resource('ucm', UcmController::class);
+    Route::resource('ucm', UcmController::class)->except(['show']);
     
     // UCM API test route
     Route::post('/ucm/{ucm}/test-connection', [UcmController::class, 'testConnection'])->name('ucm.test-connection');

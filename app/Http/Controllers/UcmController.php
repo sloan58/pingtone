@@ -108,30 +108,22 @@ class UcmController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Ucm $ucm): Response
-    {
-        $syncHistory = $ucm->syncHistory()
-            ->orderBy('sync_start_time', 'desc')
-            ->limit(10)
-            ->get();
 
-        return Inertia::render('Ucm/Show', [
-            'ucm' => $ucm,
-            'syncHistory' => $syncHistory,
-        ]);
-    }
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(Ucm $ucm): Response
     {
+        $syncHistory = $ucm->syncHistory()
+            ->orderBy('sync_start_time', 'desc')
+            ->limit(10)
+            ->get();
+
         return Inertia::render('Ucm/Edit', [
             'ucm' => $ucm,
             'apiVersions' => Ucm::getApiVersions(),
+            'syncHistory' => $syncHistory,
         ]);
     }
 
