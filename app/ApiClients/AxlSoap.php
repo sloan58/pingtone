@@ -154,7 +154,7 @@ class AxlSoap extends SoapClient
      * @return void
      * @throws SoapFault
      */
-    public function handleAxlApiError(SoapFault $e, array $args = null): void
+    public function handleAxlApiError(SoapFault $e, array $args = null): mixed
     {
         $method = debug_backtrace()[1]['function'];
 
@@ -200,11 +200,8 @@ class AxlSoap extends SoapClient
                     'total_count' => count($accumulatedData),
                 ]);
                 
-                // The accumulated data would need to be handled differently
-                // For now, we'll just complete the pagination
-
                 $this->resetPagination();
-                return;
+                return $accumulatedData;
             }
         }
 
@@ -260,7 +257,7 @@ class AxlSoap extends SoapClient
         sleep($sleepSeconds);
 
         // Retry the same operation
-        $this->{$method}(...$args);
+        return $this->{$method}(...$args);
     }
 
     /**
