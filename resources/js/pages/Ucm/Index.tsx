@@ -108,7 +108,16 @@ export default function UcmIndex({ ucms }: Props) {
                             <RefreshCw className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{ucms.filter((u) => u.sync_status === 'Synced Today').length}</div>
+                            <div className="text-2xl font-bold">
+                                {
+                                    ucms.filter((u) => {
+                                        if (!u.last_sync_at) return false;
+                                        const lastSync = new Date(u.last_sync_at);
+                                        const today = new Date();
+                                        return lastSync.toDateString() === today.toDateString();
+                                    }).length
+                                }
+                            </div>
                         </CardContent>
                     </Card>
                     <Card>
