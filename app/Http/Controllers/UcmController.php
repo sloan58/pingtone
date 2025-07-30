@@ -86,7 +86,7 @@ class UcmController extends Controller
                 $toastTitle = 'UCM Server Created with Connection Error';
             }
 
-            return redirect()->route('ucm.index')
+            return redirect()->back()
                 ->with('toast', [
                     'type' => $toastType,
                     'title' => $toastTitle,
@@ -148,7 +148,7 @@ class UcmController extends Controller
 
             $ucm->update($validated);
 
-            return redirect()->route('ucm.index')
+            return redirect()->back()
                 ->with('toast', [
                     'type' => 'success',
                     'title' => 'UCM Server Updated',

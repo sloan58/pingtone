@@ -7,20 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Head } from '@inertiajs/react';
-import { Activity, BarChart3, Clock, Phone, PieChart, Plus, Server, Settings, TrendingUp, Users } from 'lucide-react';
+import { Activity, BarChart3, Clock, Phone, Plus, Server, Settings, TrendingUp, Users } from 'lucide-react';
 
 interface DashboardProps {
     stats: {
-        total_phones: number;
         total_ucms: number;
-        total_lines: number;
         total_users: number;
-        registered_phones: number;
-        unregistered_phones: number;
-        active_ucms: number;
-        inactive_ucms: number;
+        synced_today: number;
+        currently_syncing: number;
+        failed_syncs: number;
     };
-    phoneModels: Array<{ model: string; count: number }>;
     recentActivity: Array<{
         id: number;
         type: string;
@@ -30,13 +26,16 @@ interface DashboardProps {
         color: string;
     }>;
     systemHealth: {
-        ucm_servers: { total: number; active: number; inactive: number; health_percentage: number };
-        phones: { total: number; registered: number; unregistered: number; health_percentage: number };
-        lines: { total: number; assigned: number; unassigned: number; health_percentage: number };
+        ucm_servers: {
+            total: number;
+            synced_today: number;
+            currently_syncing: number;
+            failed_syncs: number;
+            health_percentage: number;
+        };
     };
     monthlyTrends: {
-        phones: { current: number; previous: number; change_percentage: number };
-        lines: { current: number; previous: number; change_percentage: number };
+        ucms: { current: number; previous: number; change_percentage: number };
         users: { current: number; previous: number; change_percentage: number };
     };
 }
@@ -47,6 +46,9 @@ const getActivityIcon = (icon: string) => {
         'phone-off': Phone,
         link: Activity,
         server: Server,
+        plus: Plus,
+        'alert-triangle': Activity,
+        settings: Settings,
     };
     return icons[icon] || Activity;
 };
@@ -61,7 +63,7 @@ const getActivityColor = (color: string) => {
     return colors[color] || 'text-gray-500 bg-gray-100 dark:bg-gray-900';
 };
 
-export default function Dashboard({ stats, phoneModels, recentActivity, systemHealth, monthlyTrends }: DashboardProps) {
+export default function Dashboard({ stats, recentActivity, systemHealth, monthlyTrends }: DashboardProps) {
     return (
         <AppShell variant="sidebar">
             <Head title="Dashboard" />
@@ -95,19 +97,19 @@ export default function Dashboard({ stats, phoneModels, recentActivity, systemHe
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Phones</CardTitle>
-                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium">Total UCMs</CardTitle>
+                                    <Server className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{stats.total_phones}</div>
+                                    <div className="text-2xl font-bold">{stats.total_ucms}</div>
                                     <p className="text-xs text-muted-foreground">
-                                        {stats.registered_phones} registered, {stats.unregistered_phones} unregistered
+                                        {stats.synced_today} synced today, {stats.currently_syncing} syncing
                                     </p>
                                     <div className="mt-2">
-                                        <Badge variant={monthlyTrends.phones.change_percentage >= 0 ? 'default' : 'destructive'}>
+                                        <Badge variant={monthlyTrends.ucms.change_percentage >= 0 ? 'default' : 'destructive'}>
                                             <TrendingUp className="mr-1 h-3 w-3" />
-                                            {monthlyTrends.phones.change_percentage >= 0 ? '+' : ''}
-                                            {monthlyTrends.phones.change_percentage}%
+                                            {monthlyTrends.ucms.change_percentage >= 0 ? '+' : ''}
+                                            {monthlyTrends.ucms.change_percentage}%
                                         </Badge>
                                     </div>
                                 </CardContent>
@@ -115,14 +117,12 @@ export default function Dashboard({ stats, phoneModels, recentActivity, systemHe
 
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">UCM Servers</CardTitle>
-                                    <Server className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium">Synced Today</CardTitle>
+                                    <Activity className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{stats.total_ucms}</div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {stats.active_ucms} active, {stats.inactive_ucms} inactive
-                                    </p>
+                                    <div className="text-2xl font-bold">{stats.synced_today}</div>
+                                    <p className="text-xs text-muted-foreground">{stats.failed_syncs} failed syncs</p>
                                     <div className="mt-2">
                                         <Progress value={systemHealth.ucm_servers.health_percentage} className="h-2" />
                                         <p className="mt-1 text-xs text-muted-foreground">{systemHealth.ucm_servers.health_percentage}% healthy</p>
@@ -132,21 +132,12 @@ export default function Dashboard({ stats, phoneModels, recentActivity, systemHe
 
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Phone Lines</CardTitle>
-                                    <Activity className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium">Currently Syncing</CardTitle>
+                                    <Clock className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{stats.total_lines}</div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {systemHealth.lines.assigned} assigned, {systemHealth.lines.unassigned} unassigned
-                                    </p>
-                                    <div className="mt-2">
-                                        <Badge variant={monthlyTrends.lines.change_percentage >= 0 ? 'default' : 'destructive'}>
-                                            <TrendingUp className="mr-1 h-3 w-3" />
-                                            {monthlyTrends.lines.change_percentage >= 0 ? '+' : ''}
-                                            {monthlyTrends.lines.change_percentage}%
-                                        </Badge>
-                                    </div>
+                                    <div className="text-2xl font-bold">{stats.currently_syncing}</div>
+                                    <p className="text-xs text-muted-foreground">Active sync operations</p>
                                 </CardContent>
                             </Card>
 
@@ -183,34 +174,34 @@ export default function Dashboard({ stats, phoneModels, recentActivity, systemHe
                                 <CardContent className="space-y-4">
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium">Phone Registration</span>
-                                            <span className="text-sm text-muted-foreground">{systemHealth.phones.health_percentage}%</span>
-                                        </div>
-                                        <Progress value={systemHealth.phones.health_percentage} className="h-2" />
-                                        <p className="text-xs text-muted-foreground">
-                                            {systemHealth.phones.registered} of {systemHealth.phones.total} phones registered
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium">Line Assignment</span>
-                                            <span className="text-sm text-muted-foreground">{systemHealth.lines.health_percentage}%</span>
-                                        </div>
-                                        <Progress value={systemHealth.lines.health_percentage} className="h-2" />
-                                        <p className="text-xs text-muted-foreground">
-                                            {systemHealth.lines.assigned} of {systemHealth.lines.total} lines assigned
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium">UCM Server Status</span>
+                                            <span className="text-sm font-medium">Sync Success Rate</span>
                                             <span className="text-sm text-muted-foreground">{systemHealth.ucm_servers.health_percentage}%</span>
                                         </div>
                                         <Progress value={systemHealth.ucm_servers.health_percentage} className="h-2" />
                                         <p className="text-xs text-muted-foreground">
-                                            {systemHealth.ucm_servers.active} of {systemHealth.ucm_servers.total} servers active
+                                            {systemHealth.ucm_servers.synced_today} of {systemHealth.ucm_servers.total} UCMs synced today
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium">Active Syncs</span>
+                                            <span className="text-sm text-muted-foreground">{systemHealth.ucm_servers.currently_syncing}</span>
+                                        </div>
+                                        <Progress value={systemHealth.ucm_servers.currently_syncing > 0 ? 100 : 0} className="h-2" />
+                                        <p className="text-xs text-muted-foreground">
+                                            {systemHealth.ucm_servers.currently_syncing} UCMs currently syncing
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium">Failed Syncs</span>
+                                            <span className="text-sm text-muted-foreground">{systemHealth.ucm_servers.failed_syncs}</span>
+                                        </div>
+                                        <Progress value={systemHealth.ucm_servers.failed_syncs > 0 ? 100 : 0} className="h-2" />
+                                        <p className="text-xs text-muted-foreground">
+                                            {systemHealth.ucm_servers.failed_syncs} failed sync operations
                                         </p>
                                     </div>
                                 </CardContent>
@@ -235,7 +226,7 @@ export default function Dashboard({ stats, phoneModels, recentActivity, systemHe
                                                         <IconComponent className="h-4 w-4" />
                                                     </div>
                                                     <div className="flex-1 space-y-1">
-                                                        <p className="text-sm font-medium leading-none">{activity.description}</p>
+                                                        <p className="text-sm leading-none font-medium">{activity.description}</p>
                                                         <p className="text-xs text-muted-foreground">
                                                             <Clock className="mr-1 inline h-3 w-3" />
                                                             {new Date(activity.timestamp).toLocaleTimeString()}
@@ -249,40 +240,8 @@ export default function Dashboard({ stats, phoneModels, recentActivity, systemHe
                             </Card>
                         </div>
 
-                        {/* Phone Models and Additional Stats */}
-                        <div className="grid gap-6 md:grid-cols-2">
-                            {/* Phone Models Distribution */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center">
-                                        <PieChart className="mr-2 h-5 w-5" />
-                                        Phone Models
-                                    </CardTitle>
-                                    <CardDescription>Distribution of phone models in the system</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        {phoneModels.map((model, index) => (
-                                            <div key={index} className="flex items-center justify-between">
-                                                <span className="text-sm font-medium">{model.model}</span>
-                                                <div className="flex items-center space-x-2">
-                                                    <div className="h-2 w-16 rounded-full bg-secondary">
-                                                        <div
-                                                            className="h-2 rounded-full bg-primary"
-                                                            style={{
-                                                                width: `${(model.count / stats.total_phones) * 100}%`,
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <span className="w-8 text-right text-sm text-muted-foreground">{model.count}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Quick Actions */}
+                        {/* Quick Actions */}
+                        <div className="grid gap-6 md:grid-cols-1">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center">
@@ -293,14 +252,6 @@ export default function Dashboard({ stats, phoneModels, recentActivity, systemHe
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <Button variant="outline" className="h-20 flex-col">
-                                            <Phone className="mb-2 h-5 w-5" />
-                                            <span className="text-sm">Add Phone</span>
-                                        </Button>
-                                        <Button variant="outline" className="h-20 flex-col">
-                                            <Activity className="mb-2 h-5 w-5" />
-                                            <span className="text-sm">Add Line</span>
-                                        </Button>
                                         <Button variant="outline" className="h-20 flex-col">
                                             <Server className="mb-2 h-5 w-5" />
                                             <span className="text-sm">Add UCM</span>
