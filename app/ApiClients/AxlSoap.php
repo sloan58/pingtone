@@ -2,12 +2,10 @@
 
 namespace App\ApiClients;
 
-use DB;
 use Exception;
 use SoapFault;
 use SoapClient;
 use App\Models\Ucm;
-use MongoDB\BSON\UTCDateTime;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -94,15 +92,15 @@ class AxlSoap extends SoapClient
      * @param string $methodName The SOAP method name (e.g., 'listRecordingProfile')
      * @param array $listObject The search criteria and returned tags
      * @param string $responseProperty The property name in the response (e.g., 'recordingProfile')
-     * @param string $collectionName The MongoDB collection name
-     * @param array $filterStructure The filter structure to use (e.g., ['ucm_id' => 'ucm_id', 'name' => 'name'])
-     * @param array $hint The MongoDB index hint to use (e.g., ['ucm_id' => 1, 'name' => 1])
-     * @return void
+     * @return array
      * @throws SoapFault
      */
     public function listUcmObjects(string $methodName, array $listObject, string $responseProperty): array
     {
         Log::info("{$this->ucm->name}: Syncing {$responseProperty}");
+
+        // Initialize accumulated data array
+        $accumulatedData = [];
 
         // Add pagination parameters if we're in pagination mode
         if ($this->paginatingRequests) {
@@ -121,10 +119,53 @@ class AxlSoap extends SoapClient
 
             if (isset($res->return->{$responseProperty})) {
                 $data = $res->return->{$responseProperty};
-                Log::info("{$this->ucm->name}: {$responseProperty} sync completed", [
-                    'count' => count($data),
+                
+                // If we're paginating, accumulate the data
+                if ($this->paginatingRequests) {
+                    $accumulatedData = array_merge($accumulatedData, $data);
+                    Log::info("{$this->ucm->name}: Accumulated {$responseProperty} data", [
+                        'current_count' => count($data),
+                        'total_count' => count($accumulatedData),
+                    ]);
+                } else {
+                    // Not paginating, return the data directly
+                    Log::info("{$this->ucm->name}: {$responseProperty} sync completed", [
+                        'count' => count($data),
+                    ]);
+                    return $data;
+                }
+            }
+
+            // If we're paginating, continue until all data is collected
+            if ($this->paginatingRequests) {
+                while ($this->loop <= $this->iterations) {
+                    $this->skipRows += $this->suggestedRows;
+                    $this->loop++;
+                    
+                    $listObject['skipRecords'] = $this->skipRows;
+                    $listObject['first'] = $this->suggestedRows;
+                    
+                    $res = $this->__soapCall($methodName, [
+                        $methodName => $listObject
+                    ]);
+                    
+                    if (isset($res->return->{$responseProperty})) {
+                        $data = $res->return->{$responseProperty};
+                        $accumulatedData = array_merge($accumulatedData, $data);
+                        
+                        Log::info("{$this->ucm->name}: Accumulated {$responseProperty} data", [
+                            'current_count' => count($data),
+                            'total_count' => count($accumulatedData),
+                            'loop' => $this->loop,
+                        ]);
+                    }
+                }
+                
+                $this->resetPagination();
+                Log::info("{$this->ucm->name}: {$responseProperty} pagination completed", [
+                    'total_count' => count($accumulatedData),
                 ]);
-                return $data;
+                return $accumulatedData;
             }
 
             return [];
@@ -145,12 +186,7 @@ class AxlSoap extends SoapClient
      * Determine if we should throttle, paginate, or retry with backoff
      *
      * @param SoapFault $e
-     * @param string $methodName
-     * @param array $listObject
-     * @param string $responseProperty
-     * @param string $collectionName
-     * @param array $filterStructure
-     * @param array $hint
+     * @param array|null $args
      * @return void
      * @throws SoapFault
      */
@@ -173,16 +209,9 @@ class AxlSoap extends SoapClient
                     'suggestedRows' => $this->suggestedRows,
                     'iterations' => $this->iterations,
                 ]);
-                while ($this->loop <= $this->iterations) {
-                    Log::info("{$this->ucm->name}: Processing page {$this->loop} of {$this->iterations}", [
-                        'skipRows' => $this->skipRows,
-                        'suggestedRows' => $this->suggestedRows,
-                    ]);
-                    $this->{$method}(...$args);
-                    $this->skipRows += $this->suggestedRows;
-                    $this->loop++;
-                }
-                $this->resetPagination();
+                
+                // Let the method handle the pagination internally
+                $this->{$method}(...$args);
                 return;
             }
         }
@@ -351,6 +380,9 @@ class AxlSoap extends SoapClient
     {
         Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
 
+        // Initialize accumulated data array
+        $accumulatedData = [];
+
         // Format SQL query with pagination if needed
         $formattedSql = $this->formatSqlQuery($sql);
 
@@ -365,10 +397,54 @@ class AxlSoap extends SoapClient
 
             if (isset($res->return->row)) {
                 $data = $res->return->row;
-                Log::info("{$this->ucm->name}: SQL query execution completed", [
-                    'count' => count($data),
+                
+                // If we're paginating, accumulate the data
+                if ($this->paginatingRequests) {
+                    $accumulatedData = array_merge($accumulatedData, $data);
+                    Log::info("{$this->ucm->name}: Accumulated SQL query data", [
+                        'current_count' => count($data),
+                        'total_count' => count($accumulatedData),
+                    ]);
+                } else {
+                    // Not paginating, return the data directly
+                    Log::info("{$this->ucm->name}: SQL query execution completed", [
+                        'count' => count($data),
+                    ]);
+                    return $data;
+                }
+            }
+
+            // If we're paginating, continue until all data is collected
+            if ($this->paginatingRequests) {
+                while ($this->loop <= $this->iterations) {
+                    $this->skipRows += $this->suggestedRows;
+                    $this->loop++;
+                    
+                    $formattedSql = $this->formatSqlQuery($sql);
+                    
+                    $res = $this->__soapCall('executeSQLQuery', [
+                        'executeSQLQuery' => [
+                            'sql' => $formattedSql,
+                        ]
+                    ]);
+                    
+                    if (isset($res->return->row)) {
+                        $data = $res->return->row;
+                        $accumulatedData = array_merge($accumulatedData, $data);
+                        
+                        Log::info("{$this->ucm->name}: Accumulated SQL query data", [
+                            'current_count' => count($data),
+                            'total_count' => count($accumulatedData),
+                            'loop' => $this->loop,
+                        ]);
+                    }
+                }
+                
+                $this->resetPagination();
+                Log::info("{$this->ucm->name}: SQL query pagination completed", [
+                    'total_count' => count($accumulatedData),
                 ]);
-                return $data;
+                return $accumulatedData;
             }
 
             return [];
