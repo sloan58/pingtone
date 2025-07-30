@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Ucm;
 use App\Models\SyncHistory;
+use App\Models\RecordingProfile;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -51,29 +52,47 @@ class SyncUcmJob implements ShouldQueue
                 'status' => SyncStatusEnum::SYNCING,
             ]);
 
-            // For now, just query the version to test the workflow
-            // This will be expanded later with more comprehensive data collection
+            // Get the AXL API client
+            $axlApi = $this->ucm->axlApi();
+
+            // Update version first
             $version = $this->ucm->updateVersionFromApi();
 
-            if ($version) {
-                Log::info("UCM sync completed successfully", [
-                    'ucm_id' => $this->ucm->id,
-                    'version' => $version,
-                ]);
-
-                // Mark sync as completed
-                $this->syncHistory->update([
-                    'sync_end_time' => now(),
-                    'status' => SyncStatusEnum::COMPLETED,
-                ]);
-
-                // Update UCM's last sync time
-                $this->ucm->update([
-                    'last_sync_at' => now(),
-                ]);
-            } else {
+            if (!$version) {
                 throw new \Exception('Version detection failed');
             }
+
+            // Sync Recording Profiles
+            $start = now();
+            $axlApi->listUcmObjects(
+                'listRecordingProfile',
+                [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => ''],
+                ],
+                'recordingProfile',
+                'recording_profiles',
+                ['ucm_id' => 'ucm_id', 'name' => 'name'],
+                ['ucm_id' => 1, 'name' => 1]
+            );
+            $this->ucm->recordingProfiles()->where('updated_at', '<', $start)->delete();
+            Log::info("{$this->ucm->name}: syncRecordingProfiles completed");
+
+            Log::info("UCM sync completed successfully", [
+                'ucm_id' => $this->ucm->id,
+                'version' => $version,
+            ]);
+
+            // Mark sync as completed
+            $this->syncHistory->update([
+                'sync_end_time' => now(),
+                'status' => SyncStatusEnum::COMPLETED,
+            ]);
+
+            // Update UCM's last sync time
+            $this->ucm->update([
+                'last_sync_at' => now(),
+            ]);
 
         } catch (\Exception $e) {
             Log::error("UCM sync failed", [

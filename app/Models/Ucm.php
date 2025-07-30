@@ -6,11 +6,14 @@ use Exception;
 use App\ApiClients\AxlSoap;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Ucm extends Model
 {
+    use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      */
@@ -69,6 +72,14 @@ class Ucm extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Get the recording profiles associated with this UCM.
+     */
+    public function recordingProfiles(): HasMany
+    {
+        return $this->hasMany(RecordingProfile::class);
     }
 
     /**

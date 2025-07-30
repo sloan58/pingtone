@@ -2,10 +2,12 @@
 
 namespace App\ApiClients;
 
+use DB;
 use Exception;
 use SoapFault;
 use SoapClient;
 use App\Models\Ucm;
+use MongoDB\BSON\UTCDateTime;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -64,6 +66,73 @@ class AxlSoap extends SoapClient
                 'error' => $e->getMessage(),
             ]);
             return null;
+        }
+    }
+
+    /**
+     * Generic method to list UCM objects and store them in MongoDB
+     *
+     * @param string $methodName The SOAP method name (e.g., 'listRecordingProfile')
+     * @param array $listObject The search criteria and returned tags
+     * @param string $responseProperty The property name in the response (e.g., 'recordingProfile')
+     * @param string $collectionName The MongoDB collection name
+     * @param array $filterStructure The filter structure to use (e.g., ['ucm_id' => 'ucm_id', 'pkid' => 'pkid'])
+     * @param array $hint The MongoDB index hint to use (e.g., ['ucm_id' => 1, 'pkid' => 1])
+     * @return void
+     * @throws SoapFault
+     */
+    public function listUcmObjects(string $methodName, array $listObject, string $responseProperty, string $collectionName, array $filterStructure, array $hint): void
+    {
+        Log::info("{$this->ucm->name}: Syncing {$responseProperty}");
+
+        Log::info("{$this->ucm->name}: Set list object", $listObject);
+
+        try {
+            $res = $this->__soapCall($methodName, [
+                $methodName => $listObject
+            ]);
+
+            Log::info("{$this->ucm->name}: Processing {$responseProperty} data");
+
+            foreach ($res->return->{$responseProperty} as $record) {
+                $recordArray = (array) $record;
+
+                $update = [
+                    ...$recordArray,
+                    'ucm_id' => $this->ucm->id,
+                    'updated_at' => new UTCDateTime(now())
+                ];
+
+                // Build filter using the specified structure
+                $filter = array_map(function ($updateKey) use ($update) {
+                    return $update[$updateKey];
+                }, $filterStructure);
+
+                $collection = DB::connection('mongodb')->getCollection($collectionName);
+                $collection->updateOne($filter, ['$set' => $update], ['upsert' => true, 'hint' => $hint]);
+            }
+
+            if (!empty($res->return->{$responseProperty})) {
+                Log::info("{$this->ucm->name}: Stored {$collectionName} data", [
+                    'count' => count($res->return->{$responseProperty}),
+                ]);
+            }
+
+            Log::info("{$this->ucm->name}: {$responseProperty} sync completed");
+
+        } catch (SoapFault $e) {
+            Log::error("SOAP fault syncing {$responseProperty}", [
+                'ucm' => $this->ucm->name,
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+            ]);
+            throw $e;
+        } catch (Exception $e) {
+            Log::error("Unexpected error syncing {$responseProperty}", [
+                'ucm' => $this->ucm->name,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
     }
 
