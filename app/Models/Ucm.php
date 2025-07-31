@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Exception;
 use App\ApiClients\AxlSoap;
+use App\Observers\UcmObserver;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
+#[ObservedBy([UcmObserver::class])]
 class Ucm extends Model
 {
     use HasFactory;

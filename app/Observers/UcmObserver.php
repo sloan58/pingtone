@@ -2,10 +2,11 @@
 
 namespace App\Observers;
 
+use Exception;
 use App\Models\Ucm;
-use App\Models\RecordingProfile;
-use App\Models\VoicemailProfile;
 use App\Models\PhoneModel;
+use App\Models\VoicemailProfile;
+use App\Models\RecordingProfile;
 use Illuminate\Support\Facades\Log;
 
 class UcmObserver
@@ -74,7 +75,7 @@ class UcmObserver
                 'voicemail_profiles_deleted' => $voicemailProfilesDeleted,
                 'phone_models_deleted' => $phoneModelsDeleted,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             echo "OBSERVER ERROR: " . $e->getMessage() . "\n";
             Log::error("Error in UcmObserver::deleted", [
                 'error' => $e->getMessage(),
