@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,16 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::connection('mongodb')->getCollection('phone_models')->createIndex([
-            'name' => 1
-        ]);
-        DB::connection('mongodb')->getCollection('phone_models')->createIndex([
-            'ucm_id' => 1
-        ]);
-        DB::connection('mongodb')->getCollection('phone_models')->createIndex([
-            'ucm_id' => 1,
-            'name' => 1
-        ], ['unique' => true]);
+        Schema::create('phone_models', function (Blueprint $table) {
+            $table->index('name');
+            $table->index('ucm_id');
+            $table->unique(['ucm_id', 'name']);
+        });
     }
 
     /**
@@ -27,8 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::connection('mongodb')->getCollection('phone_models')->dropIndex('name_1');
-        DB::connection('mongodb')->getCollection('phone_models')->dropIndex('ucm_id_1');
-        DB::connection('mongodb')->getCollection('phone_models')->dropIndex('ucm_id_1_name_1');
+        Schema::dropIfExists('phone_models');
     }
 }; 

@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,19 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->createIndex([
-            'name' => 1
-        ]);
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->createIndex([
-            'uuid' => 1
-        ]);
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->createIndex([
-            'ucm_id' => 1
-        ]);
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->createIndex([
-            'ucm_id' => 1,
-            'name' => 1
-        ], ['unique' => true]);
+        Schema::create('voicemail_profiles', function (Blueprint $table) {
+            $table->index('name');
+            $table->index('uuid');
+            $table->index('ucm_id');
+            $table->unique(['ucm_id', 'name']);
+        });
     }
 
     /**
@@ -30,9 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->dropIndex('name_1');
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->dropIndex('uuid_1');
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->dropIndex('ucm_id_1');
-        DB::connection('mongodb')->getCollection('voicemail_profiles')->dropIndex('ucm_id_1_name_1');
+        Schema::dropIfExists('voicemail_profiles');
     }
 }; 
