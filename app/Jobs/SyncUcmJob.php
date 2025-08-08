@@ -4,13 +4,14 @@ namespace App\Jobs;
 
 use Throwable;
 use Exception;
+use SoapFault;
 use App\Models\Ucm;
-use App\Models\SyncHistory;
-use App\Models\RecordingProfile;
-use App\Models\VoicemailProfile;
 use App\Models\PhoneModel;
+use App\Models\SyncHistory;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
+use App\Models\RecordingProfile;
+use App\Models\VoicemailProfile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -24,12 +25,7 @@ class SyncUcmJob implements ShouldQueue
     /**
      * The number of times the job may be attempted.
      */
-    public $tries = 3;
-
-    /**
-     * The number of seconds to wait before retrying the job.
-     */
-    public $backoff = 60;
+    public int $tries = 1;
 
     /**
      * Create a new job instance.
@@ -41,6 +37,7 @@ class SyncUcmJob implements ShouldQueue
 
     /**
      * Execute the job.
+     * @throws SoapFault
      */
     public function handle(): void
     {
@@ -58,9 +55,6 @@ class SyncUcmJob implements ShouldQueue
 
             // Get the AXL API client
             $axlApi = $this->ucm->axlApi();
-            
-            // Reset retry state for new sync operation
-            $axlApi->resetRetryState();
 
             // Update version first
             $version = $this->ucm->updateVersionFromApi();
@@ -99,10 +93,23 @@ class SyncUcmJob implements ShouldQueue
 
             // Sync Phone Models (using SQL query)
             $start = now();
-            $phoneModels = $axlApi->executeSqlQuery('SELECT name FROM typemodel WHERE tkclass = 1');
+            $phoneModels = $axlApi->performSqlQuery('SELECT name FROM typemodel WHERE tkclass = 1');
             PhoneModel::storeUcmData($phoneModels, $this->ucm);
             $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncPhoneModels completed");
+
+            // Sync Phone Model Expansion Modules
+            $start = now();
+            $expansionModules = $axlApi->syncPhoneModelExpansionModules();
+            PhoneModel::storeSupportedExpansionModuleData($expansionModules, $this->ucm);
+            $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
+            Log::info("{$this->ucm->name}: syncPhoneModelExpansionModules completed");
+
+            // Sync Phone Model Max Expansion Modules
+            $start = now();
+            $maxExpansionModules = $axlApi->syncPhoneModelMaxExpansionModule();
+            PhoneModel::storeMaxExpansionModuleData($maxExpansionModules, $this->ucm);
+            Log::info("{$this->ucm->name}: syncPhoneModelMaxExpansionModule completed");
 
             Log::info("UCM sync completed successfully", [
                 'ucm_id' => $this->ucm->id,

@@ -44,6 +44,7 @@ class AxlSoap extends SoapClient
     /**
      * Get the CCM version from the UCM
      * @return string|null
+     * @throws Exception
      */
     public function getCCMVersion(): ?string
     {
@@ -108,31 +109,9 @@ class AxlSoap extends SoapClient
         Log::info("{$this->ucm->name}: Set list object", $listObject);
 
         try {
-            $res = $this->__soapCall($methodName, [
+            return $this->__soapCall($methodName, [
                 $methodName => $listObject
-            ]);
-
-            Log::info("{$this->ucm->name}: Processing {$responseProperty} data");
-
-            if (isset($res->return->{$responseProperty})) {
-                $data = $res->return->{$responseProperty};
-
-                // If we're paginating, accumulate data
-                if ($this->paginatingRequests) {
-                    // Store data for accumulation (this will be handled by the error handler)
-                    Log::info("{$this->ucm->name}: Pagination data received", [
-                        'count' => count($data),
-                        'loop' => $this->loop,
-                    ]);
-                }
-
-                Log::info("{$this->ucm->name}: {$responseProperty} sync completed", [
-                    'count' => count($data),
-                ]);
-                return $data;
-            }
-
-            return [];
+            ])->return->{$responseProperty};
 
         } catch (SoapFault $e) {
             $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty]);
@@ -146,15 +125,14 @@ class AxlSoap extends SoapClient
     }
 
     /**
-     * Handle AXL API Errors
-     * Determine if we should throttle, paginate, or retry with backoff
+     * Handle AXL API errors with retry logic and pagination support
      *
      * @param SoapFault $e
      * @param array|null $args
-     * @return void
+     * @return mixed
      * @throws SoapFault
      */
-    public function handleAxlApiError(SoapFault $e, array $args = null): mixed
+    public function handleAxlApiError(SoapFault $e, ?array $args = null): mixed
     {
         $method = debug_backtrace()[1]['function'];
 
@@ -236,6 +214,7 @@ class AxlSoap extends SoapClient
         ]);
 
         $this->tries++;
+
         if ($this->tries > $this->maxTries) {
             Log::error("{$this->ucm->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
                 'method' => $method,
@@ -271,16 +250,6 @@ class AxlSoap extends SoapClient
         $this->totalRows = 0;
         $this->iterations = 0;
         $this->tries = 0; // Reset retry counter on successful pagination
-    }
-
-    /**
-     * Reset retry state for new operations
-     * Call this before starting a new sync operation
-     */
-    public function resetRetryState(): void
-    {
-        $this->tries = 0;
-        $this->resetPagination();
     }
 
     /**
@@ -358,66 +327,92 @@ class AxlSoap extends SoapClient
     }
 
     /**
-     * Execute SQL query and pass results to callback
+     * Execute a SQL query with pagination support
      *
-     * @param string $sql The SQL query to execute
+     * @param string $sql
      * @return array
      * @throws SoapFault
      */
-    public function executeSqlQuery(string $sql): array
+    public function performSqlQuery(string $sql): array
     {
         Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
 
-        // Format SQL query with pagination if needed
-        $formattedSql = $this->formatSqlQuery($sql);
-
         try {
-            $res = $this->__soapCall('executeSQLQuery', [
-                'executeSQLQuery' => [
-                    'sql' => $formattedSql,
-                ]
-            ]);
-
-            Log::info("{$this->ucm->name}: Processing SQL query results");
-
-            if (isset($res->return->row)) {
-                $data = $res->return->row;
-
-                // If we're paginating, accumulate data
-                if ($this->paginatingRequests) {
-                    // Store data for accumulation (this will be handled by the error handler)
-                    Log::info("{$this->ucm->name}: Pagination SQL data received", [
-                        'count' => count($data),
-                        'loop' => $this->loop,
-                    ]);
-                }
-
-                Log::info("{$this->ucm->name}: SQL query execution completed", [
-                    'count' => count($data),
-                ]);
-                return $data;
-            }
-
-            return [];
+            return $this->executeSQLQuery( [
+                'sql' => $this->formatSqlQuery($sql),
+            ])->return->row;
 
         } catch (SoapFault $e) {
-            $this->handleAxlApiError($e, [$sql]);
-        } catch (Exception $e) {
-            Log::error("Unexpected error executing SQL query", [
-                'ucm' => $this->ucm->name,
-                'sql' => $sql,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw $e;
+            return $this->handleAxlApiError($e, [$sql]);
         }
     }
 
     /**
-     * Format SQL query with pagination parameters if needed
+     * Sync phone model expansion modules
      *
-     * @param string $query The original SQL query
-     * @return string The formatted SQL query
+     * @return array
+     * @throws SoapFault
+     */
+    public function syncPhoneModelExpansionModules(): array
+    {
+        Log::info("{$this->ucm->name}: Running syncPhoneModelExpansionModules");
+
+        $query = "SELECT DISTINCT tm2.name module, tm.name model
+                      FROM typesupportsfeature tsf
+                      JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
+                      JOIN typemodel tm ON tm.enum = psf.tkmodel
+                      JOIN typedeviceprotocol tp ON tp.enum = psf.tkdeviceprotocol
+                      JOIN productsupportsfeature psf2 ON psf2.param IN (tsf.enum)
+                      JOIN typemodel tm2 ON tm2.enum = psf2.tkmodel
+                      WHERE tsf.name LIKE '%Expansion%'
+                      AND psf2.tksupportsfeature = 86
+                      AND tm.name LIKE 'Cisco%'";
+
+        Log::info("{$this->ucm->name}: Set query - {$query}");
+
+        try {
+            return $this->performSqlQuery($query);
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$query]);
+        }
+    }
+
+    /**
+     * Sync phone model maximum expansion modules
+     *
+     * @return array
+     * @throws SoapFault
+     */
+    public function syncPhoneModelMaxExpansionModule(): array
+    {
+        Log::info("{$this->ucm->name}: Running syncPhoneModelMaxExpansionModule");
+
+        $query = "SELECT DISTINCT tm.name model, psf.param max
+                      FROM typesupportsfeature tsf
+                      JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
+                      JOIN typemodel tm ON tm.enum = psf.tkmodel
+                      JOIN typedeviceprotocol tp ON tp.enum = psf.tkdeviceprotocol
+                      JOIN productsupportsfeature psf2 ON psf2.param IN (tsf.enum)
+                      JOIN typemodel tm2 ON tm2.enum = psf2.tkmodel
+                      WHERE tsf.name LIKE '%Expansion%'
+                      AND psf2.tksupportsfeature = 86
+                      AND psf.param != ''
+                      AND tm.name LIKE 'Cisco%'";
+
+        Log::info("{$this->ucm->name}: Set query - {$query}");
+
+        try {
+            return $this->performSqlQuery($query);
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$query]);
+        }
+    }
+
+    /**
+     * Format SQL query for pagination
+     *
+     * @param string $query
+     * @return string
      */
     private function formatSqlQuery(string $query): string
     {
@@ -428,6 +423,7 @@ class AxlSoap extends SoapClient
                 $query
             );
         }
+        Log::info("{$this->ucm->name}: Running sql query", [$query]);
         return $query;
     }
 

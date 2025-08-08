@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -12,9 +11,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('phone_models', function (Blueprint $table) {
-            $table->index('name');
-            $table->index('ucm_id');
-            $table->unique(['ucm_id', 'name']);
+            $table->string('name')->index();
+            $table->string('ucm_id')->index();
+            $table->unique(['name', 'ucm_id']);
         });
     }
 
@@ -25,4 +24,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('phone_models');
     }
-}; 
+};

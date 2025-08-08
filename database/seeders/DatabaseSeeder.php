@@ -13,15 +13,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        Ucm::create([
-            'name' => 'Karmatek',
-            'hostname' => '192.168.1.10',
-            'username' => 'pingtone',
-            'password' => 'password',
-            'is_active' => true,
-            'schema_version' => '15.0'
-        ]);
-
         // Create sample user
         User::updateOrCreate(['email' => 'admin@pingtone.com'], [
             'name' => 'Admin',
@@ -30,7 +21,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UcmSeeder::class,
-            SyncHistorySeeder::class,
+            // SyncHistorySeeder::class,
         ]);
     }
 }
