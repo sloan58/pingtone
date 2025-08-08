@@ -162,7 +162,11 @@ export default function UcmIndex({ ucms }: Props) {
                             <TableBody>
                                 {ucms.map((ucm) => (
                                     <TableRow key={ucm.id}>
-                                        <TableCell className="font-medium">{ucm.name}</TableCell>
+                                        <TableCell className="font-medium">
+                                            <Link href={`/ucm/${ucm.id}/edit`} className="text-primary hover:underline">
+                                                {ucm.name}
+                                            </Link>
+                                        </TableCell>
                                         <TableCell>{ucm.hostname}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline">{ucm.schema_version}</Badge>
