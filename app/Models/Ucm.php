@@ -8,6 +8,7 @@ use App\Observers\UcmObserver;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -99,6 +100,16 @@ class Ucm extends Model
     public function phoneModels(): HasMany
     {
         return $this->hasMany(PhoneModel::class);
+    }
+
+    /**
+     * Get the UCM users associated with this UCM.
+     */
+    public function ucmUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(UcmUser::class, 'ucm_user_ucm', 'ucm_id', 'ucm_user_id')
+            ->withPivot(['home_cluster', 'im_presence_enabled'])
+            ->withTimestamps();
     }
 
     /**

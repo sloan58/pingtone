@@ -12,6 +12,7 @@ use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
+use App\Models\UcmUser;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -129,6 +130,25 @@ class SyncUcmJob implements ShouldQueue
                       AND tm.name LIKE 'Cisco%'");
             PhoneModel::storeMaxExpansionModuleData($maxExpansionModules, $this->ucm);
             Log::info("{$this->ucm->name}: syncPhoneModelMaxExpansionModule completed");
+
+            // Sync UCM Users
+            $start = now();
+            $users = $axlApi->listUcmObjects(
+                'listUser',
+                [
+                    'searchCriteria' => ['userid' => '%'],
+                    'returnedTags' => [
+                        'uuid' => '',
+                        'userid' => '',
+                        'mailid' => '',
+                        'homeCluster' => '',
+                        'imAndPresenceEnable' => '',
+                    ],
+                ],
+                'user'
+            );
+            UcmUser::storeUcmData($users, $this->ucm);
+            Log::info("{$this->ucm->name}: syncUcmUsers completed");
 
             Log::info("UCM sync completed successfully", [
                 'ucm_id' => $this->ucm->id,
