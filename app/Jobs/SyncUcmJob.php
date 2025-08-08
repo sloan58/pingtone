@@ -100,14 +100,33 @@ class SyncUcmJob implements ShouldQueue
 
             // Sync Phone Model Expansion Modules
             $start = now();
-            $expansionModules = $axlApi->syncPhoneModelExpansionModules();
+            $expansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm2.name module, tm.name model
+                      FROM typesupportsfeature tsf
+                      JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
+                      JOIN typemodel tm ON tm.enum = psf.tkmodel
+                      JOIN typedeviceprotocol tp ON tp.enum = psf.tkdeviceprotocol
+                      JOIN productsupportsfeature psf2 ON psf2.param IN (tsf.enum)
+                      JOIN typemodel tm2 ON tm2.enum = psf2.tkmodel
+                      WHERE tsf.name LIKE '%Expansion%'
+                      AND psf2.tksupportsfeature = 86
+                      AND tm.name LIKE 'Cisco%'");
             PhoneModel::storeSupportedExpansionModuleData($expansionModules, $this->ucm);
             $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncPhoneModelExpansionModules completed");
 
             // Sync Phone Model Max Expansion Modules
             $start = now();
-            $maxExpansionModules = $axlApi->syncPhoneModelMaxExpansionModule();
+            $maxExpansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm.name model, psf.param max
+                      FROM typesupportsfeature tsf
+                      JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
+                      JOIN typemodel tm ON tm.enum = psf.tkmodel
+                      JOIN typedeviceprotocol tp ON tp.enum = psf.tkdeviceprotocol
+                      JOIN productsupportsfeature psf2 ON psf2.param IN (tsf.enum)
+                      JOIN typemodel tm2 ON tm2.enum = psf2.tkmodel
+                      WHERE tsf.name LIKE '%Expansion%'
+                      AND psf2.tksupportsfeature = 86
+                      AND psf.param != ''
+                      AND tm.name LIKE 'Cisco%'");
             PhoneModel::storeMaxExpansionModuleData($maxExpansionModules, $this->ucm);
             Log::info("{$this->ucm->name}: syncPhoneModelMaxExpansionModule completed");
 

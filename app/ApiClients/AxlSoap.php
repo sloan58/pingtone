@@ -348,67 +348,6 @@ class AxlSoap extends SoapClient
     }
 
     /**
-     * Sync phone model expansion modules
-     *
-     * @return array
-     * @throws SoapFault
-     */
-    public function syncPhoneModelExpansionModules(): array
-    {
-        Log::info("{$this->ucm->name}: Running syncPhoneModelExpansionModules");
-
-        $query = "SELECT DISTINCT tm2.name module, tm.name model
-                      FROM typesupportsfeature tsf
-                      JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
-                      JOIN typemodel tm ON tm.enum = psf.tkmodel
-                      JOIN typedeviceprotocol tp ON tp.enum = psf.tkdeviceprotocol
-                      JOIN productsupportsfeature psf2 ON psf2.param IN (tsf.enum)
-                      JOIN typemodel tm2 ON tm2.enum = psf2.tkmodel
-                      WHERE tsf.name LIKE '%Expansion%'
-                      AND psf2.tksupportsfeature = 86
-                      AND tm.name LIKE 'Cisco%'";
-
-        Log::info("{$this->ucm->name}: Set query - {$query}");
-
-        try {
-            return $this->performSqlQuery($query);
-        } catch (SoapFault $e) {
-            return $this->handleAxlApiError($e, [$query]);
-        }
-    }
-
-    /**
-     * Sync phone model maximum expansion modules
-     *
-     * @return array
-     * @throws SoapFault
-     */
-    public function syncPhoneModelMaxExpansionModule(): array
-    {
-        Log::info("{$this->ucm->name}: Running syncPhoneModelMaxExpansionModule");
-
-        $query = "SELECT DISTINCT tm.name model, psf.param max
-                      FROM typesupportsfeature tsf
-                      JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
-                      JOIN typemodel tm ON tm.enum = psf.tkmodel
-                      JOIN typedeviceprotocol tp ON tp.enum = psf.tkdeviceprotocol
-                      JOIN productsupportsfeature psf2 ON psf2.param IN (tsf.enum)
-                      JOIN typemodel tm2 ON tm2.enum = psf2.tkmodel
-                      WHERE tsf.name LIKE '%Expansion%'
-                      AND psf2.tksupportsfeature = 86
-                      AND psf.param != ''
-                      AND tm.name LIKE 'Cisco%'";
-
-        Log::info("{$this->ucm->name}: Set query - {$query}");
-
-        try {
-            return $this->performSqlQuery($query);
-        } catch (SoapFault $e) {
-            return $this->handleAxlApiError($e, [$query]);
-        }
-    }
-
-    /**
      * Format SQL query for pagination
      *
      * @param string $query

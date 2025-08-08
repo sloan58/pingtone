@@ -2,9 +2,6 @@
 
 namespace App\Models;
 
-use DB;
-use Exception;
-use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -41,40 +38,18 @@ class VoicemailProfile extends Model
      */
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        // Use standard Laravel upsert with chunking for large payloads
-        $nowUtc = new UTCDateTime(now());
-        $chunkSize = 1000;
+        foreach (array_chunk($responseData, 1000) as $chunk) {
+            $rows = array_map(fn($record) => [
+                'uuid' => $record->uuid,
+                'name' => $record->name,
+                'ucm_id' => $ucm->id
+            ], $chunk);
 
-        foreach (array_chunk($responseData, $chunkSize) as $chunk) {
-            $rows = [];
-
-            foreach ($chunk as $record) {
-                $uuid = is_array($record) ? ($record['uuid'] ?? null) : ($record->uuid ?? null);
-                $name = is_array($record) ? ($record['name'] ?? null) : ($record->name ?? null);
-
-                if ($uuid === null || $name === null) {
-                    // Skip invalid records but keep processing others
-                    continue;
-                }
-
-                $rows[] = [
-                    'uuid' => $uuid,
-                    'name' => $name,
-                    'ucm_id' => $ucm->id,
-                    'created_at' => $nowUtc,
-                    'updated_at' => $nowUtc,
-                ];
-            }
-
-            if (!empty($rows)) {
-                // Upsert on composite key (ucm_id, name)
-                // Update columns include uuid and updated_at
-                static::query()->upsert(
-                    $rows,
-                    ['ucm_id', 'name'],
-                    ['uuid', 'name', 'updated_at']
-                );
-            }
+            static::query()->upsert(
+                $rows,
+                ['ucm_id', 'name'],
+                ['uuid', 'name', 'updated_at']
+            );
         }
     }
 }

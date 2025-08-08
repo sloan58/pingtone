@@ -19,13 +19,6 @@ class PhoneModel extends Model
     ];
 
     /**
-     * The attributes that should be cast to native types.
-     */
-    protected $casts = [
-//        'supportedExpansionModules' => 'array',
-    ];
-
-    /**
      * The relationships that should always be loaded.
      */
     protected $with = ['ucm'];
@@ -77,14 +70,9 @@ class PhoneModel extends Model
             $expansionModules = $rows->pluck('module')->toArray();
 
             try {
-                $phoneModel = self::where('ucm_id', $ucm->id)
+                self::where('ucm_id', $ucm->id)
                     ->where('name', $model)
-                    ->first();
-
-                if ($phoneModel) {
-                    $phoneModel->fill(['supportedExpansionModules' => $expansionModules]);
-                    $phoneModel->save();
-                }
+                    ->first()?->update(['supportedExpansionModules' => $expansionModules]);
             } catch (Exception $e) {
                 logger()->error("Error storing supported expansion module data", [
                     'ucm' => $ucm->name,
