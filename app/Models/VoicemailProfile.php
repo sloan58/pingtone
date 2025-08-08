@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use DB;
+use Exception;
+use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VoicemailProfile extends Model
 {
-    use HasFactory;
-
     /**
      * The attributes that are mass assignable.
      */
@@ -41,33 +41,40 @@ class VoicemailProfile extends Model
      */
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        $collection = \DB::connection('mongodb')->getCollection('voicemail_profiles');
-        
-        foreach ($responseData as $record) {
-            $update = [
-                'uuid' => $record->uuid,
-                'name' => $record->name,
-                'ucm_id' => $ucm->id,
-                'updated_at' => new \MongoDB\BSON\UTCDateTime(now())
-            ];
+        // Use standard Laravel upsert with chunking for large payloads
+        $nowUtc = new UTCDateTime(now());
+        $chunkSize = 1000;
 
-            $filter = [
-                'ucm_id' => $ucm->id,
-                'name' => $record->name
-            ];
+        foreach (array_chunk($responseData, $chunkSize) as $chunk) {
+            $rows = [];
 
-            try {
-                $collection->updateOne($filter, ['$set' => $update], [
-                    'upsert' => true, 
-                    'hint' => ['ucm_id' => 1, 'name' => 1]
-                ]);
-            } catch (\Exception $e) {
-                logger()->error("Error storing VoicemailProfile data", [
-                    'ucm' => $ucm->name,
-                    'record' => $record,
-                    'message' => $e->getMessage(),
-                ]);
+            foreach ($chunk as $record) {
+                $uuid = is_array($record) ? ($record['uuid'] ?? null) : ($record->uuid ?? null);
+                $name = is_array($record) ? ($record['name'] ?? null) : ($record->name ?? null);
+
+                if ($uuid === null || $name === null) {
+                    // Skip invalid records but keep processing others
+                    continue;
+                }
+
+                $rows[] = [
+                    'uuid' => $uuid,
+                    'name' => $name,
+                    'ucm_id' => $ucm->id,
+                    'created_at' => $nowUtc,
+                    'updated_at' => $nowUtc,
+                ];
+            }
+
+            if (!empty($rows)) {
+                // Upsert on composite key (ucm_id, name)
+                // Update columns include uuid and updated_at
+                static::query()->upsert(
+                    $rows,
+                    ['ucm_id', 'name'],
+                    ['uuid', 'name', 'updated_at']
+                );
             }
         }
     }
-} 
+}
