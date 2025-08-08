@@ -45,33 +45,18 @@ class RecordingProfile extends Model
      */
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        $collection = \DB::connection('mongodb')->getCollection('recording_profiles');
-        
-        foreach ($responseData as $record) {
-            $update = [
+        foreach (array_chunk($responseData, 1000) as $chunk) {
+            $rows = array_map(fn($record) => [
                 'uuid' => $record->uuid,
                 'name' => $record->name,
                 'ucm_id' => $ucm->id,
-                'updated_at' => new \MongoDB\BSON\UTCDateTime(now())
-            ];
+            ], $chunk);
 
-            $filter = [
-                'ucm_id' => $ucm->id,
-                'name' => $record->name
-            ];
-
-            try {
-                $collection->updateOne($filter, ['$set' => $update], [
-                    'upsert' => true, 
-                    'hint' => ['ucm_id' => 1, 'name' => 1]
-                ]);
-            } catch (\Exception $e) {
-                logger()->error("Error storing RecordingProfile data", [
-                    'ucm' => $ucm->name,
-                    'record' => $record,
-                    'message' => $e->getMessage(),
-                ]);
-            }
+            static::query()->upsert(
+                $rows,
+                ['ucm_id', 'name'],
+                ['uuid', 'name', 'updated_at']
+            );
         }
     }
 }
