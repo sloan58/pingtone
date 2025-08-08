@@ -2,9 +2,7 @@
 
 namespace App\Models;
 
-use DB;
 use Exception;
-use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -49,32 +47,17 @@ class PhoneModel extends Model
      */
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        $collection = DB::connection('mongodb')->getCollection('phone_models');
-
-        foreach ($responseData as $record) {
-            $update = [
+        foreach (array_chunk($responseData, 1000) as $chunk) {
+            $rows = array_map(fn($record) => [
                 'name' => $record->name,
                 'ucm_id' => $ucm->id,
-                'updated_at' => new UTCDateTime(now())
-            ];
+            ], $chunk);
 
-            $filter = [
-                'ucm_id' => $ucm->id,
-                'name' => $record->name
-            ];
-
-            try {
-                $collection->updateOne($filter, ['$set' => $update], [
-                    'upsert' => true,
-                    'hint' => ['ucm_id' => 1, 'name' => 1]
-                ]);
-            } catch (Exception $e) {
-                logger()->error("Error storing PhoneModel data", [
-                    'ucm' => $ucm->name,
-                    'record' => $record,
-                    'message' => $e->getMessage(),
-                ]);
-            }
+            static::query()->upsert(
+                $rows,
+                ['ucm_id', 'name'],
+                ['name', 'updated_at']
+            );
         }
     }
 
@@ -123,7 +106,6 @@ class PhoneModel extends Model
     public static function storeMaxExpansionModuleData(array $responseData, Ucm $ucm): void
     {
         foreach ($responseData as $record) {
-            info('em data', [$record->max]);
             try {
                 self::where('ucm_id', $ucm->id)
                     ->where('name', $record->model)
