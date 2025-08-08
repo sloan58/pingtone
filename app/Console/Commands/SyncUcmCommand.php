@@ -33,7 +33,7 @@ class SyncUcmCommand extends Command
                 'syncable_type' => Ucm::class,
                 'syncable_id' => $ucm->getKey(),
                 'sync_start_time' => now(),
-                'status' => \App\Enums\SyncStatusEnum::PENDING,
+                'status' => \App\Enums\SyncStatusEnum::SYNCING,
             ]);
 
             SyncUcmJob::dispatch($ucm, $syncHistory);
