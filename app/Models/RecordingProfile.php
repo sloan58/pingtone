@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Support\MongoBulkUpsert;
 
 class RecordingProfile extends Model
 {
@@ -52,10 +53,13 @@ class RecordingProfile extends Model
                 'ucm_id' => $ucm->id,
             ], $chunk);
 
-            static::query()->upsert(
+            MongoBulkUpsert::upsert(
+                'recording_profiles',
                 $rows,
                 ['ucm_id', 'name'],
-                ['uuid', 'name', 'updated_at']
+                ['uuid', 'name', 'ucm_id'],
+                1000,
+                ['ucm_id' => 1, 'name' => 1]
             );
         }
     }

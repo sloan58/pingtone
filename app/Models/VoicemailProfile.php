@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -42,13 +43,16 @@ class VoicemailProfile extends Model
             $rows = array_map(fn($record) => [
                 'uuid' => $record->uuid,
                 'name' => $record->name,
-                'ucm_id' => $ucm->id
+                'ucm_id' => $ucm->id,
             ], $chunk);
 
-            static::query()->upsert(
+            MongoBulkUpsert::upsert(
+                'voicemail_profiles',
                 $rows,
                 ['ucm_id', 'name'],
-                ['uuid', 'name', 'updated_at']
+                ['uuid', 'name', 'ucm_id'],
+                1000,
+                ['ucm_id' => 1, 'name' => 1]
             );
         }
     }

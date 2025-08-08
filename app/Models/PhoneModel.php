@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Exception;
+use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -46,10 +47,13 @@ class PhoneModel extends Model
                 'ucm_id' => $ucm->id,
             ], $chunk);
 
-            static::query()->upsert(
+            MongoBulkUpsert::upsert(
+                'phone_models',
                 $rows,
                 ['ucm_id', 'name'],
-                ['name', 'updated_at']
+                ['name', 'ucm_id'],
+                1000,
+                ['ucm_id' => 1, 'name' => 1]
             );
         }
     }

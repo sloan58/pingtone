@@ -4,6 +4,7 @@ namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Support\MongoBulkUpsert;
 
 class UcmUser extends Model
 {
@@ -18,7 +19,10 @@ class UcmUser extends Model
     public function ucms(): BelongsToMany
     {
         return $this->belongsToMany(Ucm::class, 'ucm_user_ucm', 'ucm_user_id', 'ucm_id')
-            ->withPivot(['home_cluster', 'im_presence_enabled'])
+            ->withPivot([
+                'home_cluster',
+                'im_presence_enabled'
+            ])
             ->withTimestamps();
     }
 
@@ -28,58 +32,29 @@ class UcmUser extends Model
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
         foreach (array_chunk($responseData, 1000) as $chunk) {
-            $users = array_map(fn($r) => [
+            // Prepare user docs; require uuid for uniqueness
+            $rows = array_values(array_filter(array_map(fn($r) => [
+                'uuid' => $r->uuid ?? null,
                 'userid' => $r->userid ?? null,
                 'email' => $r->mailid ?? null,
-                'uuid' => $r->uuid ?? null,
-            ], $chunk);
+            ], $chunk), fn($u) => !empty($u['uuid'])));
 
-            // Normalize and filter out empties
-            $users = array_values(array_filter($users, function ($u) {
-                return !empty($u['userid']) || !empty($u['email']) || !empty($u['uuid']);
-            }));
-
-            if (empty($users)) {
-                continue;
+            if (!empty($rows)) {
+                MongoBulkUpsert::upsert(
+                    'ucm_users',
+                    $rows,
+                    ['uuid'],
+                    ['uuid', 'userid', 'email']
+                );
             }
 
-            // Insert/update unique users by userid/email/uuid separately
-            // Upsert by userid when present
-            $byUserid = array_values(array_filter($users, fn($u) => !empty($u['userid'])));
-            if (!empty($byUserid)) {
-                static::query()->upsert($byUserid, ['userid'], ['email', 'uuid', 'updated_at']);
-            }
-
-            // Upsert by email when present
-            $byEmail = array_values(array_filter($users, fn($u) => !empty($u['email'])));
-            if (!empty($byEmail)) {
-                static::query()->upsert($byEmail, ['email'], ['userid', 'uuid', 'updated_at']);
-            }
-
-            // Upsert by uuid when present
-            $byUuid = array_values(array_filter($users, fn($u) => !empty($u['uuid'])));
-            if (!empty($byUuid)) {
-                static::query()->upsert($byUuid, ['uuid'], ['userid', 'email', 'updated_at']);
-            }
-
-            // Sync pivots per chunk
+            // Sync pivot attributes for users having uuid
             foreach ($chunk as $r) {
-                $identifier = null;
-                if (!empty($r->userid)) {
-                    $identifier = ['userid' => $r->userid];
-                } elseif (!empty($r->mailid)) {
-                    $identifier = ['email' => $r->mailid];
-                } elseif (!empty($r->uuid)) {
-                    $identifier = ['uuid' => $r->uuid];
-                }
-                if (!$identifier) {
-                    continue;
-                }
+                $uuid = $r->uuid ?? null;
+                if (!$uuid) { continue; }
 
-                $user = static::query()->where($identifier)->first();
-                if (!$user) {
-                    continue;
-                }
+                $user = static::query()->where('uuid', $uuid)->first();
+                if (!$user) { continue; }
 
                 $pivot = [
                     'home_cluster' => (bool)($r->homeCluster ?? false),
