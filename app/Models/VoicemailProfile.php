@@ -52,7 +52,7 @@ class VoicemailProfile extends Model
                 ['ucm_id', 'name'],
                 ['uuid', 'name', 'ucm_id'],
                 1000,
-                ['ucm_id' => 1, 'name' => 1]
+                ['name' => 1, 'ucm_id' => 1]
             );
         }
     }
