@@ -161,6 +161,11 @@ class Ucm extends Model
 
     // Phone vendor configs are embedded on Phone documents in this project
 
+    public function deviceProfiles(): HasMany
+    {
+        return $this->hasMany(DeviceProfile::class);
+    }
+
     /**
      * Get the UCM users associated with this UCM.
      */

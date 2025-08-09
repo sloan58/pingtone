@@ -27,6 +27,7 @@ use App\Models\VoicemailProfile;
 use App\Models\CommonPhoneConfig;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
+use App\Models\DeviceProfile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -412,6 +413,29 @@ class SyncUcmJob implements ShouldQueue
 
         $this->ucm->phones()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncPhones completed");
+
+        // Sync Device Profiles (list + get for details)
+        $start = now();
+        $profiles = $axlApi->listUcmObjects(
+            'listDeviceProfile',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => ''],
+            ],
+            'deviceProfile'
+        );
+        foreach ($profiles as $profile) {
+            try {
+                DeviceProfile::storeUcmDetails(
+                    $axlApi->getDeviceProfileByName($profile['name']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get device profile details for {$profile['name']}: {$e->getMessage()}");
+            }
+        }
+        $this->ucm->deviceProfiles()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncDeviceProfiles completed");
 
         Log::info("UCM sync completed successfully", [
             'ucm_id' => $this->ucm->id,

@@ -367,6 +367,26 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Get full device profile details by name (RDeviceProfile)
+     * @throws SoapFault
+     */
+    public function getDeviceProfileByName(string $name): array
+    {
+        try {
+            $res = $this->__soapCall('getDeviceProfile', [
+                'getDeviceProfile' => [
+                    'name' => $name,
+                ],
+            ]);
+
+            return json_decode(json_encode($res->return->deviceProfile), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$name]);
+        }
+    }
+
+    /**
      * Format SQL query for pagination
      *
      * @param string $query
