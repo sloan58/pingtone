@@ -29,6 +29,7 @@ use App\Models\CommonPhoneConfig;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
 use App\Models\RemoteDestinationProfile;
+use App\Models\RemoteDestination;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -441,6 +442,29 @@ class SyncUcmJob implements ShouldQueue
         }
         $this->ucm->remoteDestinationProfiles()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncRemoteDestinationProfiles completed");
+
+        // Sync Remote Destinations (list + get for details)
+        $start = now();
+        $rds = $axlApi->listUcmObjects(
+            'listRemoteDestination',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => ''],
+            ],
+            'remoteDestination'
+        );
+        foreach ($rds as $rd) {
+            try {
+                RemoteDestination::storeUcmDetails(
+                    $axlApi->getRemoteDestinationByName($rd['name']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get remote destination details for {$rd['name']}: {$e->getMessage()}");
+            }
+        }
+        $this->ucm->remoteDestinations()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncRemoteDestinations completed");
         // Sync Device Profiles (list + get for details)
         $start = now();
         $profiles = $axlApi->listUcmObjects(
