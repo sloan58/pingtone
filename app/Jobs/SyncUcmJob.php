@@ -20,6 +20,8 @@ use App\Models\CallPickupGroup;
 use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
+use App\Models\CommonPhoneConfig;
+use App\Models\LineGroup;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
@@ -254,6 +256,33 @@ class SyncUcmJob implements ShouldQueue
         $this->ucm->callPickupGroups()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncCallPickupGroups completed");
 
+        // Sync Common Phone Configs
+        $start = now();
+        $commonPhoneConfigs = $axlApi->listUcmObjects(
+            'listCommonPhoneConfig',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'commonPhoneConfig'
+        );
+        CommonPhoneConfig::storeUcmData($commonPhoneConfigs, $this->ucm);
+        $this->ucm->commonPhoneConfigs()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncCommonPhoneConfigs completed");
+
+        // Sync Line Groups
+        $start = now();
+        $lineGroups = $axlApi->listUcmObjects(
+            'listLineGroup',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'lineGroup'
+        );
+        LineGroup::storeUcmData($lineGroups, $this->ucm);
+        $this->ucm->lineGroups()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncLineGroups completed");
         // Sync UCM Users
         $start = now();
         $users = $axlApi->listUcmObjects(
