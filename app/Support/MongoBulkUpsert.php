@@ -21,7 +21,7 @@ class MongoBulkUpsert
         string $collectionName,
         array $rows,
         array $uniqueBy,
-        array $updateColumns,
+        ?array $updateColumns = null,
         int $chunkSize = 1000,
         ?array $hint = null
     ): void {
@@ -32,7 +32,17 @@ class MongoBulkUpsert
             $now = new UTCDateTime(now());
 
             foreach ($chunk as $row) {
-                $get = static fn(string $k) => is_array($row) ? ($row[$k] ?? null) : ($row->$k ?? null);
+                // Normalize row to associative array (preserve nested structures)
+                if (is_array($row)) {
+                    $rowArray = $row;
+                } elseif (is_object($row)) {
+                    $rowArray = json_decode(json_encode($row), true);
+                } else {
+                    // Unsupported row type
+                    continue;
+                }
+
+                $get = static fn(string $k) => $rowArray[$k] ?? null;
 
                 // Build filter from unique keys; skip if any required key missing
                 $filter = [];
@@ -44,9 +54,15 @@ class MongoBulkUpsert
                 if (!$filter) { continue; }
 
                 // Build $set document
-                $set = ['updated_at' => $now];
-                foreach ($updateColumns as $k) {
-                    $set[$k] = $get($k);
+                if ($updateColumns === null) {
+                    // Upsert full document as-is (plus updated_at)
+                    $set = $rowArray;
+                    $set['updated_at'] = $now;
+                } else {
+                    $set = ['updated_at' => $now];
+                    foreach ($updateColumns as $k) {
+                        $set[$k] = $get($k);
+                    }
                 }
 
                 $update = [
@@ -66,5 +82,6 @@ class MongoBulkUpsert
         }
     }
 }
+
 
 
