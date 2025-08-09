@@ -166,6 +166,11 @@ class Ucm extends Model
         return $this->hasMany(DeviceProfile::class);
     }
 
+    public function remoteDestinationProfiles(): HasMany
+    {
+        return $this->hasMany(RemoteDestinationProfile::class);
+    }
+
     /**
      * Get the UCM users associated with this UCM.
      */

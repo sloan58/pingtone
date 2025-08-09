@@ -407,6 +407,26 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Get full remote destination profile details by name (RRemoteDestinationProfile)
+     * @throws SoapFault
+     */
+    public function getRemoteDestinationProfileByName(string $name): array
+    {
+        try {
+            $res = $this->__soapCall('getRemoteDestinationProfile', [
+                'getRemoteDestinationProfile' => [
+                    'name' => $name,
+                ],
+            ]);
+
+            return json_decode(json_encode($res->return->remoteDestinationProfile), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$name]);
+        }
+    }
+
+    /**
      * Format SQL query for pagination
      *
      * @param string $query

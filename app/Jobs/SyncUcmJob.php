@@ -18,6 +18,7 @@ use App\Models\SipProfile;
 use App\Models\SyncHistory;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
+use App\Models\DeviceProfile;
 use App\Models\RoutePartition;
 use App\Models\ServiceProfile;
 use App\Models\CallPickupGroup;
@@ -27,7 +28,7 @@ use App\Models\VoicemailProfile;
 use App\Models\CommonPhoneConfig;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
-use App\Models\DeviceProfile;
+use App\Models\RemoteDestinationProfile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -342,6 +343,7 @@ class SyncUcmJob implements ShouldQueue
         LineGroup::storeUcmData($lineGroups, $this->ucm);
         $this->ucm->lineGroups()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncLineGroups completed");
+
         // Sync UCM Users (list + get for details)
         $start = now();
         $users = $axlApi->listUcmObjects(
@@ -417,6 +419,28 @@ class SyncUcmJob implements ShouldQueue
         $this->ucm->phones()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncPhones completed");
 
+        // Sync Remote Destination Profiles (list + get for details)
+        $start = now();
+        $rdps = $axlApi->listUcmObjects(
+            'listRemoteDestinationProfile',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => ''],
+            ],
+            'remoteDestinationProfile'
+        );
+        foreach ($rdps as $rdp) {
+            try {
+                RemoteDestinationProfile::storeUcmDetails(
+                    $axlApi->getRemoteDestinationProfileByName($rdp['name']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get remote destination profile details for {$rdp['name']}: {$e->getMessage()}");
+            }
+        }
+        $this->ucm->remoteDestinationProfiles()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncRemoteDestinationProfiles completed");
         // Sync Device Profiles (list + get for details)
         $start = now();
         $profiles = $axlApi->listUcmObjects(
