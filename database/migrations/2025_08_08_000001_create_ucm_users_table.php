@@ -11,6 +11,7 @@ return new class extends Migration
             $table->string('userid')->index();
             $table->string('email')->index();
             $table->string('uuid')->unique();
+            $table->unique(['uuid', 'ucm_id']);
             $table->timestamps();
         });
     }

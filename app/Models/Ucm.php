@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[ObservedBy([UcmObserver::class])]
 class Ucm extends Model
@@ -148,14 +147,9 @@ class Ucm extends Model
     /**
      * Get the UCM users associated with this UCM.
      */
-    public function ucmUsers(): BelongsToMany
+    public function ucmUsers(): HasMany
     {
-        return $this->belongsToMany(UcmUser::class, 'ucm_user_ucm', 'ucm_id', 'ucm_user_id')
-            ->withPivot([
-                'home_cluster',
-                'im_presence_enabled'
-            ])
-            ->withTimestamps();
+        return $this->hasMany(UcmUser::class);
     }
 
     /**

@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Support\MongoBulkUpsert;
+use MongoDB\Laravel\Eloquent\Model;
+use MongoDB\Laravel\Relations\BelongsTo;
 
 class UcmUser extends Model
 {
@@ -16,14 +16,9 @@ class UcmUser extends Model
 
     protected $with = [];
 
-    public function ucms(): BelongsToMany
+    public function ucm(): BelongsTo
     {
-        return $this->belongsToMany(Ucm::class, 'ucm_user_ucm', 'ucm_user_id', 'ucm_id')
-            ->withPivot([
-                'home_cluster',
-                'im_presence_enabled'
-            ])
-            ->withTimestamps();
+        return $this->belongsTo(Ucm::class);
     }
 
     /**
@@ -31,39 +26,14 @@ class UcmUser extends Model
      */
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        foreach (array_chunk($responseData, 1000) as $chunk) {
-            // Prepare user docs; require uuid for uniqueness
-            $rows = array_values(array_filter(array_map(fn($r) => [
-                'uuid' => $r->uuid ?? null,
-                'userid' => $r->userid ?? null,
-                'email' => $r->mailid ?? null,
-            ], $chunk), fn($u) => !empty($u['uuid'])));
+        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
 
-            if (!empty($rows)) {
-                MongoBulkUpsert::upsert(
-                    'ucm_users',
-                    $rows,
-                    ['uuid'],
-                    ['uuid', 'userid', 'email']
-                );
-            }
-
-            // Sync pivot attributes for users having uuid
-            foreach ($chunk as $r) {
-                $uuid = $r->uuid ?? null;
-                if (!$uuid) { continue; }
-
-                $user = static::query()->where('uuid', $uuid)->first();
-                if (!$user) { continue; }
-
-                $pivot = [
-                    'home_cluster' => (bool)($r->homeCluster ?? false),
-                    'im_presence_enabled' => (bool)($r->imAndPresenceEnable ?? false),
-                ];
-
-                $user->ucms()->syncWithoutDetaching([$ucm->id => $pivot]);
-            }
-        }
+        MongoBulkUpsert::upsert(
+            'ucm_users',
+            $rows,
+            ['uuid', 'ucm_id'],
+            ['uuid' => 1, 'ucm_id' => 1]
+        );
     }
 }
 

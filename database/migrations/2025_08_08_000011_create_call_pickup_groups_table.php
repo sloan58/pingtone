@@ -9,10 +9,10 @@ return new class extends Migration
     {
         Schema::create('call_pickup_groups', function (Blueprint $table) {
             $table->string('pattern')->index();
+            $table->string('name')->index();
             $table->string('uuid')->index();
             $table->string('ucm_id')->index();
-            $table->string('route_partition_name')->nullable()->index();
-            $table->unique(['ucm_id', 'pattern', 'route_partition_name']);
+            $table->unique(['name', 'ucm_id']); // Must be in the right order for 'hint' to work
         });
     }
 
