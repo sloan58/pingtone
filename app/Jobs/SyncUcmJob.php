@@ -448,19 +448,19 @@ class SyncUcmJob implements ShouldQueue
         $rds = $axlApi->listUcmObjects(
             'listRemoteDestination',
             [
-                'searchCriteria' => ['name' => '%'],
-                'returnedTags' => ['name' => ''],
+                'searchCriteria' => ['destination' => '%'],
+                'returnedTags' => ['destination' => ''],
             ],
             'remoteDestination'
         );
         foreach ($rds as $rd) {
             try {
                 RemoteDestination::storeUcmDetails(
-                    $axlApi->getRemoteDestinationByName($rd['name']),
+                    $axlApi->getRemoteDestinationByDestination($rd['destination']),
                     $this->ucm
                 );
             } catch (Exception $e) {
-                Log::warning("{$this->ucm->name}: Failed to get remote destination details for {$rd['name']}: {$e->getMessage()}");
+                Log::warning("{$this->ucm->name}: Failed to get remote destination details for {$rd['destination']}: {$e->getMessage()}");
             }
         }
         $this->ucm->remoteDestinations()->where('updated_at', '<', $start)->delete();

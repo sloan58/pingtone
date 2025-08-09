@@ -427,22 +427,22 @@ class AxlSoap extends SoapClient
     }
 
     /**
-     * Get full remote destination details by name (RRemoteDestination)
+     * Get full remote destination details by destination or uuid (RRemoteDestination)
      * @throws SoapFault
      */
-    public function getRemoteDestinationByName(string $name): array
+    public function getRemoteDestinationByDestination(string $destination): array
     {
         try {
             $res = $this->__soapCall('getRemoteDestination', [
                 'getRemoteDestination' => [
-                    'name' => $name,
+                    'destination' => $destination,
                 ],
             ]);
 
             return json_decode(json_encode($res->return->remoteDestination), true);
 
         } catch (SoapFault $e) {
-            return $this->handleAxlApiError($e, [$name]);
+            return $this->handleAxlApiError($e, [$destination]);
         }
     }
 
