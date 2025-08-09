@@ -7,12 +7,12 @@ use Exception;
 use SoapFault;
 use App\Models\Ucm;
 use App\Models\Line;
+use App\Models\Phone;
 use App\Models\UcmUser;
 use App\Models\Location;
-use App\Models\LineGroup;
 use App\Models\Intercom;
+use App\Models\LineGroup;
 use App\Models\PhoneModel;
-use App\Models\Phone;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
 use App\Models\SyncHistory;
@@ -398,19 +398,18 @@ class SyncUcmJob implements ShouldQueue
             ],
             'phone'
         );
-        $names = Phone::storeUcmList($phoneList, $this->ucm);
 
-        $details = [];
-        foreach ($names as $name) {
+        foreach ($phoneList as $phone) {
             try {
-                $details[] = $axlApi->getPhoneByName($name);
-            } catch (\Exception $e) {
-                Log::warning("{$this->ucm->name}: Failed to get phone details for {$name}: {$e->getMessage()}");
+                Phone::storeUcmDetails(
+                    $axlApi->getPhoneByName($phone['name']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get phone details for {$phone['name']}: {$e->getMessage()}");
             }
         }
-        if (!empty($details)) {
-            Phone::storeUcmDetails($details, $this->ucm);
-        }
+
         $this->ucm->phones()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncPhones completed");
 

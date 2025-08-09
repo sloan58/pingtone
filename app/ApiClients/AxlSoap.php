@@ -113,7 +113,7 @@ class AxlSoap extends SoapClient
                 $methodName => $listObject
             ])->return->{$responseProperty} ?? []), true);
         } catch (SoapFault $e) {
-            $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty]);
+            return $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty]);
         } catch (Exception $e) {
             Log::error("Unexpected error syncing {$responseProperty}", [
                 'ucm' => $this->ucm->name,
