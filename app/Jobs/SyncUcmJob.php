@@ -11,9 +11,9 @@ use App\Models\PhoneModel;
 use App\Models\SyncHistory;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
+use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
-use App\Models\SoftkeyTemplate;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
@@ -50,59 +50,58 @@ class SyncUcmJob implements ShouldQueue
             'sync_history_id' => $this->syncHistory->id,
         ]);
 
-        try {
-            // Update sync history to show we're starting
-            $this->syncHistory->update([
-                'status' => SyncStatusEnum::SYNCING,
-            ]);
+        // Update sync history to show we're starting
+        $this->syncHistory->update([
+            'status' => SyncStatusEnum::SYNCING,
+        ]);
 
-            // Get the AXL API client
-            $axlApi = $this->ucm->axlApi();
+        // Get the AXL API client
+        $axlApi = $this->ucm->axlApi();
 
-            // Update version first
-            $version = $this->ucm->updateVersionFromApi();
+        // Update version first
+        $version = $this->ucm->updateVersionFromApi();
 
-            if (!$version) {
-                throw new Exception('Version detection failed');
-            }
+        if (!$version) {
+            throw new Exception('Version detection failed');
+        }
 
-            // Sync Recording Profiles
-            $start = now();
-            $recordingProfiles = $axlApi->listUcmObjects(
-                'listRecordingProfile',
-                [
-                    'searchCriteria' => ['name' => '%'],
-                    'returnedTags' => ['name' => '', 'uuid' => ''],
-                ],
-                'recordingProfile'
-            );
-            RecordingProfile::storeUcmData($recordingProfiles, $this->ucm);
-            $this->ucm->recordingProfiles()->where('updated_at', '<', $start)->delete();
-            Log::info("{$this->ucm->name}: syncRecordingProfiles completed");
+        // Sync Recording Profiles
+        $start = now();
+        $recordingProfiles = $axlApi->listUcmObjects(
+            'listRecordingProfile',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'recordingProfile'
+        );
+        RecordingProfile::storeUcmData($recordingProfiles, $this->ucm);
+        $this->ucm->recordingProfiles()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncRecordingProfiles completed");
 
-            // Sync Voicemail Profiles
-            $start = now();
-            $voicemailProfiles = $axlApi->listUcmObjects(
-                'listVoicemailProfile',
-                [
-                    'searchCriteria' => ['name' => '%'],
-                    'returnedTags' => ['name' => '', 'uuid' => ''],
-                ],
-                'voiceMailProfile'
-            );
-            VoicemailProfile::storeUcmData($voicemailProfiles, $this->ucm);
-            $this->ucm->voicemailProfiles()->where('updated_at', '<', $start)->delete();
-            Log::info("{$this->ucm->name}: syncVoicemailProfiles completed");
+        // Sync Voicemail Profiles
+        $start = now();
+        $voicemailProfiles = $axlApi->listUcmObjects(
+            'listVoicemailProfile',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'voiceMailProfile'
+        );
+        VoicemailProfile::storeUcmData($voicemailProfiles, $this->ucm);
+        $this->ucm->voicemailProfiles()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncVoicemailProfiles completed");
 
-            // Sync Phone Models (using SQL query)
-            $start = now();
-            $phoneModels = $axlApi->performSqlQuery('SELECT name FROM typemodel WHERE tkclass = 1');
-            PhoneModel::storeUcmData($phoneModels, $this->ucm);
-            $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
-            Log::info("{$this->ucm->name}: syncPhoneModels completed");
+        // Sync Phone Models (using SQL query)
+        $start = now();
+        $phoneModels = $axlApi->performSqlQuery('SELECT name FROM typemodel WHERE tkclass = 1');
+        PhoneModel::storeUcmData($phoneModels, $this->ucm);
+        $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncPhoneModels completed");
 
-            // Sync Phone Model Expansion Modules
-            $expansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm2.name module, tm.name model
+        // Sync Phone Model Expansion Modules
+        $expansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm2.name module, tm.name model
                       FROM typesupportsfeature tsf
                       JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
                       JOIN typemodel tm ON tm.enum = psf.tkmodel
@@ -112,11 +111,11 @@ class SyncUcmJob implements ShouldQueue
                       WHERE tsf.name LIKE '%Expansion%'
                       AND psf2.tksupportsfeature = 86
                       AND tm.name LIKE 'Cisco%'");
-            PhoneModel::storeSupportedExpansionModuleData($expansionModules, $this->ucm);
-            Log::info("{$this->ucm->name}: syncPhoneModelExpansionModules completed");
+        PhoneModel::storeSupportedExpansionModuleData($expansionModules, $this->ucm);
+        Log::info("{$this->ucm->name}: syncPhoneModelExpansionModules completed");
 
-            // Sync Phone Model Max Expansion Modules
-            $maxExpansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm.name model, psf.param max
+        // Sync Phone Model Max Expansion Modules
+        $maxExpansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm.name model, psf.param max
                       FROM typesupportsfeature tsf
                       JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
                       JOIN typemodel tm ON tm.enum = psf.tkmodel
@@ -127,90 +126,86 @@ class SyncUcmJob implements ShouldQueue
                       AND psf2.tksupportsfeature = 86
                       AND psf.param != ''
                       AND tm.name LIKE 'Cisco%'");
-            PhoneModel::storeMaxExpansionModuleData($maxExpansionModules, $this->ucm);
-            Log::info("{$this->ucm->name}: syncPhoneModelMaxExpansionModule completed");
+        PhoneModel::storeMaxExpansionModuleData($maxExpansionModules, $this->ucm);
+        Log::info("{$this->ucm->name}: syncPhoneModelMaxExpansionModule completed");
 
-            // Sync Softkey Templates
-            $start = now();
-            $softkeyTemplates = $axlApi->listUcmObjects(
-                'listSoftKeyTemplate',
-                [
-                    'searchCriteria' => ['name' => '%'],
-                    'returnedTags' => ['name' => '', 'uuid' => ''],
+        // Sync Phone Button Template Details via SQL
+        $start = now();
+        $templateDetails = $axlApi->performSqlQuery(
+            'SELECT pb.buttonnum, pb.fkphonetemplate templatepkid, pb.label, f.name feature, t.name templatename, m.name model, p.name protocol
+             FROM phonebutton pb
+             JOIN typefeature f ON f.enum = pb.tkfeature
+             JOIN phonetemplate t ON pb.fkphonetemplate = t.pkid
+             JOIN typemodel m ON t.tkmodel = m.enum
+             JOIN typedeviceprotocol p ON t.tkdeviceprotocol = p.enum
+             ORDER BY pb.fkphonetemplate'
+        );
+        PhoneButtonTemplate::storeButtonTemplateDetails($templateDetails, $this->ucm);
+        Log::info("{$this->ucm->name}: syncPhoneButtonTemplateDetails completed");
+
+        // Sync Softkey Templates
+        $start = now();
+        $softkeyTemplates = $axlApi->listUcmObjects(
+            'listSoftKeyTemplate',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'softKeyTemplate'
+        );
+        SoftkeyTemplate::storeUcmData($softkeyTemplates, $this->ucm);
+        $this->ucm->softkeyTemplates()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncSoftkeyTemplates completed");
+
+        // Sync UCM Users
+        $start = now();
+        $users = $axlApi->listUcmObjects(
+            'listUser',
+            [
+                'searchCriteria' => ['userid' => '%'],
+                'returnedTags' => [
+                    'uuid' => '',
+                    'userid' => '',
+                    'mailid' => '',
+                    'homeCluster' => '',
+                    'imAndPresenceEnable' => '',
                 ],
-                'softKeyTemplate'
-            );
-            SoftkeyTemplate::storeUcmData($softkeyTemplates, $this->ucm);
-            $this->ucm->softkeyTemplates()->where('updated_at', '<', $start)->delete();
-            Log::info("{$this->ucm->name}: syncSoftkeyTemplates completed");
+            ],
+            'user'
+        );
+        UcmUser::storeUcmData($users, $this->ucm);
+        $this->ucm->ucmUsers()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncUcmUsers completed");
 
-            // Sync UCM Users
-            $start = now();
-            $users = $axlApi->listUcmObjects(
-                'listUser',
-                [
-                    'searchCriteria' => ['userid' => '%'],
-                    'returnedTags' => [
-                        'uuid' => '',
-                        'userid' => '',
-                        'mailid' => '',
-                        'homeCluster' => '',
-                        'imAndPresenceEnable' => '',
-                    ],
-                ],
-                'user'
-            );
-            UcmUser::storeUcmData($users, $this->ucm);
-            $this->ucm->ucmUsers()->where('updated_at', '<', $start)->delete();
-            Log::info("{$this->ucm->name}: syncUcmUsers completed");
+        // Sync Phone Button Templates
+        $start = now();
+        $phoneButtonTemplates = $axlApi->listUcmObjects(
+            'listPhoneButtonTemplate',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'phoneButtonTemplate'
+        );
+        PhoneButtonTemplate::storeUcmData($phoneButtonTemplates, $this->ucm);
+        $this->ucm->phoneButtonTemplates()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncPhoneButtonTemplates completed");
 
-            // Sync Phone Button Templates
-            $start = now();
-            $phoneButtonTemplates = $axlApi->listUcmObjects(
-                'listPhoneButtonTemplate',
-                [
-                    'searchCriteria' => ['name' => '%'],
-                    'returnedTags' => ['name' => '', 'uuid' => ''],
-                ],
-                'phoneButtonTemplate'
-            );
-            PhoneButtonTemplate::storeUcmData($phoneButtonTemplates, $this->ucm);
-            $this->ucm->phoneButtonTemplates()->where('updated_at', '<', $start)->delete();
-            Log::info("{$this->ucm->name}: syncPhoneButtonTemplates completed");
+        Log::info("UCM sync completed successfully", [
+            'ucm_id' => $this->ucm->id,
+            'version' => $version,
+        ]);
 
-            Log::info("UCM sync completed successfully", [
-                'ucm_id' => $this->ucm->id,
-                'version' => $version,
-            ]);
+        // Mark sync as completed
+        $this->syncHistory->update([
+            'sync_end_time' => now(),
+            'status' => SyncStatusEnum::COMPLETED,
+        ]);
 
-            // Mark sync as completed
-            $this->syncHistory->update([
-                'sync_end_time' => now(),
-                'status' => SyncStatusEnum::COMPLETED,
-            ]);
-
-            // Update UCM's last sync time
-            $this->ucm->update([
-                'last_sync_at' => now(),
-            ]);
-
-        } catch (Exception $e) {
-            Log::error("UCM sync failed", [
-                'ucm_id' => $this->ucm->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Mark sync as failed
-            $this->syncHistory->update([
-                'sync_end_time' => now(),
-                'status' => SyncStatusEnum::FAILED,
-                'error' => $e->getMessage(),
-            ]);
-
-            // Re-throw the exception to trigger job retry logic
-            throw $e;
-        }
+        // Update UCM's last sync time
+        $this->ucm->update([
+            'last_sync_at' => now(),
+        ]);
     }
 
     /**

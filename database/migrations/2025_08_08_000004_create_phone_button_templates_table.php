@@ -11,6 +11,10 @@ return new class extends Migration
             $table->string('name')->index();
             $table->string('uuid')->index();
             $table->string('ucm_id')->index();
+            $table->string('pkid')->nullable()->index();
+            $table->string('model')->nullable()->index();
+            $table->string('protocol')->nullable()->index();
+            $table->json('buttons')->nullable();
             $table->unique(['name', 'ucm_id']);
         });
     }
