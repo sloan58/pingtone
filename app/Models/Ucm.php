@@ -159,10 +159,7 @@ class Ucm extends Model
         return $this->hasMany(Intercom::class);
     }
 
-    public function phoneVendorConfigs(): HasMany
-    {
-        return $this->hasMany(PhoneVendorConfig::class);
-    }
+    // Phone vendor configs are embedded on Phone documents in this project
 
     /**
      * Get the UCM users associated with this UCM.

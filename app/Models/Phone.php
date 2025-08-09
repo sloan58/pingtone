@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
+use MongoDB\Laravel\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -38,10 +39,7 @@ class Phone extends Model
             ->withTimestamps();
     }
 
-    public function vendorConfig()
-    {
-        return $this->hasOne(PhoneVendorConfig::class, 'phone_uuid', 'uuid');
-    }
+    // Vendor config will be embedded on this model (e.g., vendor_config xml/json)
 
     public static function storeUcmDetails(array $phone, Ucm $ucm): void
     {
