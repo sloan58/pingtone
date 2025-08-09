@@ -38,6 +38,11 @@ class Phone extends Model
             ->withTimestamps();
     }
 
+    public function vendorConfig()
+    {
+        return $this->hasOne(PhoneVendorConfig::class, 'phone_uuid', 'uuid');
+    }
+
     public static function storeUcmDetails(array $phone, Ucm $ucm): void
     {
         $phone['ucm_id'] = $ucm->id;

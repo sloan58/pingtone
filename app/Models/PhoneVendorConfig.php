@@ -19,6 +19,11 @@ class PhoneVendorConfig extends Model
     {
         return $this->belongsTo(Ucm::class);
     }
+
+    public function phone(): BelongsTo
+    {
+        return $this->belongsTo(Phone::class, 'phone_uuid', 'uuid');
+    }
 }
 
 
