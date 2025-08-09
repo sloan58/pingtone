@@ -15,6 +15,12 @@ use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
 use App\Models\PhoneButtonTemplate;
+use App\Models\RoutePartition;
+use App\Models\CallingSearchSpace;
+use App\Models\DevicePool;
+use App\Models\ServiceProfile;
+use App\Models\SipProfile;
+use App\Models\Location;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -129,20 +135,6 @@ class SyncUcmJob implements ShouldQueue
         PhoneModel::storeMaxExpansionModuleData($maxExpansionModules, $this->ucm);
         Log::info("{$this->ucm->name}: syncPhoneModelMaxExpansionModule completed");
 
-        // Sync Phone Button Template Details via SQL
-        $start = now();
-        $templateDetails = $axlApi->performSqlQuery(
-            'SELECT pb.buttonnum, pb.fkphonetemplate templatepkid, pb.label, f.name feature, t.name templatename, m.name model, p.name protocol
-             FROM phonebutton pb
-             JOIN typefeature f ON f.enum = pb.tkfeature
-             JOIN phonetemplate t ON pb.fkphonetemplate = t.pkid
-             JOIN typemodel m ON t.tkmodel = m.enum
-             JOIN typedeviceprotocol p ON t.tkdeviceprotocol = p.enum
-             ORDER BY pb.fkphonetemplate'
-        );
-        PhoneButtonTemplate::storeButtonTemplateDetails($templateDetails, $this->ucm);
-        Log::info("{$this->ucm->name}: syncPhoneButtonTemplateDetails completed");
-
         // Sync Softkey Templates
         $start = now();
         $softkeyTemplates = $axlApi->listUcmObjects(
@@ -156,6 +148,90 @@ class SyncUcmJob implements ShouldQueue
         SoftkeyTemplate::storeUcmData($softkeyTemplates, $this->ucm);
         $this->ucm->softkeyTemplates()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncSoftkeyTemplates completed");
+
+        // Sync Route Partitions
+        $start = now();
+        $routePartitions = $axlApi->listUcmObjects(
+            'listRoutePartition',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'routePartition'
+        );
+        RoutePartition::storeUcmData($routePartitions, $this->ucm);
+        $this->ucm->routePartitions()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncRoutePartitions completed");
+
+        // Sync Calling Search Spaces
+        $start = now();
+        $callingSearchSpaces = $axlApi->listUcmObjects(
+            'listCallingSearchSpace',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'callingSearchSpace'
+        );
+        CallingSearchSpace::storeUcmData($callingSearchSpaces, $this->ucm);
+        $this->ucm->callingSearchSpaces()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncCallingSearchSpaces completed");
+
+        // Sync Device Pools
+        $start = now();
+        $devicePools = $axlApi->listUcmObjects(
+            'listDevicePool',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'devicePool'
+        );
+        DevicePool::storeUcmData($devicePools, $this->ucm);
+        $this->ucm->devicePools()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncDevicePools completed");
+
+        // Sync Service Profiles
+        $start = now();
+        $serviceProfiles = $axlApi->listUcmObjects(
+            'listServiceProfile',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'serviceProfile'
+        );
+        ServiceProfile::storeUcmData($serviceProfiles, $this->ucm);
+        $this->ucm->serviceProfiles()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncServiceProfiles completed");
+
+        // Sync SIP Profiles
+        $start = now();
+        $sipProfiles = $axlApi->listUcmObjects(
+            'listSipProfile',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'sipProfile'
+        );
+        SipProfile::storeUcmData($sipProfiles, $this->ucm);
+        $this->ucm->sipProfiles()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncSipProfiles completed");
+
+        // Sync Locations
+        $start = now();
+        $locations = $axlApi->listUcmObjects(
+            'listLocation',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => '', 'uuid' => ''],
+            ],
+            'location'
+        );
+        Location::storeUcmData($locations, $this->ucm);
+        $this->ucm->locations()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncLocations completed");
 
         // Sync UCM Users
         $start = now();
@@ -190,6 +266,19 @@ class SyncUcmJob implements ShouldQueue
         PhoneButtonTemplate::storeUcmData($phoneButtonTemplates, $this->ucm);
         $this->ucm->phoneButtonTemplates()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncPhoneButtonTemplates completed");
+
+        // Sync Phone Button Template Details via SQL
+        $templateDetails = $axlApi->performSqlQuery(
+            'SELECT pb.buttonnum, pb.fkphonetemplate templatepkid, pb.label, f.name feature, t.name templatename, m.name model, p.name protocol
+             FROM phonebutton pb
+             JOIN typefeature f ON f.enum = pb.tkfeature
+             JOIN phonetemplate t ON pb.fkphonetemplate = t.pkid
+             JOIN typemodel m ON t.tkmodel = m.enum
+             JOIN typedeviceprotocol p ON t.tkdeviceprotocol = p.enum
+             ORDER BY pb.fkphonetemplate'
+        );
+        PhoneButtonTemplate::storeButtonTemplateDetails($templateDetails, $this->ucm);
+        Log::info("{$this->ucm->name}: syncPhoneButtonTemplateDetails completed");
 
         Log::info("UCM sync completed successfully", [
             'ucm_id' => $this->ucm->id,

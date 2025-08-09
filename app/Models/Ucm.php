@@ -110,6 +110,36 @@ class Ucm extends Model
         return $this->hasMany(PhoneButtonTemplate::class);
     }
 
+    public function routePartitions(): HasMany
+    {
+        return $this->hasMany(RoutePartition::class);
+    }
+
+    public function callingSearchSpaces(): HasMany
+    {
+        return $this->hasMany(CallingSearchSpace::class);
+    }
+
+    public function devicePools(): HasMany
+    {
+        return $this->hasMany(DevicePool::class);
+    }
+
+    public function serviceProfiles(): HasMany
+    {
+        return $this->hasMany(ServiceProfile::class);
+    }
+
+    public function sipProfiles(): HasMany
+    {
+        return $this->hasMany(SipProfile::class);
+    }
+
+    public function locations(): HasMany
+    {
+        return $this->hasMany(Location::class);
+    }
+
     /**
      * Get the UCM users associated with this UCM.
      */
