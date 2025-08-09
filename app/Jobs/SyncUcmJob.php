@@ -6,13 +6,13 @@ use Throwable;
 use Exception;
 use SoapFault;
 use App\Models\Ucm;
+use App\Models\UcmUser;
 use App\Models\PhoneModel;
 use App\Models\SyncHistory;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
-use App\Models\UcmUser;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -112,7 +112,6 @@ class SyncUcmJob implements ShouldQueue
                       AND psf2.tksupportsfeature = 86
                       AND tm.name LIKE 'Cisco%'");
             PhoneModel::storeSupportedExpansionModuleData($expansionModules, $this->ucm);
-            $this->ucm->phoneModels()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncPhoneModelExpansionModules completed");
 
             // Sync Phone Model Max Expansion Modules
@@ -148,6 +147,7 @@ class SyncUcmJob implements ShouldQueue
                 'user'
             );
             UcmUser::storeUcmData($users, $this->ucm);
+            $this->ucm->ucmUsers()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncUcmUsers completed");
 
             Log::info("UCM sync completed successfully", [
