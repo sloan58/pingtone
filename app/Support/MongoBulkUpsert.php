@@ -13,72 +13,43 @@ class MongoBulkUpsert
      * @param string $collectionName
      * @param array $rows Array of arrays or objects containing data
      * @param array $uniqueBy Fields composing the unique filter
-     * @param array $updateColumns Fields to set on update/insert
-     * @param int $chunkSize Chunk size for bulkWrite
      * @param array|null $hint Optional index hint (e.g., ['ucm_id' => 1, 'name' => 1])
      */
     public static function upsert(
         string $collectionName,
         array $rows,
         array $uniqueBy,
-        ?array $updateColumns = null,
-        int $chunkSize = 1000,
-        ?array $hint = null
+        array $hint
     ): void {
         $collection = DB::connection('mongodb')->getCollection($collectionName);
 
-        foreach (array_chunk($rows, $chunkSize) as $chunk) {
+        foreach (array_chunk($rows, 1000) as $chunk) {
             $ops = [];
             $now = new UTCDateTime(now());
 
             foreach ($chunk as $row) {
                 // Normalize row to associative array (preserve nested structures)
-                if (is_array($row)) {
-                    $rowArray = $row;
-                } elseif (is_object($row)) {
-                    $rowArray = json_decode(json_encode($row), true);
-                } else {
-                    // Unsupported row type
-                    continue;
-                }
+                $rowArray = json_decode(json_encode($row), true);
 
                 $get = static fn(string $k) => $rowArray[$k] ?? null;
 
-                // Build filter from unique keys; skip if any required key missing
-                $filter = [];
-                foreach ($uniqueBy as $k) {
-                    $v = $get($k);
-                    if ($v === null) { $filter = []; break; }
-                    $filter[$k] = $v;
-                }
-                if (!$filter) { continue; }
-
-                // Build $set document
-                if ($updateColumns === null) {
-                    // Upsert full document as-is (plus updated_at)
-                    $set = $rowArray;
-                    $set['updated_at'] = $now;
-                } else {
-                    $set = ['updated_at' => $now];
-                    foreach ($updateColumns as $k) {
-                        $set[$k] = $get($k);
-                    }
-                }
+                // Build filter directly from required unique keys (assume presence)
+                $filter = array_intersect_key($rowArray, array_flip($uniqueBy));
 
                 $update = [
-                    '$set' => $set,
+                    '$set' => [...$rowArray, 'updated_at' => $now],
                     '$setOnInsert' => ['created_at' => $now],
                 ];
 
-                $options = ['upsert' => true];
-                if ($hint) { $options['hint'] = $hint; }
+                $options = [
+                    'upsert' => true,
+                    'hint' => $hint,
+                ];
 
                 $ops[] = ['updateOne' => [$filter, $update, $options]];
             }
 
-            if ($ops) {
-                $collection->bulkWrite($ops, ['ordered' => false]);
-            }
+            $collection->bulkWrite($ops, ['ordered' => false]);
         }
     }
 }
