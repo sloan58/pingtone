@@ -19,6 +19,7 @@ class Phone extends Model
     public static function storeUcmDetails(array $phone, Ucm $ucm): void
     {
         $phone['ucm_id'] = $ucm->id;
-        self::updateOrCreate(['uuid' => $phone['uuid']], $phone);
+        $model = self::updateOrCreate(['uuid' => $phone['uuid']], $phone);
+        $model->touch();
     }
 }

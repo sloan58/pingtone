@@ -8,19 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VoicemailProfile extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'uuid',
-        'name',
-        'ucm_id',
-    ];
-
-    /**
-     * The relationships that should always be loaded.
-     */
-    protected $with = ['ucm'];
+    protected $guarded = [];
 
     /**
      * Get the UCM that owns this voicemail profile.

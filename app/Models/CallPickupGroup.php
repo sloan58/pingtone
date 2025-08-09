@@ -8,14 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CallPickupGroup extends Model
 {
-    protected $fillable = [
-        'uuid',
-        'pattern',
-        'route_partition_name',
-        'ucm_id',
-    ];
-
-    protected $with = ['ucm'];
+    protected $guarded = [];
 
     public function ucm(): BelongsTo
     {

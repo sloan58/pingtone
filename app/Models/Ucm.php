@@ -17,18 +17,7 @@ class Ucm extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'name',
-        'hostname',
-        'username',
-        'password',
-        'schema_version',
-        'version',
-        'last_sync_at',
-    ];
+    protected $guarded = [];
 
     /**
      * The attributes that should be cast.

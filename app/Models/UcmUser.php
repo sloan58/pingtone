@@ -17,7 +17,7 @@ class UcmUser extends Model
     public static function storeUcmDetails(array $user, Ucm $ucm): void
     {
         $user['ucm_id'] = $ucm->id;
-        self::updateOrCreate(['uuid' => $user['uuid']], $user);
+        self::updateOrCreate(['uuid' => $user['uuid']], $user)->touch();
     }
 }
 

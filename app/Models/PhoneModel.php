@@ -9,20 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PhoneModel extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'name',
-        'maxExpansionModules',
-        'supportedExpansionModules',
-        'ucm_id',
-    ];
-
-    /**
-     * The relationships that should always be loaded.
-     */
-    protected $with = ['ucm'];
+    protected $guarded = [];
 
     /**
      * Get the UCM that owns this phone model.

@@ -5,29 +5,10 @@ namespace App\Models;
 use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class RecordingProfile extends Model
 {
-    use HasFactory;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'uuid',
-        'name',
-        'ucm_id',
-    ];
-
-    /**
-     * The relationships that should always be loaded.
-     *
-     * @var array
-     */
-    protected $with = ['ucm'];
+    protected $guarded = [];
 
     /**
      * @return BelongsTo

@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Line extends Model
 {
-    protected $fillable = [];
+    protected $guarded = [];
 
     public function ucm(): BelongsTo
     {
@@ -36,6 +35,6 @@ class Line extends Model
     public static function storeUcmDetails(array $line, Ucm $ucm): void
     {
         $line['ucm_id'] = $ucm->id;
-        self::updateOrCreate(['uuid' => $line['uuid']], $line);
+        self::updateOrCreate(['uuid' => $line['uuid']], $line)->touch();
     }
 }

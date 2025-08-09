@@ -8,17 +8,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class SyncHistory extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     */
-    protected $fillable = [
-        'syncable_type',
-        'syncable_id',
-        'sync_start_time',
-        'sync_end_time',
-        'status',
-        'error',
-    ];
+    protected $guarded = [];
 
     /**
      * The attributes that should be cast.

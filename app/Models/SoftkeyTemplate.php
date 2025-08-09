@@ -8,13 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SoftkeyTemplate extends Model
 {
-    protected $fillable = [
-        'uuid',
-        'name',
-        'ucm_id',
-    ];
-
-    protected $with = ['ucm'];
+    protected $guarded = [];
 
     public function ucm(): BelongsTo
     {

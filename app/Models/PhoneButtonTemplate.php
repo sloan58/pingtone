@@ -9,17 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PhoneButtonTemplate extends Model
 {
-    protected $fillable = [
-        'uuid',
-        'name',
-        'ucm_id',
-        'pkid',
-        'model',
-        'protocol',
-        'buttons',
-    ];
-
-    protected $with = ['ucm'];
+    protected $guarded = [];
 
     public function ucm(): BelongsTo
     {

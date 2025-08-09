@@ -17,7 +17,7 @@ class RemoteDestinationProfile extends Model
     public static function storeUcmDetails(array $profile, Ucm $ucm): void
     {
         $profile['ucm_id'] = $ucm->id;
-        self::updateOrCreate(['uuid' => $profile['uuid']], $profile);
+        self::updateOrCreate(['uuid' => $profile['uuid']], $profile)->touch();
     }
 }
 

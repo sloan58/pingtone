@@ -17,7 +17,7 @@ class RemoteDestination extends Model
     public static function storeUcmDetails(array $rd, Ucm $ucm): void
     {
         $rd['ucm_id'] = $ucm->id;
-        self::updateOrCreate(['uuid' => $rd['uuid']], $rd);
+        self::updateOrCreate(['uuid' => $rd['uuid']], $rd)->touch();
     }
 }
 

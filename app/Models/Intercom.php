@@ -2,13 +2,12 @@
 
 namespace App\Models;
 
-use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Intercom extends Model
 {
-    protected $fillable = [];
+    protected $guarded = [];
 
     public function ucm(): BelongsTo
     {
@@ -18,7 +17,7 @@ class Intercom extends Model
     public static function storeUcmDetails(array $intercom, Ucm $ucm): void
     {
         $intercom['ucm_id'] = $ucm->id;
-        self::updateOrCreate(['uuid' => $intercom['uuid']], $intercom);
+        self::updateOrCreate(['uuid' => $intercom['uuid']], $intercom)->touch();
     }
 }
 
