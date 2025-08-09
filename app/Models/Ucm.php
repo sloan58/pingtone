@@ -103,6 +103,14 @@ class Ucm extends Model
     }
 
     /**
+     * Get the phone button templates associated with this UCM.
+     */
+    public function phoneButtonTemplates(): HasMany
+    {
+        return $this->hasMany(PhoneButtonTemplate::class);
+    }
+
+    /**
      * Get the UCM users associated with this UCM.
      */
     public function ucmUsers(): BelongsToMany
