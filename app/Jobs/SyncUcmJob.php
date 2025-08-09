@@ -6,8 +6,11 @@ use Throwable;
 use Exception;
 use SoapFault;
 use App\Models\Ucm;
+use App\Models\Line;
 use App\Models\UcmUser;
 use App\Models\Location;
+use App\Models\LineGroup;
+use App\Models\Intercom;
 use App\Models\PhoneModel;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
@@ -20,9 +23,7 @@ use App\Models\CallPickupGroup;
 use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
-use App\Models\Line;
 use App\Models\CommonPhoneConfig;
-use App\Models\LineGroup;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
@@ -262,11 +263,20 @@ class SyncUcmJob implements ShouldQueue
         $lines = $axlApi->listUcmObjects(
             'listLine',
             [
-                'searchCriteria' => ['pattern' => '%'],
+                'searchCriteria' => [
+                    'pattern' => '%',
+                    'usage' => 'Device',
+                ],
                 'returnedTags' => [
-                    'uuid' => '',
+                    'usage' => '',
                     'pattern' => '',
+                    'description' => '',
+                    'alertingName' => '',
+                    'autoAnswer' => '',
+                    'shareLineAppearanceCssName' => '',
                     'routePartitionName' => '',
+                    'voiceMailProfileName' => '',
+                    'callPickupGroupName' => '',
                 ],
             ],
             'line'
@@ -274,6 +284,34 @@ class SyncUcmJob implements ShouldQueue
         Line::storeUcmData($lines, $this->ucm);
         $this->ucm->lines()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncLines completed");
+
+        // Sync Intercoms
+        $start = now();
+        $intercoms = $axlApi->listUcmObjects(
+            'listLine',
+            [
+                'searchCriteria' => [
+                    'pattern' => '%',
+                    'usage' => 'Device Intercom',
+                ],
+                'returnedTags' => [
+                    'uuid' => '',
+                    'usage' => '',
+                    'pattern' => '',
+                    'description' => '',
+                    'alertingName' => '',
+                    'autoAnswer' => '',
+                    'shareLineAppearanceCssName' => '',
+                    'routePartitionName' => '',
+                    'voiceMailProfileName' => '',
+                    'callPickupGroupName' => '',
+                ],
+            ],
+            'line'
+        );
+        Intercom::storeUcmData($intercoms, $this->ucm);
+        $this->ucm->intercoms()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncIntercoms completed");
 
         // Sync Common Phone Configs
         $start = now();

@@ -144,6 +144,21 @@ class Ucm extends Model
         return $this->hasMany(CallPickupGroup::class);
     }
 
+    public function commonPhoneConfigs(): HasMany
+    {
+        return $this->hasMany(CommonPhoneConfig::class);
+    }
+
+    public function lineGroups(): HasMany
+    {
+        return $this->hasMany(LineGroup::class);
+    }
+
+    public function intercoms(): HasMany
+    {
+        return $this->hasMany(Intercom::class);
+    }
+
     /**
      * Get the UCM users associated with this UCM.
      */
