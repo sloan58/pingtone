@@ -26,12 +26,12 @@ use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
 use App\Models\CommonPhoneConfig;
+use App\Models\RemoteDestination;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
-use App\Models\RemoteDestinationProfile;
-use App\Models\RemoteDestination;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
+use App\Models\RemoteDestinationProfile;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -448,7 +448,7 @@ class SyncUcmJob implements ShouldQueue
         $rds = $axlApi->listUcmObjects(
             'listRemoteDestination',
             [
-                'searchCriteria' => ['destination' => '%'],
+                'searchCriteria' => ['name' => '%'],
                 'returnedTags' => ['destination' => ''],
             ],
             'remoteDestination'
@@ -465,6 +465,7 @@ class SyncUcmJob implements ShouldQueue
         }
         $this->ucm->remoteDestinations()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncRemoteDestinations completed");
+
         // Sync Device Profiles (list + get for details)
         $start = now();
         $profiles = $axlApi->listUcmObjects(

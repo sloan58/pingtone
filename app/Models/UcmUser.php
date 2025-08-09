@@ -2,19 +2,12 @@
 
 namespace App\Models;
 
-use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
 
 class UcmUser extends Model
 {
-    protected $fillable = [
-        'userid',
-        'email',
-        'uuid',
-    ];
-
-    protected $with = [];
+    protected $guarded = [];
 
     public function ucm(): BelongsTo
     {
