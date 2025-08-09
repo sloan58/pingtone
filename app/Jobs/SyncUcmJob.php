@@ -20,6 +20,7 @@ use App\Models\CallPickupGroup;
 use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
+use App\Models\Line;
 use App\Models\CommonPhoneConfig;
 use App\Models\LineGroup;
 use App\Models\CallingSearchSpace;
@@ -255,6 +256,24 @@ class SyncUcmJob implements ShouldQueue
         CallPickupGroup::storeUcmData($callPickupGroups, $this->ucm);
         $this->ucm->callPickupGroups()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncCallPickupGroups completed");
+
+        // Sync Lines
+        $start = now();
+        $lines = $axlApi->listUcmObjects(
+            'listLine',
+            [
+                'searchCriteria' => ['pattern' => '%'],
+                'returnedTags' => [
+                    'uuid' => '',
+                    'pattern' => '',
+                    'routePartitionName' => '',
+                ],
+            ],
+            'line'
+        );
+        Line::storeUcmData($lines, $this->ucm);
+        $this->ucm->lines()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncLines completed");
 
         // Sync Common Phone Configs
         $start = now();
