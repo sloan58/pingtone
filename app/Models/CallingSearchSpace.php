@@ -23,22 +23,13 @@ class CallingSearchSpace extends Model
 
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        // Add ucm_id and pass raw rows to the bulk upsert helper; it will handle chunking and persistence
-        $rows = array_map(function ($record) use ($ucm) {
-            $doc = is_array($record) ? $record : json_decode(json_encode($record), true);
-            $doc['ucm_id'] = $ucm->id;
-            return $doc;
-        }, $responseData);
+        $rows = array_map(fn($row) => $row + ['ucm_id' => $ucm->id], $responseData);
 
         MongoBulkUpsert::upsert(
             'calling_search_spaces',
             $rows,
             ['ucm_id', 'name'],
-            null, // full-document upsert
-            1000,
             ['name' => 1, 'ucm_id' => 1]
         );
     }
 }
-
-

@@ -8,8 +8,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ucm_users', function (Blueprint $table) {
-            $table->string('userid')->unique();
-            $table->string('email')->unique();
+            $table->string('userid')->index();
+            $table->string('email')->index();
             $table->string('uuid')->unique();
             $table->timestamps();
         });
@@ -20,5 +20,6 @@ return new class extends Migration
         Schema::dropIfExists('ucm_users');
     }
 };
+
 
 

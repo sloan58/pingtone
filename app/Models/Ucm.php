@@ -240,6 +240,7 @@ class Ucm extends Model
 
     /**
      * Get the AXL API client for this UCM.
+     * @throws Exception
      */
     public function axlApi(): AxlSoap
     {

@@ -12,13 +12,13 @@ class MongoBulkUpsert
      *
      * @param string $collectionName
      * @param array $rows Array of arrays or objects containing data
-     * @param array $uniqueBy Fields composing the unique filter
-     * @param array|null $hint Optional index hint (e.g., ['ucm_id' => 1, 'name' => 1])
+     * @param array $filter Fields composing the unique filter
+     * @param array $hint Index hint (e.g., ['ucm_id' => 1, 'name' => 1])
      */
     public static function upsert(
         string $collectionName,
         array $rows,
-        array $uniqueBy,
+        array $filter,
         array $hint
     ): void {
         $collection = DB::connection('mongodb')->getCollection($collectionName);
@@ -28,16 +28,13 @@ class MongoBulkUpsert
             $now = new UTCDateTime(now());
 
             foreach ($chunk as $row) {
-                // Normalize row to associative array (preserve nested structures)
-                $rowArray = json_decode(json_encode($row), true);
-
-                $get = static fn(string $k) => $rowArray[$k] ?? null;
-
-                // Build filter directly from required unique keys (assume presence)
-                $filter = array_intersect_key($rowArray, array_flip($uniqueBy));
+                $uniqueBy = [];
+                foreach ($filter as $item) {
+                    $uniqueBy[$item] = $row[$item];
+                }
 
                 $update = [
-                    '$set' => [...$rowArray, 'updated_at' => $now],
+                    '$set' => $row + ['updated_at' => $now],
                     '$setOnInsert' => ['created_at' => $now],
                 ];
 
@@ -46,7 +43,7 @@ class MongoBulkUpsert
                     'hint' => $hint,
                 ];
 
-                $ops[] = ['updateOne' => [$filter, $update, $options]];
+                $ops[] = ['updateOne' => [$uniqueBy, $update, $options]];
             }
 
             $collection->bulkWrite($ops, ['ordered' => false]);

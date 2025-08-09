@@ -109,10 +109,9 @@ class AxlSoap extends SoapClient
         Log::info("{$this->ucm->name}: Set list object", $listObject);
 
         try {
-            return $this->__soapCall($methodName, [
+            return json_decode(json_encode($this->__soapCall($methodName, [
                 $methodName => $listObject
-            ])->return->{$responseProperty};
-
+            ])->return->{$responseProperty}), true);
         } catch (SoapFault $e) {
             $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty]);
         } catch (Exception $e) {
@@ -338,10 +337,9 @@ class AxlSoap extends SoapClient
         Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
 
         try {
-            return $this->executeSQLQuery( [
+            return json_decode(json_encode($this->executeSQLQuery( [
                 'sql' => $this->formatSqlQuery($sql),
-            ])->return->row;
-
+            ])->return->row), true);
         } catch (SoapFault $e) {
             return $this->handleAxlApiError($e, [$sql]);
         }

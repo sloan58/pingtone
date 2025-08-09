@@ -8,7 +8,6 @@ use SoapFault;
 use App\Models\Ucm;
 use App\Models\UcmUser;
 use App\Models\Location;
-use App\Models\CallPickupGroup;
 use App\Models\PhoneModel;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
@@ -17,6 +16,7 @@ use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
 use App\Models\RoutePartition;
 use App\Models\ServiceProfile;
+use App\Models\CallPickupGroup;
 use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
@@ -48,6 +48,7 @@ class SyncUcmJob implements ShouldQueue
     /**
      * Execute the job.
      * @throws SoapFault
+     * @throws Exception
      */
     public function handle(): void
     {
@@ -241,7 +242,9 @@ class SyncUcmJob implements ShouldQueue
             [
                 'searchCriteria' => ['pattern' => '%'],
                 'returnedTags' => [
+                    'name' => '',
                     'pattern' => '',
+                    'description' => '',
                     'routePartitionName' => '',
                 ],
             ],
