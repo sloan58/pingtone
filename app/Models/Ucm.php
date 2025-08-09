@@ -8,10 +8,10 @@ use App\Observers\UcmObserver;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[ObservedBy([UcmObserver::class])]
 class Ucm extends Model
@@ -71,14 +71,6 @@ class Ucm extends Model
     }
 
     /**
-     * Get the users associated with this UCM.
-     */
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class);
-    }
-
-    /**
      * Get the recording profiles associated with this UCM.
      */
     public function recordingProfiles(): HasMany
@@ -103,12 +95,23 @@ class Ucm extends Model
     }
 
     /**
+     * Get the softkey templates associated with this UCM.
+     */
+    public function softkeyTemplates(): HasMany
+    {
+        return $this->hasMany(SoftkeyTemplate::class);
+    }
+
+    /**
      * Get the UCM users associated with this UCM.
      */
     public function ucmUsers(): BelongsToMany
     {
         return $this->belongsToMany(UcmUser::class, 'ucm_user_ucm', 'ucm_id', 'ucm_user_id')
-            ->withPivot(['home_cluster', 'im_presence_enabled'])
+            ->withPivot([
+                'home_cluster',
+                'im_presence_enabled'
+            ])
             ->withTimestamps();
     }
 

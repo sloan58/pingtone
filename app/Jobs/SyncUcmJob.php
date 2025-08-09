@@ -13,6 +13,7 @@ use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
+use App\Models\SoftkeyTemplate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -100,7 +101,6 @@ class SyncUcmJob implements ShouldQueue
             Log::info("{$this->ucm->name}: syncPhoneModels completed");
 
             // Sync Phone Model Expansion Modules
-            $start = now();
             $expansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm2.name module, tm.name model
                       FROM typesupportsfeature tsf
                       JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
@@ -115,7 +115,6 @@ class SyncUcmJob implements ShouldQueue
             Log::info("{$this->ucm->name}: syncPhoneModelExpansionModules completed");
 
             // Sync Phone Model Max Expansion Modules
-            $start = now();
             $maxExpansionModules = $axlApi->performSqlQuery("SELECT DISTINCT tm.name model, psf.param max
                       FROM typesupportsfeature tsf
                       JOIN productsupportsfeature psf ON psf.tksupportsfeature = tsf.enum
@@ -129,6 +128,20 @@ class SyncUcmJob implements ShouldQueue
                       AND tm.name LIKE 'Cisco%'");
             PhoneModel::storeMaxExpansionModuleData($maxExpansionModules, $this->ucm);
             Log::info("{$this->ucm->name}: syncPhoneModelMaxExpansionModule completed");
+
+            // Sync Softkey Templates
+            $start = now();
+            $softkeyTemplates = $axlApi->listUcmObjects(
+                'listSoftKeyTemplate',
+                [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ],
+                'softKeyTemplate'
+            );
+            SoftkeyTemplate::storeUcmData($softkeyTemplates, $this->ucm);
+            $this->ucm->softkeyTemplates()->where('updated_at', '<', $start)->delete();
+            Log::info("{$this->ucm->name}: syncSoftkeyTemplates completed");
 
             // Sync UCM Users
             $start = now();
