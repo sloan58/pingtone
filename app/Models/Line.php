@@ -2,24 +2,14 @@
 
 namespace App\Models;
 
+use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Line extends Model
 {
-    protected $fillable = [
-        'pkid',
-        'pattern',
-        'description',
-        'route_partition_name',
-        'calling_search_space_name',
-        'call_pickup_group_name',
-        'auto_answer',
-        'secondary_calling_search_space_name',
-        'recording_media_source',
-        'ucm_id',
-    ];
+    protected $fillable = [];
 
     public function ucm(): BelongsTo
     {
@@ -41,5 +31,17 @@ class Line extends Model
                 'ring_settings',
             ])
             ->withTimestamps();
+    }
+
+    public static function storeUcmData(array $responseData, Ucm $ucm): void
+    {
+        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
+
+        MongoBulkUpsert::upsert(
+            'lines',
+            $rows,
+            ['ucm_id', 'pattern', 'routePartitionName'],
+            ['pattern' => 1, 'routePartitionName' => 1, 'ucm_id' => 1]
+        );
     }
 }
