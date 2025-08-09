@@ -11,8 +11,7 @@ return new class extends Migration
             $table->string('pattern')->index();
             $table->string('uuid')->index();
             $table->string('ucm_id')->index();
-            $table->string('routePartitionName')->nullable()->index();
-            $table->unique(['ucm_id', 'pattern', 'routePartitionName']);
+            $table->unique(['uuid', 'ucm_id']);
         });
     }
 

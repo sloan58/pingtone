@@ -29,8 +29,6 @@ class CommonPhoneConfig extends Model
             'common_phone_configs',
             $rows,
             ['ucm_id', 'name'],
-            null,
-            1000,
             ['name' => 1, 'ucm_id' => 1]
         );
     }

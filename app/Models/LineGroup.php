@@ -29,8 +29,6 @@ class LineGroup extends Model
             'line_groups',
             $rows,
             ['ucm_id', 'name'],
-            null,
-            1000,
             ['name' => 1, 'ucm_id' => 1]
         );
     }

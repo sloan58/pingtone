@@ -22,8 +22,8 @@ class Intercom extends Model
         MongoBulkUpsert::upsert(
             'intercoms',
             $rows,
-            ['ucm_id', 'pattern', 'routePartitionName'],
-            ['pattern' => 1, 'routePartitionName' => 1, 'ucm_id' => 1]
+            ['uuid', 'ucm_id'],
+            ['uuid' => 1, 'ucm_id' => 1]
         );
     }
 }

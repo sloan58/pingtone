@@ -40,8 +40,8 @@ class Line extends Model
         MongoBulkUpsert::upsert(
             'lines',
             $rows,
-            ['ucm_id', 'pattern', 'routePartitionName'],
-            ['pattern' => 1, 'routePartitionName' => 1, 'ucm_id' => 1]
+            ['uuid', 'ucm_id'],
+            ['uuid' => 1, 'ucm_id' => 1]
         );
     }
 }

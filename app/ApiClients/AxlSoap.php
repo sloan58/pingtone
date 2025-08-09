@@ -111,7 +111,7 @@ class AxlSoap extends SoapClient
         try {
             return json_decode(json_encode($this->__soapCall($methodName, [
                 $methodName => $listObject
-            ])->return->{$responseProperty}), true);
+            ])->return->{$responseProperty} ?? []), true);
         } catch (SoapFault $e) {
             $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty]);
         } catch (Exception $e) {
