@@ -12,6 +12,7 @@ use App\Models\Location;
 use App\Models\LineGroup;
 use App\Models\Intercom;
 use App\Models\PhoneModel;
+use App\Models\Phone;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
 use App\Models\SyncHistory;
@@ -386,6 +387,32 @@ class SyncUcmJob implements ShouldQueue
         );
         PhoneButtonTemplate::storeButtonTemplateDetails($templateDetails, $this->ucm);
         Log::info("{$this->ucm->name}: syncPhoneButtonTemplateDetails completed");
+
+        // Sync Phones (list + get for details)
+        $start = now();
+        $phoneList = $axlApi->listUcmObjects(
+            'listPhone',
+            [
+                'searchCriteria' => ['name' => '%'],
+                'returnedTags' => ['name' => ''],
+            ],
+            'phone'
+        );
+        $names = Phone::storeUcmList($phoneList, $this->ucm);
+
+        $details = [];
+        foreach ($names as $name) {
+            try {
+                $details[] = $axlApi->getPhoneByName($name);
+            } catch (\Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get phone details for {$name}: {$e->getMessage()}");
+            }
+        }
+        if (!empty($details)) {
+            Phone::storeUcmDetails($details, $this->ucm);
+        }
+        $this->ucm->phones()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncPhones completed");
 
         Log::info("UCM sync completed successfully", [
             'ucm_id' => $this->ucm->id,

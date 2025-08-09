@@ -346,6 +346,27 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Get full phone details by name (RPhone)
+     * @throws SoapFault
+     */
+    public function getPhoneByName(string $name): array
+    {
+        try {
+            $res = $this->__soapCall('getPhone', [
+                'getPhone' => [
+                    'name' => $name,
+                ],
+            ]);
+
+            // Normalize to array
+            return json_decode(json_encode($res->return->phone), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$name]);
+        }
+    }
+
+    /**
      * Format SQL query for pagination
      *
      * @param string $query

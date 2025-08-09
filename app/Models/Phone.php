@@ -2,43 +2,14 @@
 
 namespace App\Models;
 
+use App\Support\MongoBulkUpsert;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Phone extends Model
 {
-    protected $fillable = [
-        'pkid',
-        'name',
-        'description',
-        'model',
-        'protocol',
-        'location_name',
-        'calling_search_space_name',
-        'subscribe_calling_search_space_name',
-        'device_pool_name',
-        'sip_profile_name',
-        'phone_template_name',
-        'softkey_template_name',
-        'common_phone_config_name',
-        'expansion_modules',
-        'hlog',
-        'dnd_status',
-        'owner_user_name',
-        'load_information',
-        'vendor_config',
-        'enable_extension_mobility',
-        'authentication_url',
-        'secure_authentication_url',
-        'ip_address',
-        'status',
-        'registered_with',
-        'active_load',
-        'inactive_load',
-        'css_full_text',
-        'ucm_id',
-    ];
+    protected $fillable = [];
 
     protected $casts = [
         'expansion_modules' => 'array',
@@ -66,5 +37,32 @@ class Phone extends Model
                 'ring_settings',
             ])
             ->withTimestamps();
+    }
+
+    public static function storeUcmList(array $responseData, Ucm $ucm): array
+    {
+        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
+
+        MongoBulkUpsert::upsert(
+            'phones',
+            $rows,
+            ['ucm_id', 'name'],
+            ['name' => 1, 'ucm_id' => 1]
+        );
+
+        return array_column($responseData, 'name');
+    }
+
+    public static function storeUcmDetails(array $phones, Ucm $ucm): void
+    {
+        // Upsert full RPhone docs by uuid+ucm_id (assumes getPhone responses)
+        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $phones);
+
+        MongoBulkUpsert::upsert(
+            'phones',
+            $rows,
+            ['uuid', 'ucm_id'],
+            ['uuid' => 1, 'ucm_id' => 1]
+        );
     }
 }
