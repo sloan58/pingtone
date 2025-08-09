@@ -41,21 +41,14 @@ class PhoneModel extends Model
      */
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        foreach (array_chunk($responseData, 1000) as $chunk) {
-            $rows = array_map(fn($record) => [
-                'name' => $record->name,
-                'ucm_id' => $ucm->id,
-            ], $chunk);
+        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
 
-            MongoBulkUpsert::upsert(
-                'phone_models',
-                $rows,
-                ['ucm_id', 'name'],
-                ['name', 'ucm_id'],
-                1000,
-                ['name' => 1, 'ucm_id' => 1]
-            );
-        }
+        MongoBulkUpsert::upsert(
+            'phone_models',
+            $rows,
+            ['ucm_id', 'name'],
+            ['name' => 1, 'ucm_id' => 1]
+        );
     }
 
     /**

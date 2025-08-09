@@ -23,22 +23,14 @@ class DevicePool extends Model
 
     public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        foreach (array_chunk($responseData, 1000) as $chunk) {
-            $rows = array_map(fn($record) => [
-                'uuid' => $record->uuid ?? null,
-                'name' => $record->name ?? null,
-                'ucm_id' => $ucm->id,
-            ], $chunk);
+        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
 
-            MongoBulkUpsert::upsert(
-                'device_pools',
-                $rows,
-                ['ucm_id', 'name'],
-                ['uuid', 'name', 'ucm_id'],
-                1000,
-                ['name' => 1, 'ucm_id' => 1]
-            );
-        }
+        MongoBulkUpsert::upsert(
+            'device_pools',
+            $rows,
+            ['ucm_id', 'name'],
+            ['name' => 1, 'ucm_id' => 1]
+        );
     }
 }
 
