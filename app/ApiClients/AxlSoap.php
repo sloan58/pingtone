@@ -387,6 +387,26 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Get full UCM user details by userid or uuid (RUser)
+     * @throws SoapFault
+     */
+    public function getUserByUserId(string $userid): array
+    {
+        try {
+            $res = $this->__soapCall('getUser', [
+                'getUser' => [
+                    'userid' => $userid,
+                ],
+            ]);
+
+            return json_decode(json_encode($res->return->user), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$userid]);
+        }
+    }
+
+    /**
      * Format SQL query for pagination
      *
      * @param string $query

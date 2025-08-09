@@ -342,23 +342,26 @@ class SyncUcmJob implements ShouldQueue
         LineGroup::storeUcmData($lineGroups, $this->ucm);
         $this->ucm->lineGroups()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncLineGroups completed");
-        // Sync UCM Users
+        // Sync UCM Users (list + get for details)
         $start = now();
         $users = $axlApi->listUcmObjects(
             'listUser',
             [
                 'searchCriteria' => ['userid' => '%'],
-                'returnedTags' => [
-                    'uuid' => '',
-                    'userid' => '',
-                    'mailid' => '',
-                    'homeCluster' => '',
-                    'imAndPresenceEnable' => '',
-                ],
+                'returnedTags' => [ 'userid' => '' ],
             ],
             'user'
         );
-        UcmUser::storeUcmData($users, $this->ucm);
+        foreach ($users as $user) {
+            try {
+                UcmUser::storeUcmDetails(
+                    $axlApi->getUserByUserId($user['userid']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get user details for {$user['userid']}: {$e->getMessage()}");
+            }
+        }
         $this->ucm->ucmUsers()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncUcmUsers completed");
 
