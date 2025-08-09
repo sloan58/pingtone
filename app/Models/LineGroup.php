@@ -8,11 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LineGroup extends Model
 {
-    protected $fillable = [
-        'uuid',
-        'name',
-        'ucm_id',
-    ];
+    protected $guarded = [];
 
     protected $with = ['ucm'];
 
@@ -21,16 +17,10 @@ class LineGroup extends Model
         return $this->belongsTo(Ucm::class);
     }
 
-    public static function storeUcmData(array $responseData, Ucm $ucm): void
+    public static function storeUcmDetails(array $lineGroup, Ucm $ucm): void
     {
-        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
-
-        MongoBulkUpsert::upsert(
-            'line_groups',
-            $rows,
-            ['ucm_id', 'name'],
-            ['name' => 1, 'ucm_id' => 1]
-        );
+        $lineGroup['ucm_id'] = $ucm->id;
+        self::updateOrCreate(['uuid' => $lineGroup['uuid']], $lineGroup);
     }
 }
 

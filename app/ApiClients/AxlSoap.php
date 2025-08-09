@@ -407,6 +407,26 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Get full line group details by name (RLineGroup)
+     * @throws SoapFault
+     */
+    public function getLineGroupByName(string $name): array
+    {
+        try {
+            $res = $this->__soapCall('getLineGroup', [
+                'getLineGroup' => [
+                    'name' => $name,
+                ],
+            ]);
+
+            return json_decode(json_encode($res->return->lineGroup), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$name]);
+        }
+    }
+
+    /**
      * Get full remote destination profile details by name (RRemoteDestinationProfile)
      * @throws SoapFault
      */

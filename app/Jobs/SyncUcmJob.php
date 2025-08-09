@@ -331,17 +331,26 @@ class SyncUcmJob implements ShouldQueue
         $this->ucm->commonPhoneConfigs()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncCommonPhoneConfigs completed");
 
-        // Sync Line Groups
+        // Sync Line Groups (list + get for details)
         $start = now();
         $lineGroups = $axlApi->listUcmObjects(
             'listLineGroup',
             [
                 'searchCriteria' => ['name' => '%'],
-                'returnedTags' => ['name' => '', 'uuid' => ''],
+                'returnedTags' => ['name' => ''],
             ],
             'lineGroup'
         );
-        LineGroup::storeUcmData($lineGroups, $this->ucm);
+        foreach ($lineGroups as $lg) {
+            try {
+                LineGroup::storeUcmDetails(
+                    $axlApi->getLineGroupByName($lg['name']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get line group details for {$lg['name']}: {$e->getMessage()}");
+            }
+        }
         $this->ucm->lineGroups()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncLineGroups completed");
 
