@@ -262,7 +262,7 @@ class SyncUcmJob implements ShouldQueue
         $this->ucm->callPickupGroups()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncCallPickupGroups completed");
 
-        // Sync Lines
+        // Sync Lines (list + get by uuid)
         $start = now();
         $lines = $axlApi->listUcmObjects(
             'listLine',
@@ -271,25 +271,24 @@ class SyncUcmJob implements ShouldQueue
                     'pattern' => '%',
                     'usage' => 'Device',
                 ],
-                'returnedTags' => [
-                    'usage' => '',
-                    'pattern' => '',
-                    'description' => '',
-                    'alertingName' => '',
-                    'autoAnswer' => '',
-                    'shareLineAppearanceCssName' => '',
-                    'routePartitionName' => '',
-                    'voiceMailProfileName' => '',
-                    'callPickupGroupName' => '',
-                ],
+                'returnedTags' => ['uuid' => ''],
             ],
             'line'
         );
-        Line::storeUcmData($lines, $this->ucm);
+        foreach ($lines as $line) {
+            try {
+                Line::storeUcmDetails(
+                    $axlApi->getLineByUuid($line['uuid']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get line details for {$line['uuid']}: {$e->getMessage()}");
+            }
+        }
         $this->ucm->lines()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncLines completed");
 
-        // Sync Intercoms
+        // Sync Intercoms (list + get by uuid)
         $start = now();
         $intercoms = $axlApi->listUcmObjects(
             'listLine',
@@ -298,22 +297,20 @@ class SyncUcmJob implements ShouldQueue
                     'pattern' => '%',
                     'usage' => 'Device Intercom',
                 ],
-                'returnedTags' => [
-                    'uuid' => '',
-                    'usage' => '',
-                    'pattern' => '',
-                    'description' => '',
-                    'alertingName' => '',
-                    'autoAnswer' => '',
-                    'shareLineAppearanceCssName' => '',
-                    'routePartitionName' => '',
-                    'voiceMailProfileName' => '',
-                    'callPickupGroupName' => '',
-                ],
+                'returnedTags' => ['uuid' => ''],
             ],
             'line'
         );
-        Intercom::storeUcmData($intercoms, $this->ucm);
+        foreach ($intercoms as $ic) {
+            try {
+                Intercom::storeUcmDetails(
+                    $axlApi->getLineByUuid($ic['uuid']),
+                    $this->ucm
+                );
+            } catch (Exception $e) {
+                Log::warning("{$this->ucm->name}: Failed to get intercom details for {$ic['uuid']}: {$e->getMessage()}");
+            }
+        }
         $this->ucm->intercoms()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncIntercoms completed");
 

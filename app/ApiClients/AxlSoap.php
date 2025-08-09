@@ -427,6 +427,26 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Get full line details by uuid (RLine)
+     * @throws SoapFault
+     */
+    public function getLineByUuid(string $uuid): array
+    {
+        try {
+            $res = $this->__soapCall('getLine', [
+                'getLine' => [
+                    'uuid' => $uuid,
+                ],
+            ]);
+
+            return json_decode(json_encode($res->return->line), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$uuid]);
+        }
+    }
+
+    /**
      * Get full remote destination profile details by name (RRemoteDestinationProfile)
      * @throws SoapFault
      */
