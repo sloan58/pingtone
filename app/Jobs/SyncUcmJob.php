@@ -7,20 +7,21 @@ use Exception;
 use SoapFault;
 use App\Models\Ucm;
 use App\Models\UcmUser;
+use App\Models\Location;
+use App\Models\CallPickupGroup;
 use App\Models\PhoneModel;
+use App\Models\DevicePool;
+use App\Models\SipProfile;
 use App\Models\SyncHistory;
 use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
+use App\Models\RoutePartition;
+use App\Models\ServiceProfile;
 use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
-use App\Models\PhoneButtonTemplate;
-use App\Models\RoutePartition;
 use App\Models\CallingSearchSpace;
-use App\Models\DevicePool;
-use App\Models\ServiceProfile;
-use App\Models\SipProfile;
-use App\Models\Location;
+use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -166,12 +167,12 @@ class SyncUcmJob implements ShouldQueue
         // Sync Calling Search Spaces
         $start = now();
         $callingSearchSpaces = $axlApi->listUcmObjects(
-            'listCallingSearchSpace',
+            'listCss',
             [
                 'searchCriteria' => ['name' => '%'],
                 'returnedTags' => ['name' => '', 'uuid' => ''],
             ],
-            'callingSearchSpace'
+            'css'
         );
         CallingSearchSpace::storeUcmData($callingSearchSpaces, $this->ucm);
         $this->ucm->callingSearchSpaces()->where('updated_at', '<', $start)->delete();
@@ -232,6 +233,23 @@ class SyncUcmJob implements ShouldQueue
         Location::storeUcmData($locations, $this->ucm);
         $this->ucm->locations()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncLocations completed");
+
+        // Sync Call Pickup Groups
+        $start = now();
+        $callPickupGroups = $axlApi->listUcmObjects(
+            'listCallPickupGroup',
+            [
+                'searchCriteria' => ['pattern' => '%'],
+                'returnedTags' => [
+                    'pattern' => '',
+                    'routePartitionName' => '',
+                ],
+            ],
+            'callPickupGroup'
+        );
+        CallPickupGroup::storeUcmData($callPickupGroups, $this->ucm);
+        $this->ucm->callPickupGroups()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncCallPickupGroups completed");
 
         // Sync UCM Users
         $start = now();

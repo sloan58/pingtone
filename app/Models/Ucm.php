@@ -140,6 +140,11 @@ class Ucm extends Model
         return $this->hasMany(Location::class);
     }
 
+    public function callPickupGroups(): HasMany
+    {
+        return $this->hasMany(CallPickupGroup::class);
+    }
+
     /**
      * Get the UCM users associated with this UCM.
      */
