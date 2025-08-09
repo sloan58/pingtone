@@ -14,6 +14,7 @@ use Illuminate\Bus\Queueable;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
 use App\Models\SoftkeyTemplate;
+use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -162,6 +163,20 @@ class SyncUcmJob implements ShouldQueue
             UcmUser::storeUcmData($users, $this->ucm);
             $this->ucm->ucmUsers()->where('updated_at', '<', $start)->delete();
             Log::info("{$this->ucm->name}: syncUcmUsers completed");
+
+            // Sync Phone Button Templates
+            $start = now();
+            $phoneButtonTemplates = $axlApi->listUcmObjects(
+                'listPhoneButtonTemplate',
+                [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ],
+                'phoneButtonTemplate'
+            );
+            PhoneButtonTemplate::storeUcmData($phoneButtonTemplates, $this->ucm);
+            $this->ucm->phoneButtonTemplates()->where('updated_at', '<', $start)->delete();
+            Log::info("{$this->ucm->name}: syncPhoneButtonTemplates completed");
 
             Log::info("UCM sync completed successfully", [
                 'ucm_id' => $this->ucm->id,
