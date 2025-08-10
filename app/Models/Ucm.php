@@ -165,6 +165,11 @@ class Ucm extends Model
         return $this->hasMany(RemoteDestination::class);
     }
 
+    public function roles(): HasMany
+    {
+        return $this->hasMany(UcmRole::class);
+    }
+
     /**
      * Get the UCM users associated with this UCM.
      */

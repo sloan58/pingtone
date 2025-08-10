@@ -495,6 +495,13 @@ class SyncUcmJob implements ShouldQueue
         $this->ucm->deviceProfiles()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncDeviceProfiles completed");
 
+        // Sync UCM Roles (SQL)
+        $start = now();
+        $roles = $axlApi->performSqlQuery('select pkid, name FROM dirgroup');
+        UcmRole::storeUcmData($roles, $this->ucm);
+        $this->ucm->roles()->where('updated_at', '<', $start)->delete();
+        Log::info("{$this->ucm->name}: syncUcmRoles completed");
+
         Log::info("UCM sync completed successfully", [
             'ucm_id' => $this->ucm->id,
             'version' => $version,
