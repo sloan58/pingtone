@@ -5,17 +5,35 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Phone;
 use Illuminate\Http\Request;
-// use App\Http\Controllers\Concerns\AppliesSearchFilters;
+use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
 class PhoneController extends Controller
 {
-    // use AppliesSearchFilters;
+    use AppliesSearchFilters;
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
         $query = Phone::query()->with(['ucm']);
+
+        // Filters (AdvancedSearch) via JSON to avoid query parser issues
+        $rawFilters = $request->input('filters_json');
+        $filters = [];
+        if (is_string($rawFilters) && $rawFilters !== '') {
+            $decoded = json_decode($rawFilters, true);
+            if (is_array($decoded)) {
+                $filters = array_values(array_filter($decoded, function ($row) {
+                    return is_array($row) && isset($row['field'], $row['operator']) && ($row['value'] ?? '') !== '';
+                }));
+            }
+        }
+        $logic = strtolower((string) $request->input('logic', 'and')) === 'or' ? 'or' : 'and';
+        if (!empty($filters)) {
+            $this->applyFilters($query, $filters, $logic, [
+                'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
+            ]);
+        }
 
         // TanStack Table server-driven paging/sorting (filters to be added later if needed)
         $sort = (string) $request->input('sort', 'name:asc');
@@ -35,6 +53,10 @@ class PhoneController extends Controller
             'tableState' => [
                 'sort' => $sortField.':'.$sortDir,
                 'perPage' => $perPage,
+            ],
+            'filters' => [
+                'applied' => $filters,
+                'logic' => $logic,
             ],
         ]);
     }

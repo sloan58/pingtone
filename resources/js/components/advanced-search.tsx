@@ -13,12 +13,12 @@ interface AdvancedSearchProps {
 }
 
 export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps) {
-    const initialRows = (initial?.applied ?? []).map(r => ({ field: r.field, operator: r.operator, value: r.value }));
+    const initialRows = (initial?.applied ?? []).map((r) => ({ field: r.field, operator: r.operator, value: r.value }));
     const [rows, setRows] = useState<FilterRow[]>(initialRows);
     const [logic, setLogic] = useState<'and' | 'or'>(initial?.logic ?? 'and');
 
     useEffect(() => {
-        const next = (initial?.applied ?? []).map(r => ({ field: r.field, operator: r.operator, value: r.value }));
+        const next = (initial?.applied ?? []).map((r) => ({ field: r.field, operator: r.operator, value: r.value }));
         setRows(next);
         setLogic(initial?.logic ?? 'and');
     }, [initial?.applied, initial?.logic]);
@@ -51,12 +51,10 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
 
     const updateRow = (i: number, patch: Partial<FilterRow>) => setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
 
-    const apply = () => {
-        const sanitized = rows.filter((r) => r.field && r.operator && String(r.value).trim() !== '');
-        onApply({ filters: sanitized, logic });
-        // prevent accumulative UI duplication by resetting to sanitized state
-        setRows(sanitized);
-    };
+  const apply = () => {
+    const sanitized = rows.filter((r) => r.field && r.operator && String(r.value).trim() !== '');
+    onApply({ filters: sanitized, logic });
+  };
 
     return (
         <div className="flex flex-col gap-3">
