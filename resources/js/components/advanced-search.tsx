@@ -72,14 +72,10 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
                     <span className="text-sm">conditions</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button type="button" className="rounded-md border px-2 py-1 text-sm" onClick={addRow}>
+                    <button type="button" className="rounded-md border px-3 py-2 text-sm" onClick={addRow}>
                         Add condition
                     </button>
-                    <button
-                        type="button"
-                        className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
-                        onClick={apply}
-                    >
+                    <button type="button" className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground" onClick={apply}>
                         Apply filters
                     </button>
                 </div>
