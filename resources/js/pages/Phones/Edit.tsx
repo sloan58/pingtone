@@ -31,6 +31,8 @@ export default function Edit({ phone }: Props) {
     const [isDirty, setIsDirty] = useState(false);
     const [originalData] = useState(phone);
 
+
+
     const [devicePools, setDevicePools] = useState<Option[]>([]);
     const [phoneModels, setPhoneModels] = useState<Option[]>([]);
 
@@ -49,9 +51,12 @@ export default function Edit({ phone }: Props) {
 
     useEffect(() => {
         // Handle devicePoolName properly - it might be an object or string
-        const currentDevicePool = typeof data.devicePoolName === 'string' ? data.devicePoolName : data.devicePoolName?.name || '';
+        const currentDevicePool =
+            typeof data.devicePoolName === 'string' ? data.devicePoolName : data.devicePoolName?._ || data.devicePoolName?.name || '';
         const originalDevicePool =
-            typeof originalData.devicePoolName === 'string' ? originalData.devicePoolName : originalData.devicePoolName?.name || '';
+            typeof originalData.devicePoolName === 'string'
+                ? originalData.devicePoolName
+                : originalData.devicePoolName?._ || originalData.devicePoolName?.name || '';
 
         const isDataDirty =
             data.name !== originalData.name ||
@@ -59,8 +64,6 @@ export default function Edit({ phone }: Props) {
             (data.model || '') !== (originalData.model || '') ||
             currentDevicePool !== originalDevicePool ||
             JSON.stringify(data.buttons || []) !== JSON.stringify(originalData.buttons || []);
-
-
 
         setIsDirty(isDataDirty);
     }, [data.name, data.description, data.model, data.devicePoolName, data.buttons, originalData]);
@@ -143,7 +146,11 @@ export default function Edit({ phone }: Props) {
                                             value: o.name,
                                             label: o.name,
                                         }))}
-                                        value={data.devicePoolName || ''}
+                                        value={
+                                            typeof data.devicePoolName === 'string'
+                                                ? data.devicePoolName
+                                                : data.devicePoolName?._ || data.devicePoolName?.name || ''
+                                        }
                                         onValueChange={(value) => setData('devicePoolName', value)}
                                         placeholder="Select a device pool..."
                                         searchPlaceholder="Search device pools..."
