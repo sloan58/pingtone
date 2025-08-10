@@ -17,7 +17,7 @@ class PhoneController extends Controller
     {
         $query = Phone::query()->with(['ucm']);
 
-        $filters = (array) $request->input('filters', []);
+        $filters = array_values((array) $request->input('filters', []));
         $logic = (string) $request->input('logic', 'and');
         $this->applyFilters($query, $filters, $logic, [
             'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
