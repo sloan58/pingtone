@@ -88,6 +88,7 @@ class PhoneController extends Controller
                 'description' => $phone->description ?? '',
                 'model' => $phone->model ?? '',
                 'devicePoolName' => $phone->devicePoolName ?? '',
+                'buttons' => $phone->buttons ?? [],
             ],
         ]);
     }
@@ -102,6 +103,11 @@ class PhoneController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
             'model' => ['nullable', 'string', 'max:255'],
             'devicePoolName' => ['nullable', 'string', 'max:255'],
+            'buttons' => ['sometimes', 'array'],
+            'buttons.*.index' => ['nullable'],
+            'buttons.*.type' => ['nullable', 'string'],
+            'buttons.*.label' => ['nullable', 'string'],
+            'buttons.*.target' => ['nullable', 'string'],
         ]);
 
         $phone->update($validated);

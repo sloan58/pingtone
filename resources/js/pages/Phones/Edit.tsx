@@ -4,6 +4,7 @@ import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { ButtonsEditor, PhoneButton } from '@/components/phone-edit/buttons-editor';
 
 type PhoneForm = {
     id: string;
@@ -12,6 +13,7 @@ type PhoneForm = {
     description?: string;
     model?: string;
     devicePoolName?: string;
+    buttons?: PhoneButton[];
 };
 
 type Option = { id: string; name: string; uuid?: string };
@@ -60,17 +62,29 @@ export default function Edit({ phone }: Props) {
                             <form onSubmit={submit} className="space-y-6 p-6">
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Name</label>
-                                    <input className="w-full rounded-md border bg-background p-2" value={data.name} onChange={(e) => setData('name', e.target.value)} />
+                                    <input
+                                        className="w-full rounded-md border bg-background p-2"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                    />
                                     {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Description</label>
-                                    <input className="w-full rounded-md border bg-background p-2" value={data.description || ''} onChange={(e) => setData('description', e.target.value)} />
+                                    <input
+                                        className="w-full rounded-md border bg-background p-2"
+                                        value={data.description || ''}
+                                        onChange={(e) => setData('description', e.target.value)}
+                                    />
                                     {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Model</label>
-                                    <select className="w-full rounded-md border bg-background p-2" value={data.model || ''} onChange={(e) => setData('model', e.target.value)}>
+                                    <select
+                                        className="w-full rounded-md border bg-background p-2"
+                                        value={data.model || ''}
+                                        onChange={(e) => setData('model', e.target.value)}
+                                    >
                                         <option value="">Select a model…</option>
                                         {phoneModels.map((o) => (
                                             <option key={o.id} value={o.name}>
@@ -82,7 +96,11 @@ export default function Edit({ phone }: Props) {
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Device Pool</label>
-                                    <select className="w-full rounded-md border bg-background p-2" value={data.devicePoolName || ''} onChange={(e) => setData('devicePoolName', e.target.value)}>
+                                    <select
+                                        className="w-full rounded-md border bg-background p-2"
+                                        value={data.devicePoolName || ''}
+                                        onChange={(e) => setData('devicePoolName', e.target.value)}
+                                    >
                                         <option value="">Select a device pool…</option>
                                         {devicePools.map((o) => (
                                             <option key={o.id} value={o.name}>
@@ -93,11 +111,19 @@ export default function Edit({ phone }: Props) {
                                     {errors.devicePoolName && <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>}
                                 </div>
 
+                                <div className="space-y-3">
+                                    <h3 className="text-lg font-semibold">Buttons & Keys</h3>
+                                    <ButtonsEditor value={data.buttons || []} onChange={(next) => setData('buttons', next)} />
+                                </div>
+
                                 <div className="flex items-center justify-between">
                                     <Link href={`/phones/${data.id}`} className="text-sm text-muted-foreground hover:underline">
                                         Cancel
                                     </Link>
-                                    <button disabled={processing} className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50">
+                                    <button
+                                        disabled={processing}
+                                        className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+                                    >
                                         Save Changes
                                     </button>
                                 </div>
