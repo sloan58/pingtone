@@ -41,10 +41,11 @@ export default function Index({ phones, filters }: Props & { filters?: { applied
                                     ]}
                                     initial={filters}
                                     onApply={(payload) => {
-                                        // Normalize payload to plain arrays (avoid nested objects causing duplication)
                                         const normalized = {
                                             logic: payload.logic,
-                                            filters: payload.filters.map(f => ({ field: f.field, operator: f.operator, value: f.value })),
+                                            filters_json: JSON.stringify(
+                                                payload.filters.map((f) => ({ field: f.field, operator: f.operator, value: f.value }))
+                                            ),
                                         };
                                         router.get('/phones', normalized, { replace: true, preserveState: false, preserveScroll: true });
                                     }}

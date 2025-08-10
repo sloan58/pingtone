@@ -18,7 +18,9 @@ class PhoneController extends Controller
         $query = Phone::query()->with(['ucm']);
 
         // Normalize filters to an array of rows: [['field'=>..,'operator'=>..,'value'=>..], ...]
-        $rawFilters = $request->input('filters');
+        $rawFilters = $request->input('filters_json')
+            ? json_decode((string) $request->input('filters_json'), true)
+            : $request->input('filters');
         if ($rawFilters === null) {
             $filters = [];
         } elseif (is_array($rawFilters)) {
