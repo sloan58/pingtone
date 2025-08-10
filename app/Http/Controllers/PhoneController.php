@@ -33,4 +33,44 @@ class PhoneController extends Controller
             'phone' => $phone,
         ]);
     }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Phone $phone)
+    {
+        $phone->load('ucm');
+
+        return Inertia::render('Phones/Edit', [
+            'phone' => [
+                'id' => (string) $phone->getKey(),
+                'ucm_id' => (string) $phone->ucm_id,
+                'name' => $phone->name,
+                'description' => $phone->description ?? '',
+                'model' => $phone->model ?? '',
+                'devicePoolName' => $phone->devicePoolName ?? '',
+            ],
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Phone $phone)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'model' => ['nullable', 'string', 'max:255'],
+            'devicePoolName' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $phone->update($validated);
+
+        return redirect()->route('phones.show', $phone)->with('toast', [
+            'type' => 'success',
+            'title' => 'Phone updated',
+            'message' => 'The phone was updated successfully.',
+        ]);
+    }
 } 

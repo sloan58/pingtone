@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\UcmController;
+use App\Http\Controllers\PhoneController;
+use App\Http\Controllers\InfrastructureOptionsController;
 use App\Http\Controllers\SyncHistoryController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Foundation\Application;
@@ -20,6 +22,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('ucm', UcmController::class)->except(['show']);
+    Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
     
     // UCM API test route
     Route::post('/ucm/{ucm}/test-connection', [UcmController::class, 'testConnection'])->name('ucm.test-connection');
@@ -31,6 +34,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/sync-history/{syncHistory}/fail', [SyncHistoryController::class, 'failSync'])->name('sync-history.fail');
     
 
+});
+
+// Infrastructure options (scoped by UCM)
+Route::middleware('auth')->prefix('api')->group(function () {
+    Route::get('/ucm/{ucm}/options/device-pools', [InfrastructureOptionsController::class, 'devicePools']);
+    Route::get('/ucm/{ucm}/options/phone-models', [InfrastructureOptionsController::class, 'phoneModels']);
 });
 
 Route::get('/test-toast', function () {
