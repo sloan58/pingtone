@@ -1,4 +1,6 @@
-import { AdvancedSearch, FilterRow } from '@/components/advanced-search';
+import * as React from 'react';
+import { DataTable } from '@/components/data-table';
+import { ColumnDef } from '@tanstack/react-table';
 import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
@@ -16,7 +18,34 @@ interface Props {
     };
 }
 
-export default function Index({ phones, filters }: Props & { filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' } }) {
+export default function Index({ phones, tableState }: Props & { tableState?: { sort: string; perPage: number } }) {
+    const [sorting, setSorting] = React.useState(() => {
+        const [id, dir] = (tableState?.sort ?? 'name:asc').split(':');
+        return [{ id, desc: dir === 'desc' }];
+    });
+
+    const columns: ColumnDef<Phone & any>[] = [
+        { accessorKey: 'name', header: 'Name', cell: (info) => info.getValue() as string },
+        { accessorKey: 'description', header: 'Description', cell: (info) => (info.getValue() as string) || '' },
+        { accessorKey: 'model', header: 'Model', cell: (info) => (info.getValue() as string) || '' },
+        {
+            accessorKey: 'devicePoolName',
+            header: 'Device Pool',
+            cell: ({ row }) => {
+                const devicePool = (row.original as any).devicePoolName || (row.original as any).device_pool_name || '';
+                return typeof devicePool === 'string' ? devicePool : devicePool?.name || devicePool?._ || devicePool?.value || '';
+            },
+        },
+        {
+            id: 'actions',
+            header: 'Actions',
+            cell: ({ row }) => (
+                <Link href={`/phones/${(row.original as any).id}/edit`} className="text-primary hover:underline">
+                    Edit
+                </Link>
+            ),
+        },
+    ];
     return (
         <AppShell variant="sidebar">
             <Head title="Phones" />
@@ -30,82 +59,22 @@ export default function Index({ phones, filters }: Props & { filters?: { applied
                     <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
                         <div className="p-6">
                             <h2 className="mb-6 text-2xl font-semibold">Phones</h2>
-
-                            <div className="mb-4">
-                                <AdvancedSearch
-                                    fields={[
-                                        { value: 'name', label: 'Name' },
-                                        { value: 'description', label: 'Description' },
-                                        { value: 'model', label: 'Model' },
-                                        { value: 'devicePoolName', label: 'Device Pool' },
-                                    ]}
-                                    initial={filters}
-                                    onApply={(payload) => {
-                                        const normalized = {
-                                            logic: payload.logic,
-                                            filters_json: JSON.stringify(
-                                                payload.filters.map((f) => ({ field: f.field, operator: f.operator, value: f.value }))
-                                            ),
-                                        };
-                                        router.get('/phones', normalized, { replace: true, preserveState: false, preserveScroll: true });
-                                    }}
-                                />
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-border">
-                                    <thead className="bg-muted">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                                                Name
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                                                Description
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                                                Model
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                                                Device Pool
-                                            </th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border bg-card">
-                                        {phones.data.map((phone) => {
-                                            const devicePool =
-                                                (phone as any).devicePoolName ||
-                                                (phone as any).device_pool_name ||
-                                                (phone as any).devicepoolname ||
-                                                '';
-                                            const devicePoolText =
-                                                typeof devicePool === 'string'
-                                                    ? devicePool
-                                                    : devicePool?.name || devicePool?._ || devicePool?.value || '';
-                                            return (
-                                                <tr key={(phone as any).id ?? (phone as any)._id} className="hover:bg-muted/50">
-                                                    <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-foreground">
-                                                        {(phone as any).name}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm whitespace-nowrap text-muted-foreground">
-                                                        {(phone as any).description || ''}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm whitespace-nowrap text-muted-foreground">
-                                                        {(phone as any).model || ''}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm whitespace-nowrap text-muted-foreground">{devicePoolText}</td>
-                                                    <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
-                                                        <Link href={`/phones/${(phone as any).id}/edit`} className="text-primary hover:underline">
-                                                            Edit
-                                                        </Link>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                            <DataTable
+                                columns={columns}
+                                data={phones.data as any}
+                                sorting={sorting as any}
+                                onSortingChange={(next: any) => {
+                                    setSorting(next);
+                                    const first = next[0];
+                                    if (first) {
+                                        const dir = first.desc ? 'desc' : 'asc';
+                                        router.get('/phones', { sort: `${first.id}:${dir}`, page: phones.current_page, perPage: phones.per_page }, {
+                                            preserveState: true,
+                                            replace: true,
+                                        });
+                                    }
+                                }}
+                            />
                         </div>
                     </div>
                 </AppContent>

@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use App\Models\Phone;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Concerns\AppliesSearchFilters;
+// use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
 class PhoneController extends Controller
 {
-    use AppliesSearchFilters;
+    // use AppliesSearchFilters;
     /**
      * Display a listing of the resource.
      */
@@ -17,43 +17,24 @@ class PhoneController extends Controller
     {
         $query = Phone::query()->with(['ucm']);
 
-        // Normalize filters to an array of rows: [['field'=>..,'operator'=>..,'value'=>..], ...]
-        $rawFilters = $request->input('filters_json')
-            ? json_decode((string) $request->input('filters_json'), true)
-            : $request->input('filters');
-        if ($rawFilters === null) {
-            $filters = [];
-        } elseif (is_array($rawFilters)) {
-            // Single row case: ['field'=>..,'operator'=>..,'value'=>..]
-            if (isset($rawFilters['field'], $rawFilters['operator'])) {
-                $filters = [
-                    [
-                        'field' => (string) $rawFilters['field'],
-                        'operator' => (string) $rawFilters['operator'],
-                        'value' => $rawFilters['value'] ?? '',
-                    ],
-                ];
-            } else {
-                // Array of rows (possibly keyed): reindex and filter only valid rows
-                $filters = array_values(array_filter($rawFilters, function ($row) {
-                    return is_array($row) && isset($row['field'], $row['operator']);
-                }));
-            }
-        } else {
-            $filters = [];
-        }
-        $logic = (string) $request->input('logic', 'and');
-        $this->applyFilters($query, $filters, $logic, [
-            'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
-        ]);
+        // TanStack Table server-driven paging/sorting (filters to be added later if needed)
+        $sort = (string) $request->input('sort', 'name:asc');
+        [$sortField, $sortDir] = array_pad(explode(':', $sort, 2), 2, 'asc');
+        $sortField = in_array($sortField, ['name','description','model','devicePoolName']) ? $sortField : 'name';
+        $sortDir = strtolower($sortDir) === 'desc' ? 'desc' : 'asc';
 
-        $phones = $query->orderBy('name')->paginate(20)->appends($request->only('filters', 'logic'));
+        $perPage = (int) $request->input('perPage', 20);
+        if ($perPage < 5 || $perPage > 100) { $perPage = 20; }
+
+        $phones = $query->orderBy($sortField, $sortDir)
+            ->paginate($perPage)
+            ->appends($request->only('page','perPage','sort'));
 
         return Inertia::render('Phones/Index', [
             'phones' => $phones,
-            'filters' => [
-                'applied' => $filters,
-                'logic' => strtolower($logic) === 'or' ? 'or' : 'and',
+            'tableState' => [
+                'sort' => $sortField.':'.$sortDir,
+                'perPage' => $perPage,
             ],
         ]);
     }
