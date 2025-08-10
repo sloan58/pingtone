@@ -6,8 +6,9 @@ import { ButtonsEditor, PhoneButton } from '@/components/phone-edit/buttons-edit
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { PhoneInnerNav } from '@/components/phone-edit/phone-inner-nav';
 import { Combobox } from '@/components/ui/combobox';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 type PhoneForm = {
     id: string;
@@ -29,9 +30,7 @@ export default function Edit({ phone }: Props) {
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone);
     const [activeTab, setActiveTab] = useState<'device' | 'lines' | 'speed_dials' | 'blfs'>('device');
     const [isDirty, setIsDirty] = useState(false);
-    const [originalData] = useState(phone);
-
-
+    const [originalData, setOriginalData] = useState(phone);
 
     const [devicePools, setDevicePools] = useState<Option[]>([]);
     const [phoneModels, setPhoneModels] = useState<Option[]>([]);
@@ -50,7 +49,7 @@ export default function Edit({ phone }: Props) {
     }, [data.ucm_id]);
 
     useEffect(() => {
-        // Handle devicePoolName properly - it might be an object or string
+        // Handle devicePoolName properly - compare the actual values
         const currentDevicePool =
             typeof data.devicePoolName === 'string' ? data.devicePoolName : data.devicePoolName?._ || data.devicePoolName?.name || '';
         const originalDevicePool =
@@ -58,19 +57,55 @@ export default function Edit({ phone }: Props) {
                 ? originalData.devicePoolName
                 : originalData.devicePoolName?._ || originalData.devicePoolName?.name || '';
 
+        // Handle model properly - it's a simple string
+        const currentModel = data.model || '';
+        const originalModel = originalData.model || '';
+
         const isDataDirty =
             data.name !== originalData.name ||
             (data.description || '') !== (originalData.description || '') ||
-            (data.model || '') !== (originalData.model || '') ||
+            currentModel !== originalModel ||
             currentDevicePool !== originalDevicePool ||
             JSON.stringify(data.buttons || []) !== JSON.stringify(originalData.buttons || []);
+
+        console.log('Dirty state check:', {
+            name: { current: data.name, original: originalData.name, dirty: data.name !== originalData.name },
+            description: {
+                current: data.description || '',
+                original: originalData.description || '',
+                dirty: (data.description || '') !== (originalData.description || ''),
+            },
+            model: { current: currentModel, original: originalModel, dirty: currentModel !== originalModel },
+            devicePoolName: { current: currentDevicePool, original: originalDevicePool, dirty: currentDevicePool !== originalDevicePool },
+            isDirty,
+        });
 
         setIsDirty(isDataDirty);
     }, [data.name, data.description, data.model, data.devicePoolName, data.buttons, originalData]);
 
+    // Handle toast messages from backend
+    const page = usePage();
+    useEffect(() => {
+        if (page.props.flash?.toast) {
+            const toastData = page.props.flash.toast;
+            if (toastData.type === 'success') {
+                toast.success(toastData.message);
+                // Update originalData to match the current data after successful save
+                setOriginalData({ ...data });
+                setIsDirty(false);
+            } else if (toastData.type === 'error') {
+                toast.error(toastData.message);
+            }
+        }
+    }, [page.props.flash?.toast]);
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        patch(`/phones/${data.id}`);
+
+        // Data is already in the correct MongoDB object structure from the combobox handlers
+        const transformedData = { ...data };
+
+        patch(`/phones/${data.id}`, transformedData);
     };
 
     return (
@@ -132,7 +167,9 @@ export default function Edit({ phone }: Props) {
                                             label: o.name,
                                         }))}
                                         value={data.model || ''}
-                                        onValueChange={(value) => setData('model', value)}
+                                        onValueChange={(value) => {
+                                            setData('model', value);
+                                        }}
                                         placeholder="Select a model..."
                                         searchPlaceholder="Search models..."
                                         emptyMessage="No models found."
@@ -151,7 +188,24 @@ export default function Edit({ phone }: Props) {
                                                 ? data.devicePoolName
                                                 : data.devicePoolName?._ || data.devicePoolName?.name || ''
                                         }
-                                        onValueChange={(value) => setData('devicePoolName', value)}
+                                        onValueChange={(value) => {
+                                            console.log('Device Pool onValueChange:', { value, devicePools });
+                                            const selectedPool = devicePools.find((pool) => pool.name === value);
+                                            console.log('Selected pool:', selectedPool);
+                                            if (selectedPool) {
+                                                const newValue = {
+                                                    _: selectedPool.name,
+                                                    uuid: selectedPool.uuid || '',
+                                                };
+                                                console.log('Setting devicePoolName to:', newValue);
+                                                setData('devicePoolName', newValue);
+                                            } else {
+                                                // Always maintain object structure, even when clearing
+                                                const emptyValue = { _: '', uuid: '' };
+                                                console.log('Setting devicePoolName to empty object:', emptyValue);
+                                                setData('devicePoolName', emptyValue);
+                                            }
+                                        }}
                                         placeholder="Select a device pool..."
                                         searchPlaceholder="Search device pools..."
                                         emptyMessage="No device pools found."

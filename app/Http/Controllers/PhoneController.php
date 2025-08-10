@@ -91,8 +91,8 @@ class PhoneController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'model' => ['nullable', 'string', 'max:255'],
-            'devicePoolName' => ['nullable', 'string', 'max:255'],
+            'model' => ['nullable'],
+            'devicePoolName' => ['nullable'],
             'buttons' => ['sometimes', 'array'],
             'buttons.*.index' => ['nullable'],
             'buttons.*.type' => ['nullable', 'string'],
@@ -100,9 +100,15 @@ class PhoneController extends Controller
             'buttons.*.target' => ['nullable', 'string'],
         ]);
 
-        $phone->update($validated);
+        // Preserve MongoDB object structure for model and devicePoolName
+        $data = $validated;
+        
+        // Keep the object structure as-is - don't extract just the name
+        // The database should store the complete object with _ and uuid properties
 
-        return redirect()->route('phones.show', $phone)->with('toast', [
+        $phone->update($data);
+
+        return back()->with('toast', [
             'type' => 'success',
             'title' => 'Phone updated',
             'message' => 'The phone was updated successfully.',
