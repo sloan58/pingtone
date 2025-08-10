@@ -40,6 +40,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/device-pools', [InfrastructureOptionsController::class, 'devicePools']);
     Route::get('/ucm/{ucm}/options/phone-models', [InfrastructureOptionsController::class, 'phoneModels']);
+    Route::get('/ucm/{ucm}/options/common-device-configs', [InfrastructureOptionsController::class, 'commonDeviceConfigs']);
+    Route::get('/ucm/{ucm}/options/phone-button-templates', [InfrastructureOptionsController::class, 'phoneButtonTemplates']);
+    Route::get('/ucm/{ucm}/options/common-phone-configs', [InfrastructureOptionsController::class, 'commonPhoneConfigs']);
 });
 
 Route::get('/test-toast', function () {

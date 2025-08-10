@@ -33,6 +33,8 @@ interface ComboboxProps {
   emptyMessage?: string
   disabled?: boolean
   className?: string
+  onMouseEnter?: () => void
+  displayValue?: string
 }
 
 export function Combobox({
@@ -44,10 +46,13 @@ export function Combobox({
   emptyMessage = "No options found.",
   disabled = false,
   className,
+  onMouseEnter,
+  displayValue,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
   const selectedOption = options.find((option) => option.value === value)
+  const displayText = displayValue || (selectedOption ? selectedOption.label : placeholder)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -58,8 +63,9 @@ export function Combobox({
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
           disabled={disabled}
+          onMouseEnter={onMouseEnter}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {displayText}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

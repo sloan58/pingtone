@@ -138,6 +138,11 @@ class Ucm extends Model
         return $this->hasMany(CommonPhoneConfig::class);
     }
 
+    public function commonDeviceConfigs(): HasMany
+    {
+        return $this->hasMany(CommonDeviceConfig::class);
+    }
+
     public function lineGroups(): HasMany
     {
         return $this->hasMany(LineGroup::class);

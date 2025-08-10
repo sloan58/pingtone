@@ -9,7 +9,6 @@ use App\Models\UcmUser;
 use App\Models\UcmRole;
 use App\Models\Location;
 use App\Models\LineGroup;
-use App\Models\CallPickupGroup;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
 use App\Models\PhoneModel;
@@ -17,11 +16,13 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Bus\Batchable;
 use App\Models\ServiceProfile;
 use App\Models\RoutePartition;
+use App\Models\CallPickupGroup;
 use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
 use App\Models\CommonPhoneConfig;
 use App\Models\CallingSearchSpace;
+use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
@@ -181,6 +182,15 @@ class InfraSyncJob implements ShouldQueue
                 ], 'commonPhoneConfig');
                 CommonPhoneConfig::storeUcmData($data, $this->ucm);
                 $this->ucm->commonPhoneConfigs()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'common_device_configs':
+                $data = $axlApi->listUcmObjects('listCommonDeviceConfig', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ], 'commonDeviceConfig');
+                CommonDeviceConfig::storeUcmData($data, $this->ucm);
+                $this->ucm->commonDeviceConfigs()->where('updated_at', '<', $start)->delete();
                 break;
 
             case 'line_groups':

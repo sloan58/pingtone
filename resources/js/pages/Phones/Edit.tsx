@@ -16,7 +16,11 @@ type PhoneForm = {
     name: string;
     description?: string;
     model?: string;
+    protocol?: string;
     devicePoolName?: string;
+    commonDeviceConfigName?: string;
+    phoneTemplateName?: string;
+    commonPhoneConfigName?: string;
     buttons?: PhoneButton[];
 };
 
@@ -34,19 +38,70 @@ export default function Edit({ phone }: Props) {
 
     const [devicePools, setDevicePools] = useState<Option[]>([]);
     const [phoneModels, setPhoneModels] = useState<Option[]>([]);
+    const [commonDeviceConfigs, setCommonDeviceConfigs] = useState<Option[]>([]);
+    const [phoneButtonTemplates, setPhoneButtonTemplates] = useState<Option[]>([]);
+    const [commonPhoneConfigs, setCommonPhoneConfigs] = useState<Option[]>([]);
 
-    useEffect(() => {
-        const controller = new AbortController();
-        fetch(`/api/ucm/${data.ucm_id}/options/device-pools`, { signal: controller.signal })
-            .then((r) => r.json())
-            .then(setDevicePools)
-            .catch(() => {});
-        fetch(`/api/ucm/${data.ucm_id}/options/phone-models`, { signal: controller.signal })
-            .then((r) => r.json())
-            .then(setPhoneModels)
-            .catch(() => {});
-        return () => controller.abort();
-    }, [data.ucm_id]);
+    // Lazy load functions
+    const loadDevicePools = async () => {
+        if (devicePools.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/device-pools`);
+                const responseData = await response.json();
+                setDevicePools(responseData);
+            } catch (error) {
+                console.error('Failed to load device pools:', error);
+            }
+        }
+    };
+
+    const loadPhoneModels = async () => {
+        if (phoneModels.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/phone-models`);
+                const responseData = await response.json();
+                setPhoneModels(responseData);
+            } catch (error) {
+                console.error('Failed to load phone models:', error);
+            }
+        }
+    };
+
+    const loadCommonDeviceConfigs = async () => {
+        if (commonDeviceConfigs.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/common-device-configs`);
+                const responseData = await response.json();
+                setCommonDeviceConfigs(responseData);
+            } catch (error) {
+                console.error('Failed to load common device configs:', error);
+            }
+        }
+    };
+
+    const loadPhoneButtonTemplates = async () => {
+        if (phoneButtonTemplates.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/phone-button-templates`);
+                const responseData = await response.json();
+                setPhoneButtonTemplates(responseData);
+            } catch (error) {
+                console.error('Failed to load phone button templates:', error);
+            }
+        }
+    };
+
+    const loadCommonPhoneConfigs = async () => {
+        if (commonPhoneConfigs.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/common-phone-configs`);
+                const responseData = await response.json();
+                setCommonPhoneConfigs(responseData);
+            } catch (error) {
+                console.error('Failed to load common phone configs:', error);
+            }
+        }
+    };
 
     useEffect(() => {
         // Handle devicePoolName properly - compare the actual values
@@ -65,6 +120,7 @@ export default function Edit({ phone }: Props) {
             data.name !== originalData.name ||
             (data.description || '') !== (originalData.description || '') ||
             currentModel !== originalModel ||
+            (data.protocol || '') !== (originalData.protocol || '') ||
             currentDevicePool !== originalDevicePool ||
             JSON.stringify(data.buttons || []) !== JSON.stringify(originalData.buttons || []);
 
@@ -166,15 +222,6 @@ export default function Edit({ phone }: Props) {
                                     {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-sm font-medium">Description</label>
-                                    <input
-                                        className="w-full rounded-md border bg-background p-2"
-                                        value={data.description || ''}
-                                        onChange={(e) => setData('description', e.target.value)}
-                                    />
-                                    {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
-                                </div>
-                                <div>
                                     <label className="mb-1 block text-sm font-medium">Model</label>
                                     <Combobox
                                         options={phoneModels.map((o) => ({
@@ -188,8 +235,32 @@ export default function Edit({ phone }: Props) {
                                         placeholder="Select a model..."
                                         searchPlaceholder="Search models..."
                                         emptyMessage="No models found."
+                                        onMouseEnter={loadPhoneModels}
+                                        displayValue={data.model || ''}
                                     />
                                     {errors.model && <p className="mt-1 text-sm text-destructive">{errors.model}</p>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium">Protocol</label>
+                                    <select
+                                        className="w-full rounded-md border bg-background p-2"
+                                        value={data.protocol || ''}
+                                        onChange={(e) => setData('protocol', e.target.value)}
+                                    >
+                                        <option value="">Select a protocol...</option>
+                                        <option value="SIP">SIP</option>
+                                        <option value="SCCP">SCCP</option>
+                                    </select>
+                                    {errors.protocol && <p className="mt-1 text-sm text-destructive">{errors.protocol}</p>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium">Description</label>
+                                    <input
+                                        className="w-full rounded-md border bg-background p-2"
+                                        value={data.description || ''}
+                                        onChange={(e) => setData('description', e.target.value)}
+                                    />
+                                    {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Device Pool</label>
@@ -204,28 +275,134 @@ export default function Edit({ phone }: Props) {
                                                 : data.devicePoolName?._ || data.devicePoolName?.name || ''
                                         }
                                         onValueChange={(value) => {
-                                            console.log('Device Pool onValueChange:', { value, devicePools });
                                             const selectedPool = devicePools.find((pool) => pool.name === value);
-                                            console.log('Selected pool:', selectedPool);
                                             if (selectedPool) {
-                                                const newValue = {
+                                                setData('devicePoolName', {
                                                     _: selectedPool.name,
                                                     uuid: selectedPool.uuid || '',
-                                                };
-                                                console.log('Setting devicePoolName to:', newValue);
-                                                setData('devicePoolName', newValue);
+                                                });
                                             } else {
-                                                // Always maintain object structure, even when clearing
-                                                const emptyValue = { _: '', uuid: '' };
-                                                console.log('Setting devicePoolName to empty object:', emptyValue);
-                                                setData('devicePoolName', emptyValue);
+                                                setData('devicePoolName', { _: '', uuid: '' });
                                             }
                                         }}
                                         placeholder="Select a device pool..."
                                         searchPlaceholder="Search device pools..."
                                         emptyMessage="No device pools found."
+                                        onMouseEnter={loadDevicePools}
+                                        displayValue={
+                                            typeof data.devicePoolName === 'string'
+                                                ? data.devicePoolName
+                                                : data.devicePoolName?._ || data.devicePoolName?.name || ''
+                                        }
                                     />
                                     {errors.devicePoolName && <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium">Common Device Configuration</label>
+                                    <Combobox
+                                        options={commonDeviceConfigs.map((o) => ({
+                                            value: o.name,
+                                            label: o.name,
+                                        }))}
+                                        value={
+                                            typeof data.commonDeviceConfigName === 'string'
+                                                ? data.commonDeviceConfigName
+                                                : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
+                                        }
+                                        onValueChange={(value) => {
+                                            const selectedConfig = commonDeviceConfigs.find((config) => config.name === value);
+                                            if (selectedConfig) {
+                                                setData('commonDeviceConfigName', {
+                                                    _: selectedConfig.name,
+                                                    uuid: selectedConfig.uuid || '',
+                                                });
+                                            } else {
+                                                setData('commonDeviceConfigName', { _: '', uuid: '' });
+                                            }
+                                        }}
+                                        placeholder="Select a common device configuration..."
+                                        searchPlaceholder="Search common device configurations..."
+                                        emptyMessage="No common device configurations found."
+                                        onMouseEnter={loadCommonDeviceConfigs}
+                                        displayValue={
+                                            typeof data.commonDeviceConfigName === 'string'
+                                                ? data.commonDeviceConfigName
+                                                : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
+                                        }
+                                    />
+                                    {errors.commonDeviceConfigName && (
+                                        <p className="mt-1 text-sm text-destructive">{errors.commonDeviceConfigName}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium">Phone Button Template</label>
+                                    <Combobox
+                                        options={phoneButtonTemplates.map((o) => ({
+                                            value: o.name,
+                                            label: o.name,
+                                        }))}
+                                        value={
+                                            typeof data.phoneTemplateName === 'string'
+                                                ? data.phoneTemplateName
+                                                : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
+                                        }
+                                        onValueChange={(value) => {
+                                            const selectedTemplate = phoneButtonTemplates.find((template) => template.name === value);
+                                            if (selectedTemplate) {
+                                                setData('phoneTemplateName', {
+                                                    _: selectedTemplate.name,
+                                                    uuid: selectedTemplate.uuid || '',
+                                                });
+                                            } else {
+                                                setData('phoneTemplateName', { _: '', uuid: '' });
+                                            }
+                                        }}
+                                        placeholder="Select a phone button template..."
+                                        searchPlaceholder="Search phone button templates..."
+                                        emptyMessage="No phone button templates found."
+                                        onMouseEnter={loadPhoneButtonTemplates}
+                                        displayValue={
+                                            typeof data.phoneTemplateName === 'string'
+                                                ? data.phoneTemplateName
+                                                : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
+                                        }
+                                    />
+                                    {errors.phoneTemplateName && <p className="mt-1 text-sm text-destructive">{errors.phoneTemplateName}</p>}
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium">Common Phone Profile</label>
+                                    <Combobox
+                                        options={commonPhoneConfigs.map((o) => ({
+                                            value: o.name,
+                                            label: o.name,
+                                        }))}
+                                        value={
+                                            typeof data.commonPhoneConfigName === 'string'
+                                                ? data.commonPhoneConfigName
+                                                : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
+                                        }
+                                        onValueChange={(value) => {
+                                            const selectedConfig = commonPhoneConfigs.find((config) => config.name === value);
+                                            if (selectedConfig) {
+                                                setData('commonPhoneConfigName', {
+                                                    _: selectedConfig.name,
+                                                    uuid: selectedConfig.uuid || '',
+                                                });
+                                            } else {
+                                                setData('commonPhoneConfigName', { _: '', uuid: '' });
+                                            }
+                                        }}
+                                        placeholder="Select a common phone profile..."
+                                        searchPlaceholder="Search common phone profiles..."
+                                        emptyMessage="No common phone profiles found."
+                                        onMouseEnter={loadCommonPhoneConfigs}
+                                        displayValue={
+                                            typeof data.commonPhoneConfigName === 'string'
+                                                ? data.commonPhoneConfigName
+                                                : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
+                                        }
+                                    />
+                                    {errors.commonPhoneConfigName && <p className="mt-1 text-sm text-destructive">{errors.commonPhoneConfigName}</p>}
                                 </div>
 
                                 {activeTab !== 'device' && (

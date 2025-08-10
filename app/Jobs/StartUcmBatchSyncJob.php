@@ -43,6 +43,7 @@ class StartUcmBatchSyncJob implements ShouldQueue
             'locations',
             'call_pickup_groups',
             'common_phone_configs',
+            'common_device_configs',
             'line_groups',
             'ucm_users',
             'phone_button_templates',
