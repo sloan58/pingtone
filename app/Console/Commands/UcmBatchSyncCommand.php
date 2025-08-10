@@ -3,12 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Jobs\InfraSyncJob;
-use App\Jobs\ServicesSyncJob;
+use App\Jobs\WaitForBatchAndDispatchServicesJob;
 use App\Models\Ucm;
-use Illuminate\Bus\Batch;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
-use Throwable;
 
 class UcmBatchSyncCommand extends Command
 {
@@ -53,16 +51,11 @@ class UcmBatchSyncCommand extends Command
         foreach ($ucms as $ucm) {
             $jobs = array_map(fn (string $type) => new InfraSyncJob($ucm, $type), $infraTypes);
 
-            Bus::batch($jobs)
+            $batch = Bus::batch($jobs)
                 ->name("Infra sync: {$ucm->name}")
-                ->then(function (Batch $batch) use ($ucm) {
-                    // After infra completes, kick off services phase
-                    ServicesSyncJob::dispatch($ucm);
-                })
-                ->catch(function (Batch $batch, Throwable $e) use ($ucm) {
-                    $this->error("Infra batch failed for {$ucm->name}: {$e->getMessage()}");
-                })
                 ->dispatch();
+
+            WaitForBatchAndDispatchServicesJob::dispatch($batch->id, $ucm->getKey());
 
             $this->info("Dispatched infra batch for UCM {$ucm->name} ({$ucm->getKey()}); services will start after infra completes.");
         }
@@ -72,3 +65,4 @@ class UcmBatchSyncCommand extends Command
 }
 
 
+ 
