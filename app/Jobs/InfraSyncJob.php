@@ -2,38 +2,46 @@
 
 namespace App\Jobs;
 
+use Exception;
+use SoapFault;
 use App\Models\Ucm;
-use App\Models\LineGroup;
 use App\Models\UcmUser;
+use App\Models\UcmRole;
 use App\Models\Location;
+use App\Models\LineGroup;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
+use App\Models\PhoneModel;
+use Illuminate\Bus\Queueable;
 use App\Models\ServiceProfile;
 use App\Models\RoutePartition;
 use App\Models\SoftkeyTemplate;
-use App\Models\PhoneModel;
 use App\Models\RecordingProfile;
 use App\Models\VoicemailProfile;
-use App\Models\CallingSearchSpace;
 use App\Models\CommonPhoneConfig;
+use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
-use App\Models\UcmRole;
-use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 class InfraSyncJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
-        protected Ucm $ucm,
+        protected Ucm    $ucm,
         protected string $type
-    ) {}
+    )
+    {
+    }
 
+    /**
+     * @throws SoapFault
+     * @throws Exception
+     */
     public function handle(): void
     {
         $axlApi = $this->ucm->axlApi();
@@ -181,7 +189,7 @@ class InfraSyncJob implements ShouldQueue
                 foreach ($data as $lg) {
                     try {
                         LineGroup::storeUcmDetails($axlApi->getLineGroupByName($lg['name']), $this->ucm);
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         Log::warning("{$this->ucm->name}: get line group failed: {$lg['name']} - {$e->getMessage()}");
                     }
                 }
@@ -196,7 +204,7 @@ class InfraSyncJob implements ShouldQueue
                 foreach ($users as $user) {
                     try {
                         UcmUser::storeUcmDetails($axlApi->getUserByUserId($user['userid']), $this->ucm);
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         Log::warning("{$this->ucm->name}: get user failed: {$user['userid']} - {$e->getMessage()}");
                     }
                 }
