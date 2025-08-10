@@ -56,8 +56,8 @@ export default function Edit({ phone }: Props) {
             <AppSidebar />
             <div className="flex flex-1 flex-col gap-4">
                 <AppHeader />
-                <AppContent variant="sidebar">
-                    <div className="mx-auto max-w-6xl space-y-4">
+                <AppContent variant="sidebar" className="p-0">
+                    <div className="space-y-4 p-6">
                         <PhoneHeader
                             name={data.name}
                             model={data.model}
