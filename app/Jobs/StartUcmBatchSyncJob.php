@@ -2,16 +2,16 @@
 
 namespace App\Jobs;
 
+use Throwable;
 use App\Models\Ucm;
 use Illuminate\Bus\Batch;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
-use Throwable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
 class StartUcmBatchSyncJob implements ShouldQueue
 {
@@ -19,6 +19,9 @@ class StartUcmBatchSyncJob implements ShouldQueue
 
     public function __construct(protected string $ucmId) {}
 
+    /**
+     * @throws Throwable
+     */
     public function handle(): void
     {
         $ucm = Ucm::find($this->ucmId);

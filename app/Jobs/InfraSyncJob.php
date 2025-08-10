@@ -13,6 +13,7 @@ use App\Models\DevicePool;
 use App\Models\SipProfile;
 use App\Models\PhoneModel;
 use Illuminate\Bus\Queueable;
+use Illuminate\Bus\Batchable;
 use App\Models\ServiceProfile;
 use App\Models\RoutePartition;
 use App\Models\SoftkeyTemplate;
@@ -29,7 +30,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 
 class InfraSyncJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
     public function __construct(
         protected Ucm    $ucm,
