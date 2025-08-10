@@ -69,4 +69,21 @@ pingtone/
 - Add more CRUD operations for phones
 - Implement user authentication
 - Add more NDM features (users, device profiles, etc.)
-- Enhance the UI with shadcn/ui components 
+- Enhance the UI with shadcn/ui components
+
+## MCP Server Configuration
+
+The shadcn-ui MCP server is configured to provide access to the complete shadcn/ui component library:
+
+```json
+{
+  "mcpServers": {
+    "shadcn-ui": {
+      "command": "npx",
+      "args": ["@jpisnice/shadcn-ui-mcp-server"]
+    }
+  }
+}
+```
+
+This allows the AI assistant to access shadcn/ui component source code, examples, and documentation for better development assistance. 

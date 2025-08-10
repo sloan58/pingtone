@@ -5,7 +5,8 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { ButtonsEditor, PhoneButton } from '@/components/phone-edit/buttons-editor';
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { PhoneInnerNav } from '@/components/phone-edit/phone-inner-nav';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Combobox } from '@/components/ui/combobox';
+import { Head, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 type PhoneForm = {
@@ -28,6 +29,7 @@ export default function Edit({ phone }: Props) {
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone);
     const [activeTab, setActiveTab] = useState<'device' | 'lines' | 'speed_dials' | 'blfs'>('device');
     const [isDirty, setIsDirty] = useState(false);
+    const [originalData] = useState(phone);
 
     const [devicePools, setDevicePools] = useState<Option[]>([]);
     const [phoneModels, setPhoneModels] = useState<Option[]>([]);
@@ -44,6 +46,24 @@ export default function Edit({ phone }: Props) {
             .catch(() => {});
         return () => controller.abort();
     }, [data.ucm_id]);
+
+    useEffect(() => {
+        // Handle devicePoolName properly - it might be an object or string
+        const currentDevicePool = typeof data.devicePoolName === 'string' ? data.devicePoolName : data.devicePoolName?.name || '';
+        const originalDevicePool =
+            typeof originalData.devicePoolName === 'string' ? originalData.devicePoolName : originalData.devicePoolName?.name || '';
+
+        const isDataDirty =
+            data.name !== originalData.name ||
+            (data.description || '') !== (originalData.description || '') ||
+            (data.model || '') !== (originalData.model || '') ||
+            currentDevicePool !== originalDevicePool ||
+            JSON.stringify(data.buttons || []) !== JSON.stringify(originalData.buttons || []);
+
+
+
+        setIsDirty(isDataDirty);
+    }, [data.name, data.description, data.model, data.devicePoolName, data.buttons, originalData]);
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,7 +102,7 @@ export default function Edit({ phone }: Props) {
                                     {activeTab === 'device' ? 'Update basic phone settings' : 'Configure items for this phone'}
                                 </p>
                             </div>
-                            <form onSubmit={submit} className="space-y-6 p-6" onChange={() => setIsDirty(true)}>
+                            <form onSubmit={submit} className="space-y-6 p-6">
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Name</label>
                                     <input
@@ -103,34 +123,32 @@ export default function Edit({ phone }: Props) {
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Model</label>
-                                    <select
-                                        className="w-full rounded-md border bg-background p-2"
+                                    <Combobox
+                                        options={phoneModels.map((o) => ({
+                                            value: o.name,
+                                            label: o.name,
+                                        }))}
                                         value={data.model || ''}
-                                        onChange={(e) => setData('model', e.target.value)}
-                                    >
-                                        <option value="">Select a model…</option>
-                                        {phoneModels.map((o) => (
-                                            <option key={o.id} value={o.name}>
-                                                {o.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        onValueChange={(value) => setData('model', value)}
+                                        placeholder="Select a model..."
+                                        searchPlaceholder="Search models..."
+                                        emptyMessage="No models found."
+                                    />
                                     {errors.model && <p className="mt-1 text-sm text-destructive">{errors.model}</p>}
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Device Pool</label>
-                                    <select
-                                        className="w-full rounded-md border bg-background p-2"
+                                    <Combobox
+                                        options={devicePools.map((o) => ({
+                                            value: o.name,
+                                            label: o.name,
+                                        }))}
                                         value={data.devicePoolName || ''}
-                                        onChange={(e) => setData('devicePoolName', e.target.value)}
-                                    >
-                                        <option value="">Select a device pool…</option>
-                                        {devicePools.map((o) => (
-                                            <option key={o.id} value={o.name}>
-                                                {o.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        onValueChange={(value) => setData('devicePoolName', value)}
+                                        placeholder="Select a device pool..."
+                                        searchPlaceholder="Search device pools..."
+                                        emptyMessage="No device pools found."
+                                    />
                                     {errors.devicePoolName && <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>}
                                 </div>
 
@@ -148,18 +166,6 @@ export default function Edit({ phone }: Props) {
                                         />
                                     </div>
                                 )}
-
-                                <div className="flex items-center justify-between">
-                                    <Link href={`/phones/${data.id}`} className="text-sm text-muted-foreground hover:underline">
-                                        Cancel
-                                    </Link>
-                                    <button
-                                        disabled={processing}
-                                        className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-                                    >
-                                        Save Changes
-                                    </button>
-                                </div>
                             </form>
                         </div>
                     </div>

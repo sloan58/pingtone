@@ -80,21 +80,7 @@ class PhoneController extends Controller
     {
         $phone->load('ucm');
 
-        return Inertia::render('Phones/Edit', [
-            'phone' => [
-                'id' => (string) $phone->getKey(),
-                'ucm_id' => (string) $phone->ucm_id,
-                'ucm' => [
-                    'id' => (string) $phone->ucm?->getKey(),
-                    'name' => $phone->ucm?->name,
-                ],
-                'name' => $phone->name,
-                'description' => $phone->description ?? '',
-                'model' => $phone->model ?? '',
-                'devicePoolName' => $phone->devicePoolName ?? '',
-                'buttons' => $phone->buttons ?? [],
-            ],
-        ]);
+        return Inertia::render('Phones/Edit', compact('phone'));
     }
 
     /**
