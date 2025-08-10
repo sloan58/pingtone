@@ -1,9 +1,9 @@
+import { AdvancedSearch, FilterRow } from '@/components/advanced-search';
 import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { DataTable } from '@/components/data-table';
-import { AdvancedSearch, FilterRow } from '@/components/advanced-search';
 import { Phone } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
@@ -19,7 +19,11 @@ interface Props {
     };
 }
 
-export default function Index({ phones, tableState, filters }: Props & { tableState?: { sort: string; perPage: number }, filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' } }) {
+export default function Index({
+    phones,
+    tableState,
+    filters,
+}: Props & { tableState?: { sort: string; perPage: number }; filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' } }) {
     const [sorting, setSorting] = React.useState(() => {
         const [id, dir] = (tableState?.sort ?? 'name:asc').split(':');
         return [{ id, desc: dir === 'desc' }];
@@ -61,6 +65,29 @@ export default function Index({ phones, tableState, filters }: Props & { tableSt
                     <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
                         <div className="p-6">
                             <h2 className="mb-6 text-2xl font-semibold">Phones</h2>
+                            <div className="mb-4">
+                                <AdvancedSearch
+                                    fields={[
+                                        { value: 'name', label: 'Name' },
+                                        { value: 'description', label: 'Description' },
+                                        { value: 'model', label: 'Model' },
+                                        { value: 'devicePoolName', label: 'Device Pool' },
+                                    ]}
+                                    initial={filters}
+                                    onApply={(payload) => {
+                                        const normalized = {
+                                            logic: payload.logic,
+                                            filters_json: JSON.stringify(payload.filters),
+                                            sort: (sorting as any)[0]
+                                                ? `${(sorting as any)[0].id}:${(sorting as any)[0].desc ? 'desc' : 'asc'}`
+                                                : 'name:asc',
+                                            page: 1,
+                                            perPage,
+                                        };
+                                        router.get('/phones', normalized, { replace: true, preserveState: true, preserveScroll: true });
+                                    }}
+                                />
+                            </div>
                             <DataTable
                                 columns={columns}
                                 data={phones.data as any}
@@ -81,27 +108,6 @@ export default function Index({ phones, tableState, filters }: Props & { tableSt
                                     }
                                 }}
                             />
-                            <div className="mt-4">
-                                <AdvancedSearch
-                                    fields={[
-                                        { value: 'name', label: 'Name' },
-                                        { value: 'description', label: 'Description' },
-                                        { value: 'model', label: 'Model' },
-                                        { value: 'devicePoolName', label: 'Device Pool' },
-                                    ]}
-                                    initial={filters}
-                                    onApply={(payload) => {
-                                        const normalized = {
-                                            logic: payload.logic,
-                                            filters_json: JSON.stringify(payload.filters),
-                                            sort: (sorting as any)[0] ? `${(sorting as any)[0].id}:${(sorting as any)[0].desc ? 'desc' : 'asc'}` : 'name:asc',
-                                            page: 1,
-                                            perPage,
-                                        };
-                                        router.get('/phones', normalized, { replace: true, preserveState: true, preserveScroll: true });
-                                    }}
-                                />
-                            </div>
                             <div className="mt-4 flex items-center justify-between gap-4">
                                 <div className="text-sm text-muted-foreground">
                                     Page {phones.current_page} of {phones.last_page} • {phones.total} total
