@@ -9,6 +9,7 @@ use App\Models\UcmUser;
 use App\Models\UcmRole;
 use App\Models\Location;
 use App\Models\LineGroup;
+use App\Models\CallPickupGroup;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
 use App\Models\PhoneModel;
@@ -222,7 +223,7 @@ class InfraSyncJob implements ShouldQueue
                 break;
 
             case 'ucm_roles':
-                $roles = $axlApi->performSqlQuery('select pkid, name FROM dirgroup');
+                $roles = $axlApi->performSqlQuery('select pkid as uuid, name FROM dirgroup');
                 UcmRole::storeUcmData($roles, $this->ucm);
                 $this->ucm->roles()->where('updated_at', '<', $start)->delete();
                 break;
