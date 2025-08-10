@@ -8,10 +8,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ucm_roles', function (Blueprint $table) {
-            $table->string('pkid')->index();
+            $table->string('uuid')->index();
             $table->string('name')->index();
             $table->string('ucm_id')->index();
-            $table->unique(['ucm_id', 'pkid']);
+            $table->unique(['ucm_id', 'uuid']);
         });
     }
 

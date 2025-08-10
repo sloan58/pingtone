@@ -9,6 +9,7 @@ use App\Models\Ucm;
 use App\Models\Line;
 use App\Models\Phone;
 use App\Models\UcmUser;
+use App\Models\UcmRole;
 use App\Models\Location;
 use App\Models\Intercom;
 use App\Models\LineGroup;
@@ -49,9 +50,11 @@ class SyncUcmJob implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(
-        protected Ucm $ucm,
+        protected Ucm         $ucm,
         protected SyncHistory $syncHistory
-    ) {}
+    )
+    {
+    }
 
     /**
      * Execute the job.
@@ -357,7 +360,7 @@ class SyncUcmJob implements ShouldQueue
             'listUser',
             [
                 'searchCriteria' => ['userid' => '%'],
-                'returnedTags' => [ 'userid' => '' ],
+                'returnedTags' => ['userid' => ''],
             ],
             'user'
         );
@@ -497,7 +500,7 @@ class SyncUcmJob implements ShouldQueue
 
         // Sync UCM Roles (SQL)
         $start = now();
-        $roles = $axlApi->performSqlQuery('select pkid, name FROM dirgroup');
+        $roles = $axlApi->performSqlQuery('select pkid as uuid, name FROM dirgroup');
         UcmRole::storeUcmData($roles, $this->ucm);
         $this->ucm->roles()->where('updated_at', '<', $start)->delete();
         Log::info("{$this->ucm->name}: syncUcmRoles completed");

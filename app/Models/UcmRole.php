@@ -15,19 +15,15 @@ class UcmRole extends Model
         return $this->belongsTo(Ucm::class);
     }
 
-    public static function storeUcmData(array $rows, Ucm $ucm): void
+    public static function storeUcmData(array $responseData, Ucm $ucm): void
     {
-        $docs = array_map(fn($row) => [
-            'pkid' => $row['pkid'] ?? null,
-            'name' => $row['name'] ?? null,
-            'ucm_id' => $ucm->id,
-        ], $rows);
+        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
 
         MongoBulkUpsert::upsert(
             'ucm_roles',
-            $docs,
-            ['ucm_id', 'pkid'],
-            ['ucm_id' => 1, 'pkid' => 1]
+            $rows,
+            ['ucm_id', 'uuid'],
+            ['ucm_id' => 1, 'uuid' => 1]
         );
     }
 }
