@@ -57,7 +57,7 @@ export default function Edit({ phone }: Props) {
             <div className="flex flex-1 flex-col gap-4">
                 <AppHeader />
                 <AppContent variant="sidebar">
-                    <div className="mx-auto max-w-4xl space-y-4">
+                    <div className="mx-auto max-w-6xl space-y-4">
                         <PhoneHeader
                             name={data.name}
                             model={data.model}
@@ -69,8 +69,18 @@ export default function Edit({ phone }: Props) {
                         <PhoneInnerNav active={activeTab} onChange={setActiveTab} />
                         <div className="overflow-hidden rounded-lg border bg-card shadow">
                             <div className="border-b p-6">
-                                <h2 className="text-lg font-semibold">{activeTab === 'device' ? 'Device' : activeTab === 'lines' ? 'Lines' : activeTab === 'speed_dials' ? 'Speed Dials' : 'BLFs'}</h2>
-                                <p className="text-sm text-muted-foreground">{activeTab === 'device' ? 'Update basic phone settings' : 'Configure items for this phone'}</p>
+                                <h2 className="text-lg font-semibold">
+                                    {activeTab === 'device'
+                                        ? 'Device'
+                                        : activeTab === 'lines'
+                                          ? 'Lines'
+                                          : activeTab === 'speed_dials'
+                                            ? 'Speed Dials'
+                                            : 'BLFs'}
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    {activeTab === 'device' ? 'Update basic phone settings' : 'Configure items for this phone'}
+                                </p>
                             </div>
                             <form onSubmit={submit} className="space-y-6 p-6" onChange={() => setIsDirty(true)}>
                                 <div>
@@ -126,8 +136,16 @@ export default function Edit({ phone }: Props) {
 
                                 {activeTab !== 'device' && (
                                     <div className="space-y-3">
-                                        <h3 className="text-lg font-semibold">{activeTab === 'lines' ? 'Lines' : activeTab === 'speed_dials' ? 'Speed Dials' : 'BLFs'}</h3>
-                                        <ButtonsEditor value={data.buttons || []} onChange={(next) => { setData('buttons', next); setIsDirty(true); }} />
+                                        <h3 className="text-lg font-semibold">
+                                            {activeTab === 'lines' ? 'Lines' : activeTab === 'speed_dials' ? 'Speed Dials' : 'BLFs'}
+                                        </h3>
+                                        <ButtonsEditor
+                                            value={data.buttons || []}
+                                            onChange={(next) => {
+                                                setData('buttons', next);
+                                                setIsDirty(true);
+                                            }}
+                                        />
                                     </div>
                                 )}
 
