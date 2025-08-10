@@ -1,12 +1,12 @@
-import * as React from 'react';
-import { DataTable } from '@/components/data-table';
-import { ColumnDef } from '@tanstack/react-table';
 import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
+import { DataTable } from '@/components/data-table';
 import { Phone } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
+import { ColumnDef } from '@tanstack/react-table';
+import * as React from 'react';
 
 interface Props {
     phones: {
@@ -23,6 +23,7 @@ export default function Index({ phones, tableState }: Props & { tableState?: { s
         const [id, dir] = (tableState?.sort ?? 'name:asc').split(':');
         return [{ id, desc: dir === 'desc' }];
     });
+    const [perPage, setPerPage] = React.useState<number>(tableState?.perPage ?? phones.per_page ?? 20);
 
     const columns: ColumnDef<Phone & any>[] = [
         { accessorKey: 'name', header: 'Name', cell: (info) => info.getValue() as string },
@@ -59,6 +60,45 @@ export default function Index({ phones, tableState }: Props & { tableState?: { s
                     <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
                         <div className="p-6">
                             <h2 className="mb-6 text-2xl font-semibold">Phones</h2>
+                            <div className="mb-4 flex items-center justify-between gap-4">
+                                <div className="text-sm text-muted-foreground">Page {phones.current_page} of {phones.last_page} • {phones.total} total</div>
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm">Rows:</label>
+                                    <select
+                                        className="rounded-md border bg-background p-1 text-sm"
+                                        value={perPage}
+                                        onChange={(e) => {
+                                            const next = parseInt(e.target.value, 10);
+                                            setPerPage(next);
+                                            const first: any = (sorting as any)[0] ?? { id: 'name', desc: false };
+                                            const dir = first.desc ? 'desc' : 'asc';
+                                            router.get('/phones', { sort: `${first.id}:${dir}`, page: 1, perPage: next }, { preserveState: true, replace: true });
+                                        }}
+                                    >
+                                        {[10, 25, 50, 100].map((n) => (
+                                            <option key={n} value={n}>{n}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        className="rounded-md border px-2 py-1 text-sm disabled:opacity-50"
+                                        disabled={phones.current_page <= 1}
+                                        onClick={() => {
+                                            const first: any = (sorting as any)[0] ?? { id: 'name', desc: false };
+                                            const dir = first.desc ? 'desc' : 'asc';
+                                            router.get('/phones', { sort: `${first.id}:${dir}`, page: phones.current_page - 1, perPage }, { preserveState: true, replace: true });
+                                        }}
+                                    >Prev</button>
+                                    <button
+                                        className="rounded-md border px-2 py-1 text-sm disabled:opacity-50"
+                                        disabled={phones.current_page >= phones.last_page}
+                                        onClick={() => {
+                                            const first: any = (sorting as any)[0] ?? { id: 'name', desc: false };
+                                            const dir = first.desc ? 'desc' : 'asc';
+                                            router.get('/phones', { sort: `${first.id}:${dir}`, page: phones.current_page + 1, perPage }, { preserveState: true, replace: true });
+                                        }}
+                                    >Next</button>
+                                </div>
+                            </div>
                             <DataTable
                                 columns={columns}
                                 data={phones.data as any}
@@ -68,10 +108,14 @@ export default function Index({ phones, tableState }: Props & { tableState?: { s
                                     const first = next[0];
                                     if (first) {
                                         const dir = first.desc ? 'desc' : 'asc';
-                                        router.get('/phones', { sort: `${first.id}:${dir}`, page: phones.current_page, perPage: phones.per_page }, {
-                                            preserveState: true,
-                                            replace: true,
-                                        });
+                                        router.get(
+                                            '/phones',
+                                            { sort: `${first.id}:${dir}`, page: phones.current_page, perPage },
+                                            {
+                                                preserveState: true,
+                                                replace: true,
+                                            },
+                                        );
                                     }
                                 }}
                             />
