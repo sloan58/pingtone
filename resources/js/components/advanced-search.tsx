@@ -51,10 +51,10 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
 
     const updateRow = (i: number, patch: Partial<FilterRow>) => setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
 
-  const apply = () => {
-    const sanitized = rows.filter((r) => r.field && r.operator && String(r.value).trim() !== '');
-    onApply({ filters: sanitized, logic });
-  };
+    const apply = () => {
+        const sanitized = rows.filter((r) => r.field && r.operator && String(r.value).trim() !== '');
+        onApply({ filters: sanitized, logic });
+    };
 
     return (
         <div className="flex flex-col gap-3">
@@ -71,9 +71,18 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
                     </select>
                     <span className="text-sm">conditions</span>
                 </div>
-                <button type="button" className="rounded-md border px-2 py-1 text-sm" onClick={addRow}>
-                    Add condition
-                </button>
+                <div className="flex items-center gap-2">
+                    <button type="button" className="rounded-md border px-2 py-1 text-sm" onClick={addRow}>
+                        Add condition
+                    </button>
+                    <button
+                        type="button"
+                        className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
+                        onClick={apply}
+                    >
+                        Apply filters
+                    </button>
+                </div>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -113,11 +122,7 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
                 ))}
             </div>
 
-            <div className="flex justify-end">
-                <button type="button" className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground" onClick={apply}>
-                    Apply filters
-                </button>
-            </div>
+            {/* Buttons moved up next to Add condition */}
         </div>
     );
 }
