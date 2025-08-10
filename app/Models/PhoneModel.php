@@ -80,8 +80,8 @@ class PhoneModel extends Model
         foreach ($responseData as $record) {
             try {
                 self::where('ucm_id', $ucm->id)
-                    ->where('name', $record->model)
-                    ->first()?->update(['maxExpansionModules' => $record->max]);
+                    ->where('name', $record['model'])
+                    ->first()?->update(['maxExpansionModules' => $record['max']]);
             } catch (Exception $e) {
                 logger()->error("Error storing max expansion module data", [
                     'ucm' => $ucm->name,

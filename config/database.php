@@ -40,8 +40,6 @@ return [
             'password' => env('MONGODB_PASSWORD', ''),
             'options' => [
                 'database' => env('MONGODB_AUTHENTICATION_DATABASE', 'admin'),
-                // Disable retryable writes to avoid txnNumber errors on standalone mongod
-                'retryWrites' => false,
             ],
         ],
 
