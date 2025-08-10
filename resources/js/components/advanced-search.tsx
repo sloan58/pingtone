@@ -34,17 +34,26 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
         [],
     );
 
-  const addRow = () => setRows((r) => [...r, { field: fields[0]?.value ?? '', operator: 'contains', value: '' }]);
+  const addRow = () => setRows((r) => {
+    // Avoid duplicating a trailing empty row when initial filters also empty
+    if (r.length > 0) {
+      const last = r[r.length - 1];
+      if (!last.value && last.field && last.operator) {
+        return r; // keep single empty row
+      }
+    }
+    return [...r, { field: fields[0]?.value ?? '', operator: 'contains', value: '' }];
+  });
     const removeRow = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i));
 
     const updateRow = (i: number, patch: Partial<FilterRow>) => setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
 
-  const apply = () => {
-    const sanitized = rows.filter((r) => r.field && r.operator && String(r.value).trim() !== '');
-    onApply({ filters: sanitized, logic });
-    // prevent accumulative UI duplication by resetting to sanitized state
-    setRows(sanitized);
-  };
+    const apply = () => {
+        const sanitized = rows.filter((r) => r.field && r.operator && String(r.value).trim() !== '');
+        onApply({ filters: sanitized, logic });
+        // prevent accumulative UI duplication by resetting to sanitized state
+        setRows(sanitized);
+    };
 
     return (
         <div className="flex flex-col gap-3">

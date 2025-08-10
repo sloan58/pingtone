@@ -35,44 +35,44 @@ trait AppliesSearchFilters
 
         $query->where(function (Builder $q) use ($filters, $logic) {
             foreach ($filters as $idx => $f) {
-                $boolean = $idx === 0 ? 'and' : $logic;
-                $this->applySingleFilter($q, $f['field'], $f['operator'], $f['value'], $boolean);
+                $useOr = $idx !== 0 && $logic === 'or';
+                $this->applySingleFilter($q, $f['field'], $f['operator'], $f['value'], $useOr);
             }
         });
     }
 
-    protected function applySingleFilter(Builder $q, string $field, string $operator, $value, string $boolean = 'and'): void
+    protected function applySingleFilter(Builder $q, string $field, string $operator, $value, bool $useOr = false): void
     {
         $operator = strtolower($operator);
         switch ($operator) {
             case 'equals':
-                $q->where($field, '=', $value, $boolean);
+                $useOr ? $q->orWhere($field, '=', $value) : $q->where($field, '=', $value);
                 break;
             case 'not_equals':
-                $q->where($field, '!=', $value, $boolean);
+                $useOr ? $q->orWhere($field, '!=', $value) : $q->where($field, '!=', $value);
                 break;
             case 'contains':
-                $pattern = '/'.preg_quote((string) $value, '/').'/i';
-                $q->where($field, 'regexp', $pattern, $boolean);
+                $like = '%'.str_replace(['%', '_'], ['\%','\_'], (string) $value).'%';
+                $useOr ? $q->orWhere($field, 'like', $like) : $q->where($field, 'like', $like);
                 break;
             case 'starts_with':
-                $pattern = '/^'.preg_quote((string) $value, '/').'/i';
-                $q->where($field, 'regexp', $pattern, $boolean);
+                $like = str_replace(['%', '_'], ['\%','\_'], (string) $value).'%';
+                $useOr ? $q->orWhere($field, 'like', $like) : $q->where($field, 'like', $like);
                 break;
             case 'ends_with':
-                $pattern = '/'.preg_quote((string) $value, '/').'$/i';
-                $q->where($field, 'regexp', $pattern, $boolean);
+                $like = '%'.str_replace(['%', '_'], ['\%','\_'], (string) $value);
+                $useOr ? $q->orWhere($field, 'like', $like) : $q->where($field, 'like', $like);
                 break;
             case 'in':
                 $vals = is_array($value) ? $value : array_filter(array_map('trim', explode(',', (string) $value)));
                 if (!empty($vals)) {
-                    $q->whereIn($field, $vals, $boolean);
+                    $useOr ? $q->orWhereIn($field, $vals) : $q->whereIn($field, $vals);
                 }
                 break;
             case 'not_in':
                 $vals = is_array($value) ? $value : array_filter(array_map('trim', explode(',', (string) $value)));
                 if (!empty($vals)) {
-                    $q->whereNotIn($field, $vals, $boolean);
+                    $useOr ? $q->orWhereNotIn($field, $vals) : $q->whereNotIn($field, $vals);
                 }
                 break;
             default:
