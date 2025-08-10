@@ -2,9 +2,10 @@ import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
+import { ButtonsEditor, PhoneButton } from '@/components/phone-edit/buttons-editor';
+import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { ButtonsEditor, PhoneButton } from '@/components/phone-edit/buttons-editor';
 
 type PhoneForm = {
     id: string;
@@ -53,10 +54,11 @@ export default function Edit({ phone }: Props) {
             <div className="flex flex-1 flex-col gap-4">
                 <AppHeader />
                 <AppContent variant="sidebar">
-                    <div className="mx-auto max-w-3xl">
+                    <div className="mx-auto max-w-4xl space-y-4">
+                        <PhoneHeader name={data.name} model={data.model} ucmName={(phone as any).ucm?.name} onSave={() => submit(new Event('submit') as any)} onRevert={() => window.location.reload()} />
                         <div className="overflow-hidden rounded-lg border bg-card shadow">
                             <div className="border-b p-6">
-                                <h2 className="text-xl font-semibold">Edit Phone</h2>
+                                <h2 className="text-lg font-semibold">Overview</h2>
                                 <p className="text-sm text-muted-foreground">Update basic phone settings</p>
                             </div>
                             <form onSubmit={submit} className="space-y-6 p-6">

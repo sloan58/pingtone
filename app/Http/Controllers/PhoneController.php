@@ -84,6 +84,10 @@ class PhoneController extends Controller
             'phone' => [
                 'id' => (string) $phone->getKey(),
                 'ucm_id' => (string) $phone->ucm_id,
+                'ucm' => [
+                    'id' => (string) $phone->ucm?->getKey(),
+                    'name' => $phone->ucm?->name,
+                ],
                 'name' => $phone->name,
                 'description' => $phone->description ?? '',
                 'model' => $phone->model ?? '',
