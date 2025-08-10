@@ -17,7 +17,29 @@ class PhoneController extends Controller
     {
         $query = Phone::query()->with(['ucm']);
 
-        $filters = array_values((array) $request->input('filters', []));
+        // Normalize filters to an array of rows: [['field'=>..,'operator'=>..,'value'=>..], ...]
+        $rawFilters = $request->input('filters');
+        if ($rawFilters === null) {
+            $filters = [];
+        } elseif (is_array($rawFilters)) {
+            // Single row case: ['field'=>..,'operator'=>..,'value'=>..]
+            if (isset($rawFilters['field'], $rawFilters['operator'])) {
+                $filters = [
+                    [
+                        'field' => (string) $rawFilters['field'],
+                        'operator' => (string) $rawFilters['operator'],
+                        'value' => $rawFilters['value'] ?? '',
+                    ],
+                ];
+            } else {
+                // Array of rows (possibly keyed): reindex and filter only valid rows
+                $filters = array_values(array_filter($rawFilters, function ($row) {
+                    return is_array($row) && isset($row['field'], $row['operator']);
+                }));
+            }
+        } else {
+            $filters = [];
+        }
         $logic = (string) $request->input('logic', 'and');
         $this->applyFilters($query, $filters, $logic, [
             'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'

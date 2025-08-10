@@ -13,11 +13,13 @@ interface AdvancedSearchProps {
 }
 
 export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps) {
-    const [rows, setRows] = useState<FilterRow[]>(initial?.applied ?? []);
+    const initialRows = (initial?.applied ?? []).map(r => ({ field: r.field, operator: r.operator, value: r.value }));
+    const [rows, setRows] = useState<FilterRow[]>(initialRows);
     const [logic, setLogic] = useState<'and' | 'or'>(initial?.logic ?? 'and');
 
     useEffect(() => {
-        setRows(initial?.applied ?? []);
+        const next = (initial?.applied ?? []).map(r => ({ field: r.field, operator: r.operator, value: r.value }));
+        setRows(next);
         setLogic(initial?.logic ?? 'and');
     }, [initial?.applied, initial?.logic]);
 
@@ -34,16 +36,17 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
         [],
     );
 
-  const addRow = () => setRows((r) => {
-    // Avoid duplicating a trailing empty row when initial filters also empty
-    if (r.length > 0) {
-      const last = r[r.length - 1];
-      if (!last.value && last.field && last.operator) {
-        return r; // keep single empty row
-      }
-    }
-    return [...r, { field: fields[0]?.value ?? '', operator: 'contains', value: '' }];
-  });
+    const addRow = () =>
+        setRows((r) => {
+            // Avoid duplicating a trailing empty row when initial filters also empty
+            if (r.length > 0) {
+                const last = r[r.length - 1];
+                if (!last.value && last.field && last.operator) {
+                    return r; // keep single empty row
+                }
+            }
+            return [...r, { field: fields[0]?.value ?? '', operator: 'contains', value: '' }];
+        });
     const removeRow = (i: number) => setRows((r) => r.filter((_, idx) => idx !== i));
 
     const updateRow = (i: number, patch: Partial<FilterRow>) => setRows((r) => r.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
