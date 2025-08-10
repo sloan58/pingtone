@@ -4,6 +4,7 @@ import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { ButtonsEditor, PhoneButton } from '@/components/phone-edit/buttons-editor';
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
+import { PhoneInnerNav } from '@/components/phone-edit/phone-inner-nav';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
@@ -25,6 +26,8 @@ interface Props {
 
 export default function Edit({ phone }: Props) {
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone);
+    const [activeTab, setActiveTab] = useState<'device' | 'lines' | 'speed_dials' | 'blfs'>('device');
+    const [isDirty, setIsDirty] = useState(false);
 
     const [devicePools, setDevicePools] = useState<Option[]>([]);
     const [phoneModels, setPhoneModels] = useState<Option[]>([]);
@@ -55,13 +58,21 @@ export default function Edit({ phone }: Props) {
                 <AppHeader />
                 <AppContent variant="sidebar">
                     <div className="mx-auto max-w-4xl space-y-4">
-                        <PhoneHeader name={data.name} model={data.model} ucmName={(phone as any).ucm?.name} onSave={() => submit(new Event('submit') as any)} onRevert={() => window.location.reload()} />
+                        <PhoneHeader
+                            name={data.name}
+                            model={data.model}
+                            ucmName={(phone as any).ucm?.name}
+                            onSave={() => submit(new Event('submit') as any)}
+                            onRevert={() => window.location.reload()}
+                            canSave={isDirty}
+                        />
+                        <PhoneInnerNav active={activeTab} onChange={setActiveTab} />
                         <div className="overflow-hidden rounded-lg border bg-card shadow">
                             <div className="border-b p-6">
-                                <h2 className="text-lg font-semibold">Overview</h2>
-                                <p className="text-sm text-muted-foreground">Update basic phone settings</p>
+                                <h2 className="text-lg font-semibold">{activeTab === 'device' ? 'Device' : activeTab === 'lines' ? 'Lines' : activeTab === 'speed_dials' ? 'Speed Dials' : 'BLFs'}</h2>
+                                <p className="text-sm text-muted-foreground">{activeTab === 'device' ? 'Update basic phone settings' : 'Configure items for this phone'}</p>
                             </div>
-                            <form onSubmit={submit} className="space-y-6 p-6">
+                            <form onSubmit={submit} className="space-y-6 p-6" onChange={() => setIsDirty(true)}>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Name</label>
                                     <input
@@ -113,10 +124,12 @@ export default function Edit({ phone }: Props) {
                                     {errors.devicePoolName && <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>}
                                 </div>
 
-                                <div className="space-y-3">
-                                    <h3 className="text-lg font-semibold">Buttons & Keys</h3>
-                                    <ButtonsEditor value={data.buttons || []} onChange={(next) => setData('buttons', next)} />
-                                </div>
+                                {activeTab !== 'device' && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-semibold">{activeTab === 'lines' ? 'Lines' : activeTab === 'speed_dials' ? 'Speed Dials' : 'BLFs'}</h3>
+                                        <ButtonsEditor value={data.buttons || []} onChange={(next) => { setData('buttons', next); setIsDirty(true); }} />
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-between">
                                     <Link href={`/phones/${data.id}`} className="text-sm text-muted-foreground hover:underline">
