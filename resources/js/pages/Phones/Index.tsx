@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout';
 import { Phone } from '@/types';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 interface Props {
     phones: {
@@ -31,39 +31,43 @@ export default function Index({ phones }: Props) {
                                                 Name
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                                Description
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                                 Model
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                                Status
+                                                Device Pool
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                                UCM
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                                Lines
+                                            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                                Actions
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border bg-card">
-                                        {phones.data.map((phone) => (
-                                            <tr key={phone.id} className="hover:bg-muted/50">
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground">{phone.name}</td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{phone.model}</td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
-                                                    <span
-                                                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                                                            phone.status === 'Registered' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                        }`}
-                                                    >
-                                                        {phone.status}
-                                                    </span>
-                                                </td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{phone.ucm?.name}</td>
-                                                <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
-                                                    {phone.lines?.length || 0}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {phones.data.map((phone) => {
+                                            const devicePool =
+                                                (phone as any).devicePoolName ||
+                                                (phone as any).device_pool_name ||
+                                                (phone as any).devicepoolname || '';
+                                            const devicePoolText =
+                                                typeof devicePool === 'string'
+                                                    ? devicePool
+                                                    : devicePool?.name || devicePool?._ || devicePool?.value || '';
+                                            return (
+                                                <tr key={(phone as any).id ?? (phone as any)._id} className="hover:bg-muted/50">
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground">{(phone as any).name}</td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{(phone as any).description || ''}</td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{(phone as any).model || ''}</td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">{devicePoolText}</td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                                                        <Link href={`/phones/${(phone as any).id}/edit`} className="text-primary hover:underline">
+                                                            Edit
+                                                        </Link>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
