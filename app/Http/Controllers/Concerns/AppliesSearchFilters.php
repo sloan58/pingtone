@@ -42,6 +42,7 @@ trait AppliesSearchFilters
 
     protected function applySingleFilter(Builder $q, string $field, string $operator, $value, string $boolean = 'and'): void
     {
+        $operator = strtolower($operator);
         switch ($operator) {
             case 'equals':
                 $q->where($field, '=', $value, $boolean);
@@ -69,6 +70,9 @@ trait AppliesSearchFilters
                 if (!empty($vals)) {
                     $q->whereNotIn($field, $vals, $boolean);
                 }
+                break;
+            default:
+                // no-op for unknown operator
                 break;
         }
     }

@@ -1,10 +1,10 @@
+import { AdvancedSearch, FilterRow } from '@/components/advanced-search';
 import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Phone } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { AdvancedSearch, FilterRow } from '@/components/advanced-search';
 
 interface Props {
     phones: {
@@ -41,7 +41,7 @@ export default function Index({ phones, filters }: Props & { filters?: { applied
                                     ]}
                                     initial={filters}
                                     onApply={(payload) => {
-                                        router.get('/phones', payload, { preserveState: true, preserveScroll: true });
+                                        router.get('/phones', payload, { replace: true, preserveState: false, preserveScroll: true });
                                     }}
                                 />
                             </div>
