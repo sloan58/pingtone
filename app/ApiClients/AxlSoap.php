@@ -507,6 +507,46 @@ class AxlSoap extends SoapClient
 
 
     /**
+     * Update a phone in UCM via AXL API
+     * 
+     * @param array $updateObject The phone update object
+     * @return array The response from UCM
+     * @throws SoapFault
+     */
+    public function updatePhone(array $updateObject): array
+    {
+        try {
+            Log::info("Updating phone in UCM", [
+                'ucm' => $this->ucm->name,
+                'phone_name' => $updateObject['name'] ?? 'unknown',
+                'update_object' => $updateObject,
+            ]);
+
+            $res = $this->__soapCall('updatePhone', [
+                'updatePhone' => $updateObject,
+            ]);
+
+            Log::info("Successfully updated phone in UCM", [
+                'ucm' => $this->ucm->name,
+                'phone_name' => $updateObject['name'] ?? 'unknown',
+            ]);
+
+            return json_decode(json_encode($res), true);
+
+        } catch (SoapFault $e) {
+            Log::error("Failed to update phone in UCM", [
+                'ucm' => $this->ucm->name,
+                'phone_name' => $updateObject['name'] ?? 'unknown',
+                'faultcode' => $e->faultcode,
+                'faultstring' => $e->faultstring,
+                'debug_info' => $this->getDebugInfo(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
      * Get debug information for troubleshooting
      */
     public function getDebugInfo(): array

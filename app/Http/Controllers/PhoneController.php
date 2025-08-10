@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use SoapFault;
 use Inertia\Inertia;
 use App\Models\Phone;
+use App\ApiClients\AxlSoap;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
@@ -100,18 +103,37 @@ class PhoneController extends Controller
             'buttons.*.target' => ['nullable', 'string'],
         ]);
 
-        // Preserve MongoDB object structure for model and devicePoolName
-        $data = $validated;
-        
-        // Keep the object structure as-is - don't extract just the name
-        // The database should store the complete object with _ and uuid properties
+        try {
+            // Step 1: Update the phone in UCM via AXL API
+            $axlApi = new AxlSoap($phone->ucm);
 
-        $phone->update($data);
+            // Send the validated data as-is to UCM (same format we received)
+            $axlApi->updatePhone($validated);
 
-        return back()->with('toast', [
-            'type' => 'success',
-            'title' => 'Phone updated',
-            'message' => 'The phone was updated successfully.',
-        ]);
+            // Step 2: If UCM update succeeds, update our local database
+            $phone->update($validated);
+
+            return back()->with('toast', [
+                'type' => 'success',
+                'title' => 'Phone updated',
+                'message' => 'The phone was updated successfully in UCM and local database.',
+            ]);
+
+        } catch (SoapFault $e) {
+            // UCM update failed - return error and original data
+            return back()->with('toast', [
+                'type' => 'error',
+                'title' => 'Update failed',
+                'message' => 'Failed to update phone in UCM: ' . $e->getMessage(),
+            ])->withErrors(['ucm' => 'Failed to update phone in UCM: ' . $e->getMessage()]);
+
+        } catch (Exception $e) {
+            // Unexpected error
+            return back()->with('toast', [
+                'type' => 'error',
+                'title' => 'Update failed',
+                'message' => 'An unexpected error occurred: ' . $e->getMessage(),
+            ])->withErrors(['general' => 'An unexpected error occurred: ' . $e->getMessage()]);
+        }
     }
 }

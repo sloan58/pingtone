@@ -105,7 +105,14 @@ export default function Edit({ phone }: Props) {
         // Data is already in the correct MongoDB object structure from the combobox handlers
         const transformedData = { ...data };
 
-        patch(`/phones/${data.id}`, transformedData);
+        patch(`/phones/${data.id}`, transformedData, {
+            onStart: () => {
+                setIsSaving(true);
+            },
+            onFinish: () => {
+                setIsSaving(false);
+            },
+        });
     };
 
     return (
@@ -120,9 +127,17 @@ export default function Edit({ phone }: Props) {
                             name={data.name}
                             model={data.model}
                             ucmName={(phone as any).ucm?.name}
-                            onSave={() => submit(new Event('submit') as any)}
+                            onSave={() => {
+                                console.log('Save button clicked');
+
+                                // Data is already in the correct MongoDB object structure from the combobox handlers
+                                const transformedData = { ...data };
+
+                                patch(`/phones/${data.id}`, transformedData);
+                            }}
                             onRevert={() => window.location.reload()}
                             canSave={isDirty}
+                            saving={processing}
                         />
                         <PhoneInnerNav active={activeTab} onChange={setActiveTab} />
                         <div className="overflow-hidden rounded-lg border bg-card shadow">
