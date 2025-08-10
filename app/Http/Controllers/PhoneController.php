@@ -2,23 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\Phone;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
 class PhoneController extends Controller
 {
+    use AppliesSearchFilters;
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $phones = Phone::with(['ucm', 'lines'])
-            ->orderBy('name')
-            ->paginate(20);
+        $query = Phone::query()->with(['ucm']);
+
+        $filters = (array) $request->input('filters', []);
+        $logic = (string) $request->input('logic', 'and');
+        $this->applyFilters($query, $filters, $logic, [
+            'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
+        ]);
+
+        $phones = $query->orderBy('name')->paginate(20)->appends($request->only('filters', 'logic'));
 
         return Inertia::render('Phones/Index', [
             'phones' => $phones,
+            'filters' => [
+                'applied' => $filters,
+                'logic' => strtolower($logic) === 'or' ? 'or' : 'and',
+            ],
         ]);
     }
 
@@ -73,4 +85,4 @@ class PhoneController extends Controller
             'message' => 'The phone was updated successfully.',
         ]);
     }
-} 
+}

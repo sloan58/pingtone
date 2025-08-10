@@ -3,7 +3,8 @@ import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { Phone } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import { AdvancedSearch, FilterRow } from '@/components/advanced-search';
 
 interface Props {
     phones: {
@@ -15,7 +16,7 @@ interface Props {
     };
 }
 
-export default function Index({ phones }: Props) {
+export default function Index({ phones, filters }: Props & { filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' } }) {
     return (
         <AppShell variant="sidebar">
             <Head title="Phones" />
@@ -30,6 +31,20 @@ export default function Index({ phones }: Props) {
                         <div className="p-6">
                             <h2 className="mb-6 text-2xl font-semibold">Phones</h2>
 
+                            <div className="mb-4">
+                                <AdvancedSearch
+                                    fields={[
+                                        { value: 'name', label: 'Name' },
+                                        { value: 'description', label: 'Description' },
+                                        { value: 'model', label: 'Model' },
+                                        { value: 'devicePoolName', label: 'Device Pool' },
+                                    ]}
+                                    initial={filters}
+                                    onApply={(payload) => {
+                                        router.get('/phones', payload, { preserveState: true, preserveScroll: true });
+                                    }}
+                                />
+                            </div>
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-border">
                                     <thead className="bg-muted">
