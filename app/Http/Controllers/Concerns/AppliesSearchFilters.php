@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
+use MongoDB\BSON\Regex as MongoRegex;
 
 trait AppliesSearchFilters
 {
@@ -51,13 +52,16 @@ trait AppliesSearchFilters
                 $q->where($field, '!=', $value, $boolean);
                 break;
             case 'contains':
-                $q->where($field, 'like', "%$value%", $boolean);
+                $pattern = '/'.preg_quote((string) $value, '/').'/i';
+                $q->where($field, 'regexp', $pattern, $boolean);
                 break;
             case 'starts_with':
-                $q->where($field, 'like', "$value%", $boolean);
+                $pattern = '/^'.preg_quote((string) $value, '/').'/i';
+                $q->where($field, 'regexp', $pattern, $boolean);
                 break;
             case 'ends_with':
-                $q->where($field, 'like', "%$value", $boolean);
+                $pattern = '/'.preg_quote((string) $value, '/').'$/i';
+                $q->where($field, 'regexp', $pattern, $boolean);
                 break;
             case 'in':
                 $vals = is_array($value) ? $value : array_filter(array_map('trim', explode(',', (string) $value)));
