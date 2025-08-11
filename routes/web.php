@@ -49,6 +49,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/moh-audio-sources', [InfrastructureOptionsController::class, 'mohAudioSources']);
     Route::get('/ucm/{ucm}/options/aar-groups', [InfrastructureOptionsController::class, 'aarGroups']);
     Route::get('/ucm/{ucm}/options/user-locales', [InfrastructureOptionsController::class, 'userLocales']);
+    Route::get('/ucm/{ucm}/options/ucm-users', [InfrastructureOptionsController::class, 'ucmUsers']);
 });
 
 Route::get('/test-toast', function () {

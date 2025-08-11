@@ -16,6 +16,7 @@ use App\Models\MediaResourceGroupList;
 use App\Models\MohAudioSource;
 use App\Models\AarGroup;
 use App\Models\UserLocale;
+use App\Models\UcmUser;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -183,6 +184,22 @@ class InfrastructureOptionsController extends Controller
     public function userLocales(Ucm $ucm): JsonResponse
     {
         $options = UserLocale::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function ucmUsers(Ucm $ucm): JsonResponse
+    {
+        $options = UcmUser::query()
             ->where('ucm_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])

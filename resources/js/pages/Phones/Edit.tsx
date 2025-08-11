@@ -31,6 +31,7 @@ type PhoneForm = {
     builtInBridgeStatus?: string;
     callInfoPrivacyStatus?: string;
     deviceMobilityMode?: string;
+    ownerUserName?: any;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -73,6 +74,8 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [aarCallingSearchSpaces, setAarCallingSearchSpaces] = useState<Option[]>([]);
     const [aarGroups, setAarGroups] = useState<Option[]>([]);
     const [userLocales, setUserLocales] = useState<Option[]>([]);
+    const [ownerType, setOwnerType] = useState<'user' | 'anonymous'>('user');
+    const [ucmUsers, setUcmUsers] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -388,6 +391,18 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setUserLocales(responseData);
             } catch (error) {
                 console.error('Failed to load user locales:', error);
+            }
+        }
+    };
+
+    const loadUcmUsers = async () => {
+        if (ucmUsers.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/ucm-users`);
+                const responseData = await response.json();
+                setUcmUsers(responseData);
+            } catch (error) {
+                console.error('Failed to load UCM users:', error);
             }
         }
     };
@@ -974,6 +989,66 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <p className="mt-1 text-sm text-destructive">{errors.deviceMobilityMode}</p>
                                                 )}
                                             </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Owner</label>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        <input
+                                                            type="radio"
+                                                            id="owner-user"
+                                                            name="ownerType"
+                                                            value="user"
+                                                            checked={ownerType === 'user'}
+                                                            onChange={(e) => setOwnerType(e.target.value as 'user' | 'anonymous')}
+                                                            className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                                                        />
+                                                        <label htmlFor="owner-user" className="text-sm font-medium">
+                                                            User
+                                                        </label>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        <input
+                                                            type="radio"
+                                                            id="owner-anonymous"
+                                                            name="ownerType"
+                                                            value="anonymous"
+                                                            checked={ownerType === 'anonymous'}
+                                                            onChange={(e) => setOwnerType(e.target.value as 'user' | 'anonymous')}
+                                                            className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                                                        />
+                                                        <label htmlFor="owner-anonymous" className="text-sm font-medium">
+                                                            Anonymous (Public/Shared Space)
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {ownerType === 'user' && (
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Owner User ID</label>
+                                                    <Combobox
+                                                        options={ucmUsers.map((o) => ({
+                                                            value: o.uuid || o.id,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={data.ownerUserName?._ || ''}
+                                                        onValueChange={(value) => {
+                                                            const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
+                                                            if (selectedUser) {
+                                                                setData('ownerUserName', {
+                                                                    _: selectedUser.name,
+                                                                    uuid: selectedUser.uuid || selectedUser.id,
+                                                                });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a user..."
+                                                        searchPlaceholder="Search users..."
+                                                        emptyMessage="No users found."
+                                                        onMouseEnter={loadUcmUsers}
+                                                        displayValue={data.ownerUserName?._ || ''}
+                                                    />
+                                                    {errors.ownerUserName && <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>}
+                                                </div>
+                                            )}
                                         </div>
                                     </form>
                                 </div>
