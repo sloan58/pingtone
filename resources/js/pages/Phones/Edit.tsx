@@ -1013,42 +1013,48 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                             name="ownerType"
                                                             value="anonymous"
                                                             checked={ownerType === 'anonymous'}
-                                                            onChange={(e) => setOwnerType(e.target.value as 'user' | 'anonymous')}
+                                                            onChange={(e) => {
+                                                                setOwnerType(e.target.value as 'user' | 'anonymous');
+                                                                if (e.target.value === 'anonymous') {
+                                                                    setData('ownerUserName', { _: '', uuid: '' });
+                                                                }
+                                                            }}
                                                             className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
                                                         />
                                                         <label htmlFor="owner-anonymous" className="text-sm font-medium">
                                                             Anonymous (Public/Shared Space)
                                                         </label>
                                                     </div>
+                                                    <div className="ml-6">
+                                                        <label className="mb-1 block text-sm font-medium">Owner User ID</label>
+                                                        <Combobox
+                                                            options={ucmUsers.map((o) => ({
+                                                                value: o.uuid || o.id,
+                                                                label: o.name,
+                                                            }))}
+                                                            value={data.ownerUserName?._ || ''}
+                                                            onValueChange={(value) => {
+                                                                const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
+                                                                if (selectedUser) {
+                                                                    setData('ownerUserName', {
+                                                                        _: selectedUser.name,
+                                                                        uuid: selectedUser.uuid || selectedUser.id,
+                                                                    });
+                                                                }
+                                                            }}
+                                                            placeholder="Select a user..."
+                                                            searchPlaceholder="Search users..."
+                                                            emptyMessage="No users found."
+                                                            onMouseEnter={loadUcmUsers}
+                                                            displayValue={data.ownerUserName?._ || ''}
+                                                            disabled={ownerType === 'anonymous'}
+                                                        />
+                                                        {errors.ownerUserName && (
+                                                            <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                            {ownerType === 'user' && (
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">Owner User ID</label>
-                                                    <Combobox
-                                                        options={ucmUsers.map((o) => ({
-                                                            value: o.uuid || o.id,
-                                                            label: o.name,
-                                                        }))}
-                                                        value={data.ownerUserName?._ || ''}
-                                                        onValueChange={(value) => {
-                                                            const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
-                                                            if (selectedUser) {
-                                                                setData('ownerUserName', {
-                                                                    _: selectedUser.name,
-                                                                    uuid: selectedUser.uuid || selectedUser.id,
-                                                                });
-                                                            }
-                                                        }}
-                                                        placeholder="Select a user..."
-                                                        searchPlaceholder="Search users..."
-                                                        emptyMessage="No users found."
-                                                        onMouseEnter={loadUcmUsers}
-                                                        displayValue={data.ownerUserName?._ || ''}
-                                                    />
-                                                    {errors.ownerUserName && <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>}
-                                                </div>
-                                            )}
                                         </div>
                                     </form>
                                 </div>
