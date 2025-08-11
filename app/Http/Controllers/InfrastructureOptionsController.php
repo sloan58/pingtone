@@ -3,20 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ucm;
+use App\Models\UcmUser;
+use App\Models\Location;
+use App\Models\AarGroup;
 use App\Models\DevicePool;
 use App\Models\PhoneModel;
+use App\Models\UserLocale;
 use Illuminate\Http\Request;
+use App\Models\MohAudioSource;
 use App\Models\CommonPhoneConfig;
 use Illuminate\Http\JsonResponse;
 use App\Models\CommonDeviceConfig;
-use App\Models\PhoneButtonTemplate;
 use App\Models\CallingSearchSpace;
-use App\Models\Location;
+use App\Models\PhoneButtonTemplate;
 use App\Models\MediaResourceGroupList;
-use App\Models\MohAudioSource;
-use App\Models\AarGroup;
-use App\Models\UserLocale;
-use App\Models\UcmUser;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -202,11 +202,30 @@ class InfrastructureOptionsController extends Controller
         $options = UcmUser::query()
             ->where('ucm_id', $ucm->getKey())
             ->orderBy('name')
-            ->get(['_id', 'uuid', 'name'])
+            ->get(['_id', 'uuid', 'name', 'userid'])
             ->map(fn ($row) => [
                 'id' => (string) $row->_id,
                 'uuid' => $row->uuid ?? null,
                 'name' => $row->name ?? ($row['name'] ?? null),
+                'userid' => $row->userid ?? null,
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function mobilityUsers(Ucm $ucm): JsonResponse
+    {
+        $options = UcmUser::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->where('enableMobility', 'true')
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name', 'userid'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+                'userid' => $row->userid ?? null,
             ])
             ->values();
 

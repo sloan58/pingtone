@@ -551,6 +551,9 @@ class AxlSoap extends SoapClient
             // userLocale needs to be an empty string if null
             $updateObject['userLocale'] = is_null($updateObject['userLocale']) ? '' : $updateObject['userLocale'];
 
+            // UCM doesn't like the capital uuid (which we also got from UCM)
+            $updateObject['ownerUserName']['uuid'] = strtolower($updateObject['ownerUserName']['uuid']);
+
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,
             ]);

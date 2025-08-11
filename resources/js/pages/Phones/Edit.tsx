@@ -32,6 +32,7 @@ type PhoneForm = {
     callInfoPrivacyStatus?: string;
     deviceMobilityMode?: string;
     ownerUserName?: any;
+    mobilityUserIdName?: any;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -75,6 +76,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [aarGroups, setAarGroups] = useState<Option[]>([]);
     const [userLocales, setUserLocales] = useState<Option[]>([]);
     const [ucmUsers, setUcmUsers] = useState<Option[]>([]);
+    const [mobilityUsers, setMobilityUsers] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -402,6 +404,18 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setUcmUsers(responseData);
             } catch (error) {
                 console.error('Failed to load UCM users:', error);
+            }
+        }
+    };
+
+    const loadMobilityUsers = async () => {
+        if (mobilityUsers.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/mobility-users`);
+                const responseData = await response.json();
+                setMobilityUsers(responseData);
+            } catch (error) {
+                console.error('Failed to load mobility users:', error);
             }
         }
     };
@@ -1019,6 +1033,33 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     displayValue={data.ownerUserName?._ || 'Anonymous (Public/Shared Space)'}
                                                 />
                                                 {errors.ownerUserName && <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Mobility User ID</label>
+                                                <Combobox
+                                                    options={mobilityUsers.map((o) => ({
+                                                        value: o.uuid || o.id,
+                                                        label: o.userid || o.name || '',
+                                                    }))}
+                                                    value={data.mobilityUserIdName?._ || ''}
+                                                    onValueChange={(value) => {
+                                                        const selectedUser = mobilityUsers.find((u) => (u.uuid || u.id) === value);
+                                                        if (selectedUser) {
+                                                            setData('mobilityUserIdName', {
+                                                                _: selectedUser.userid || selectedUser.name || '',
+                                                                uuid: selectedUser.uuid || selectedUser.id,
+                                                            });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a mobility user..."
+                                                    searchPlaceholder="Search mobility users..."
+                                                    emptyMessage="No mobility users found."
+                                                    onMouseEnter={loadMobilityUsers}
+                                                    displayValue={data.mobilityUserIdName?._ || ''}
+                                                />
+                                                {errors.mobilityUserIdName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.mobilityUserIdName}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </form>
