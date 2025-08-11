@@ -26,6 +26,7 @@ type PhoneForm = {
     automatedAlternateRoutingCssName?: any;
     userHoldMohAudioSourceId?: string;
     networkHoldMohAudioSourceId?: string;
+    aarNeighborhoodName?: any;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -43,6 +44,15 @@ interface Props {
 export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Props) {
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
     const isSaving = useRef(false);
+
+    // Debug logging for props
+    console.log('Edit component props:', {
+        phoneButtonTemplate,
+        phoneButtons: phone.buttons,
+        phoneLines: phone.lines,
+        phoneSpeedDials: phone.speedDials,
+        phoneBlfs: phone.blfs,
+    });
 
     // Handle toast messages from backend
     const page = usePage<any>();
@@ -66,6 +76,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [locations, setLocations] = useState<Option[]>([]);
     const [mediaResourceGroupLists, setMediaResourceGroupLists] = useState<Option[]>([]);
     const [aarCallingSearchSpaces, setAarCallingSearchSpaces] = useState<Option[]>([]);
+    const [aarGroups, setAarGroups] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -96,6 +107,13 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 feature: templateButton.feature || 'Line',
             };
 
+            // Debug logging to see what's happening with button types
+            console.log(`Button ${buttonNum}:`, {
+                templateFeature: templateButton.feature,
+                buttonType: button.type,
+                templateButton,
+            });
+
             // Map based on feature type
             switch (templateButton.feature?.toLowerCase()) {
                 case 'line':
@@ -111,6 +129,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                     break;
                 case 'speed_dial':
                 case 'speeddial':
+                case 'speed dial':
                     // Find the speed dial that matches this buttonnum position
                     const matchingSpeedDial = availableSpeedDials.find((sd: any) => parseInt(sd.index) === buttonNum);
                     if (matchingSpeedDial) {
@@ -122,6 +141,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                     }
                     break;
                 case 'blf':
+                case 'speed dial blf':
                     // Find the BLF that matches this buttonnum position
                     const matchingBlf = availableBlfs.find((blf: any) => parseInt(blf.index) === buttonNum);
                     if (matchingBlf) {
@@ -148,6 +168,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
         if (!phoneButtonTemplate?.buttons) return;
 
         const mappedButtons = mapTemplateToPhoneButtons();
+        console.log('rebuildButtonArrays - mappedButtons:', mappedButtons);
         setData('buttons', mappedButtons);
     }, [phoneButtonTemplate, mapTemplateToPhoneButtons, setData]);
 
@@ -163,9 +184,10 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
             // Group buttons by type and create position mappings
             const lineButtons = reorderedButtons.filter((btn) => btn.type?.toLowerCase() === 'line');
             const speedDialButtons = reorderedButtons.filter(
-                (btn) => btn.type?.toLowerCase() === 'speed_dial' || btn.type?.toLowerCase() === 'speeddial',
+                (btn) =>
+                    btn.type?.toLowerCase() === 'speed_dial' || btn.type?.toLowerCase() === 'speeddial' || btn.type?.toLowerCase() === 'speed dial',
             );
-            const blfButtons = reorderedButtons.filter((btn) => btn.type?.toLowerCase() === 'blf');
+            const blfButtons = reorderedButtons.filter((btn) => btn.type?.toLowerCase() === 'blf' || btn.type?.toLowerCase() === 'speed dial blf');
 
             // Update lines - map button positions to line indices
             if (lineButtons.length > 0 && data.lines?.line) {
@@ -354,6 +376,18 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setAarCallingSearchSpaces(responseData);
             } catch (error) {
                 console.error('Failed to load AAR calling search spaces:', error);
+            }
+        }
+    };
+
+    const loadAarGroups = async () => {
+        if (aarGroups.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/aar-groups`);
+                const responseData = await response.json();
+                setAarGroups(responseData);
+            } catch (error) {
+                console.error('Failed to load AAR groups:', error);
             }
         }
     };
@@ -829,6 +863,43 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     }
                                                 />
                                                 {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">AAR Group</label>
+                                                <Combobox
+                                                    options={aarGroups.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.aarNeighborhoodName === 'string'
+                                                            ? data.aarNeighborhoodName
+                                                            : data.aarNeighborhoodName?._ || data.aarNeighborhoodName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedAarGroup = aarGroups.find((aarGroup) => aarGroup.name === value);
+                                                        if (selectedAarGroup) {
+                                                            setData('aarNeighborhoodName', {
+                                                                _: selectedAarGroup.name,
+                                                                uuid: selectedAarGroup.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('aarNeighborhoodName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select an AAR group..."
+                                                    searchPlaceholder="Search AAR groups..."
+                                                    emptyMessage="No AAR groups found."
+                                                    onMouseEnter={loadAarGroups}
+                                                    displayValue={
+                                                        typeof data.aarNeighborhoodName === 'string'
+                                                            ? data.aarNeighborhoodName
+                                                            : data.aarNeighborhoodName?._ || data.aarNeighborhoodName?.name || ''
+                                                    }
+                                                />
+                                                {errors.aarNeighborhoodName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.aarNeighborhoodName}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </form>

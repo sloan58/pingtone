@@ -138,6 +138,11 @@ class Ucm extends Model
         return $this->hasMany(MohAudioSource::class);
     }
 
+    public function aarGroups(): HasMany
+    {
+        return $this->hasMany(AarGroup::class);
+    }
+
     public function callPickupGroups(): HasMany
     {
         return $this->hasMany(CallPickupGroup::class);

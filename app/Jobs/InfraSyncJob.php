@@ -27,6 +27,7 @@ use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use App\Models\MediaResourceGroupList;
+use App\Models\AarGroup;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -273,6 +274,15 @@ class InfraSyncJob implements ShouldQueue
                 $roles = $axlApi->performSqlQuery('select pkid as uuid, name FROM dirgroup');
                 UcmRole::storeUcmData($roles, $this->ucm);
                 $this->ucm->roles()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'aar_groups':
+                $data = $axlApi->listUcmObjects('listAarGroup', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ], 'aarGroup');
+                AarGroup::storeUcmData($data, $this->ucm);
+                $this->ucm->aarGroups()->where('updated_at', '<', $start)->delete();
                 break;
         }
     }

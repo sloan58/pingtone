@@ -47,6 +47,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/locations', [InfrastructureOptionsController::class, 'locations']);
     Route::get('/ucm/{ucm}/options/media-resource-group-lists', [InfrastructureOptionsController::class, 'mediaResourceGroupLists']);
     Route::get('/ucm/{ucm}/options/moh-audio-sources', [InfrastructureOptionsController::class, 'mohAudioSources']);
+    Route::get('/ucm/{ucm}/options/aar-groups', [InfrastructureOptionsController::class, 'aarGroups']);
 });
 
 Route::get('/test-toast', function () {
