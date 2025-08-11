@@ -1127,22 +1127,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 )}
                                             </div>
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">Always Use Prime Line*</label>
-                                                <select
-                                                    value={data.alwaysUsePrimeLine || ''}
-                                                    onChange={(e) => setData('alwaysUsePrimeLine', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
-                                                {errors.alwaysUsePrimeLine && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.alwaysUsePrimeLine}</p>
-                                                )}
-                                            </div>
-                                            <div>
                                                 <label className="mb-1 block text-sm font-medium">BLF Audible Alert Setting (Phone Idle)*</label>
                                                 <select
                                                     value={data.ringSettingIdleBlfAudibleAlert || ''}
@@ -1172,6 +1156,22 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 </select>
                                                 {errors.ringSettingBusyBlfAudibleAlert && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.ringSettingBusyBlfAudibleAlert}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Always Use Prime Line*</label>
+                                                <select
+                                                    value={data.alwaysUsePrimeLine || ''}
+                                                    onChange={(e) => setData('alwaysUsePrimeLine', e.target.value)}
+                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    <option value="">&lt; None &gt;</option>
+                                                    <option value="Off">Off</option>
+                                                    <option value="On">On</option>
+                                                    <option value="Default">Default</option>
+                                                </select>
+                                                {errors.alwaysUsePrimeLine && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.alwaysUsePrimeLine}</p>
                                                 )}
                                             </div>
                                         </div>
