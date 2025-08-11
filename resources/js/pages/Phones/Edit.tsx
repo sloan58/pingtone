@@ -974,48 +974,59 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Built In Bridge</label>
-                                                <select
+                                                <Combobox
+                                                    options={[
+                                                        { value: '', label: '< None >' },
+                                                        { value: 'Off', label: 'Off' },
+                                                        { value: 'On', label: 'On' },
+                                                        { value: 'Default', label: 'Default' },
+                                                    ]}
                                                     value={data.builtInBridgeStatus || ''}
-                                                    onChange={(e) => setData('builtInBridgeStatus', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
+                                                    onValueChange={(value) => setData('builtInBridgeStatus', value)}
+                                                    placeholder="Select built in bridge status..."
+                                                    searchPlaceholder="Search options..."
+                                                    emptyMessage="No options found."
+                                                    displayValue={data.builtInBridgeStatus || ''}
+                                                />
                                                 {errors.builtInBridgeStatus && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.builtInBridgeStatus}</p>
                                                 )}
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Privacy</label>
-                                                <select
+                                                <Combobox
+                                                    options={[
+                                                        { value: '', label: '< None >' },
+                                                        { value: 'Off', label: 'Off' },
+                                                        { value: 'On', label: 'On' },
+                                                        { value: 'Default', label: 'Default' },
+                                                    ]}
                                                     value={data.callInfoPrivacyStatus || ''}
-                                                    onChange={(e) => setData('callInfoPrivacyStatus', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
+                                                    onValueChange={(value) => setData('callInfoPrivacyStatus', value)}
+                                                    placeholder="Select privacy status..."
+                                                    searchPlaceholder="Search options..."
+                                                    emptyMessage="No options found."
+                                                    displayValue={data.callInfoPrivacyStatus || ''}
+                                                />
                                                 {errors.callInfoPrivacyStatus && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.callInfoPrivacyStatus}</p>
                                                 )}
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Device Mobility Mode</label>
-                                                <select
+                                                <Combobox
+                                                    options={[
+                                                        { value: 'Off', label: 'Off' },
+                                                        { value: 'On', label: 'On' },
+                                                        { value: 'Default', label: 'Default' },
+                                                    ]}
                                                     value={data.deviceMobilityMode || ''}
-                                                    onChange={(e) => setData('deviceMobilityMode', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
+                                                    onValueChange={(value) => setData('deviceMobilityMode', value)}
+                                                    placeholder="Select device mobility mode..."
+                                                    searchPlaceholder="Search options..."
+                                                    emptyMessage="No options found."
+                                                    displayValue={data.deviceMobilityMode || ''}
+                                                />
                                                 {errors.deviceMobilityMode && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.deviceMobilityMode}</p>
                                                 )}
@@ -1112,64 +1123,76 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                             )}
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Use Trusted Relay Point*</label>
-                                                <select
+                                                <Combobox
+                                                    options={[
+                                                        { value: 'Off', label: 'Off' },
+                                                        { value: 'On', label: 'On' },
+                                                        { value: 'Default', label: 'Default' },
+                                                    ]}
                                                     value={data.useTrustedRelayPoint || ''}
-                                                    onChange={(e) => setData('useTrustedRelayPoint', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
+                                                    onValueChange={(value) => setData('useTrustedRelayPoint', value)}
+                                                    placeholder="Select trusted relay point setting..."
+                                                    searchPlaceholder="Search options..."
+                                                    emptyMessage="No options found."
+                                                    displayValue={data.useTrustedRelayPoint || ''}
+                                                />
                                                 {errors.useTrustedRelayPoint && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.useTrustedRelayPoint}</p>
                                                 )}
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">BLF Audible Alert Setting (Phone Idle)*</label>
-                                                <select
+                                                <Combobox
+                                                    options={[
+                                                        { value: 'Off', label: 'Off' },
+                                                        { value: 'On', label: 'On' },
+                                                        { value: 'Default', label: 'Default' },
+                                                    ]}
                                                     value={data.ringSettingIdleBlfAudibleAlert || ''}
-                                                    onChange={(e) => setData('ringSettingIdleBlfAudibleAlert', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
+                                                    onValueChange={(value) => setData('ringSettingIdleBlfAudibleAlert', value)}
+                                                    placeholder="Select BLF audible alert setting..."
+                                                    searchPlaceholder="Search options..."
+                                                    emptyMessage="No options found."
+                                                    displayValue={data.ringSettingIdleBlfAudibleAlert || ''}
+                                                />
                                                 {errors.ringSettingIdleBlfAudibleAlert && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.ringSettingIdleBlfAudibleAlert}</p>
                                                 )}
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">BLF Audible Alert Setting (Phone Busy)*</label>
-                                                <select
+                                                <Combobox
+                                                    options={[
+                                                        { value: 'Off', label: 'Off' },
+                                                        { value: 'On', label: 'On' },
+                                                        { value: 'Default', label: 'Default' },
+                                                    ]}
                                                     value={data.ringSettingBusyBlfAudibleAlert || ''}
-                                                    onChange={(e) => setData('ringSettingBusyBlfAudibleAlert', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
+                                                    onValueChange={(value) => setData('ringSettingBusyBlfAudibleAlert', value)}
+                                                    placeholder="Select BLF audible alert setting..."
+                                                    searchPlaceholder="Search options..."
+                                                    emptyMessage="No options found."
+                                                    displayValue={data.ringSettingBusyBlfAudibleAlert || ''}
+                                                />
                                                 {errors.ringSettingBusyBlfAudibleAlert && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.ringSettingBusyBlfAudibleAlert}</p>
                                                 )}
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Always Use Prime Line*</label>
-                                                <select
+                                                <Combobox
+                                                    options={[
+                                                        { value: 'Off', label: 'Off' },
+                                                        { value: 'On', label: 'On' },
+                                                        { value: 'Default', label: 'Default' },
+                                                    ]}
                                                     value={data.alwaysUsePrimeLine || ''}
-                                                    onChange={(e) => setData('alwaysUsePrimeLine', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    <option value="">&lt; None &gt;</option>
-                                                    <option value="Off">Off</option>
-                                                    <option value="On">On</option>
-                                                    <option value="Default">Default</option>
-                                                </select>
+                                                    onValueChange={(value) => setData('alwaysUsePrimeLine', value)}
+                                                    placeholder="Select always use prime line setting..."
+                                                    searchPlaceholder="Search options..."
+                                                    emptyMessage="No options found."
+                                                    displayValue={data.alwaysUsePrimeLine || ''}
+                                                />
                                                 {errors.alwaysUsePrimeLine && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.alwaysUsePrimeLine}</p>
                                                 )}
