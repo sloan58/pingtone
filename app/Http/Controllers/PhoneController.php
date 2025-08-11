@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Phone;
 use App\ApiClients\AxlSoap;
 use Illuminate\Http\Request;
+use App\Models\MohAudioSource;
 use App\Models\PhoneButtonTemplate;
 use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
@@ -74,9 +75,14 @@ class PhoneController extends Controller
 
         $phoneButtonTemplate = PhoneButtonTemplate::where('name', $phone->phoneTemplateName['_'])->first();
 
+        $mohAudioSources = MohAudioSource::where('ucm_id', $phone->ucm_id)
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name', 'sourceId']);
+
         return Inertia::render('Phones/Edit', [
             'phone' => $phone,
             'phoneButtonTemplate' => $phoneButtonTemplate,
+            'mohAudioSources' => $mohAudioSources,
         ]);
     }
 
