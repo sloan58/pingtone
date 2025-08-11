@@ -47,6 +47,29 @@ class PhoneButtonTemplate extends Model
             }
         });
     }
+
+    /**
+     * Store phone button template protocol and model information from SQL response rows
+     */
+    public static function storeTemplateProtocolModelInfo(array $responseData, Ucm $ucm): void
+    {
+        collect($responseData)->each(function($record) use ($ucm) {
+            try {
+                self::where('ucm_id', $ucm->id)
+                    ->where('name', $record['templatename'])
+                    ->first()?->update([
+                        'model' => $record['model'],
+                        'protocol' => $record['protocol'],
+                    ]);
+            } catch (Exception $e) {
+                logger()->error("Error updating phone button template protocol/model info", [
+                    'ucm' => $ucm->name,
+                    'template' => $record['templatename'],
+                    'message' => $e->getMessage(),
+                ]);
+            }
+        });
+    }
 }
 
 

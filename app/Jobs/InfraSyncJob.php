@@ -229,6 +229,17 @@ class InfraSyncJob implements ShouldQueue
                     'returnedTags' => ['name' => '', 'uuid' => ''],
                 ], 'phoneButtonTemplate');
                 PhoneButtonTemplate::storeUcmData($data, $this->ucm);
+
+                // Sync Phone Button Template Protocol and Model info via SQL
+                $templateProtocolModelInfo = $axlApi->performSqlQuery(
+                    'SELECT t.name templatename, m.name model, p.name protocol
+                         FROM phonetemplate t
+                         JOIN typemodel m ON t.tkmodel = m.enum
+                         JOIN typedeviceprotocol p ON t.tkdeviceprotocol = p.enum'
+                );
+                PhoneButtonTemplate::storeTemplateProtocolModelInfo($templateProtocolModelInfo, $this->ucm);
+                Log::info("{$this->ucm->name}: syncPhoneButtonTemplateProtocolModelInfo completed");
+
                 $this->ucm->phoneButtonTemplates()->where('updated_at', '<', $start)->delete();
                 break;
 
