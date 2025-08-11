@@ -12,6 +12,7 @@ use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
 use App\Models\CallingSearchSpace;
 use App\Models\Location;
+use App\Models\MediaResourceGroupList;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -115,6 +116,22 @@ class InfrastructureOptionsController extends Controller
     public function locations(Ucm $ucm): JsonResponse
     {
         $options = Location::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function mediaResourceGroupLists(Ucm $ucm): JsonResponse
+    {
+        $options = MediaResourceGroupList::query()
             ->where('ucm_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])

@@ -25,6 +25,7 @@ use App\Models\CallingSearchSpace;
 use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
+use App\Models\MediaResourceGroupList;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -162,6 +163,15 @@ class InfraSyncJob implements ShouldQueue
                 ], 'location');
                 Location::storeUcmData($data, $this->ucm);
                 $this->ucm->locations()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'media_resource_group_lists':
+                $data = $axlApi->listUcmObjects('listMediaResourceList', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ], 'mediaResourceList');
+                MediaResourceGroupList::storeUcmData($data, $this->ucm);
+                $this->ucm->mediaResourceGroupLists()->where('updated_at', '<', $start)->delete();
                 break;
 
             case 'call_pickup_groups':

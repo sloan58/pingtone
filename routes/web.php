@@ -45,6 +45,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/common-phone-configs', [InfrastructureOptionsController::class, 'commonPhoneConfigs']);
     Route::get('/ucm/{ucm}/options/calling-search-spaces', [InfrastructureOptionsController::class, 'callingSearchSpaces']);
     Route::get('/ucm/{ucm}/options/locations', [InfrastructureOptionsController::class, 'locations']);
+    Route::get('/ucm/{ucm}/options/media-resource-group-lists', [InfrastructureOptionsController::class, 'mediaResourceGroupLists']);
 });
 
 Route::get('/test-toast', function () {

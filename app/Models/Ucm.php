@@ -128,6 +128,11 @@ class Ucm extends Model
         return $this->hasMany(Location::class);
     }
 
+    public function mediaResourceGroupLists(): HasMany
+    {
+        return $this->hasMany(MediaResourceGroupList::class);
+    }
+
     public function callPickupGroups(): HasMany
     {
         return $this->hasMany(CallPickupGroup::class);

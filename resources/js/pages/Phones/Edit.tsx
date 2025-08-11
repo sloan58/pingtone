@@ -22,6 +22,7 @@ type PhoneForm = {
     commonPhoneConfigName?: any;
     callingSearchSpaceName?: any;
     locationName?: any;
+    mediaResourceListName?: any;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -59,6 +60,7 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
     const [commonPhoneConfigs, setCommonPhoneConfigs] = useState<Option[]>([]);
     const [callingSearchSpaces, setCallingSearchSpaces] = useState<Option[]>([]);
     const [locations, setLocations] = useState<Option[]>([]);
+    const [mediaResourceGroupLists, setMediaResourceGroupLists] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -347,6 +349,18 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                 setLocations(responseData);
             } catch (error) {
                 console.error('Failed to load locations:', error);
+            }
+        }
+    };
+
+    const loadMediaResourceGroupLists = async () => {
+        if (mediaResourceGroupLists.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/media-resource-group-lists`);
+                const responseData = await response.json();
+                setMediaResourceGroupLists(responseData);
+            } catch (error) {
+                console.error('Failed to load media resource group lists:', error);
             }
         }
     };
@@ -674,6 +688,43 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                     }
                                                 />
                                                 {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Media Resource Group List</label>
+                                                <Combobox
+                                                    options={mediaResourceGroupLists.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.mediaResourceListName === 'string'
+                                                            ? data.mediaResourceListName
+                                                            : data.mediaResourceListName?._ || data.mediaResourceListName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedMrgl = mediaResourceGroupLists.find((mrgl) => mrgl.name === value);
+                                                        if (selectedMrgl) {
+                                                            setData('mediaResourceListName', {
+                                                                _: selectedMrgl.name,
+                                                                uuid: selectedMrgl.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('mediaResourceListName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a media resource group list..."
+                                                    searchPlaceholder="Search media resource group lists..."
+                                                    emptyMessage="No media resource group lists found."
+                                                    onMouseEnter={loadMediaResourceGroupLists}
+                                                    displayValue={
+                                                        typeof data.mediaResourceListName === 'string'
+                                                            ? data.mediaResourceListName
+                                                            : data.mediaResourceListName?._ || data.mediaResourceListName?.name || ''
+                                                    }
+                                                />
+                                                {errors.mediaResourceListName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.mediaResourceListName}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </form>

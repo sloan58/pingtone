@@ -96,6 +96,7 @@ class PhoneController extends Controller
             'commonPhoneConfigName' => ['nullable'],
             'callingSearchSpaceName' => ['nullable'],
             'locationName' => ['nullable'],
+            'mediaResourceListName' => ['nullable'],
             'buttons' => ['sometimes', 'array'],
             'buttons.*.index' => ['nullable'],
             'buttons.*.type' => ['nullable', 'string'],
