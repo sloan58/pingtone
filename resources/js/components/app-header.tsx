@@ -79,7 +79,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
     return (
         <>
             <div className="border-b border-sidebar-border/80">
-                <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
+                <div className="flex h-16 w-full items-center justify-between px-4">
                     {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
@@ -123,7 +123,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         </Sheet>
                     </div>
 
-                    <div className="ml-auto flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
                             <Button variant="ghost" size="icon" className="group h-9 w-9 cursor-pointer">
                                 <Search className="!size-5 opacity-80 group-hover:opacity-100" />

@@ -33,6 +33,7 @@ type PhoneForm = {
     deviceMobilityMode?: string;
     ownerUserName?: any;
     mobilityUserIdName?: any;
+    primaryPhoneName?: any;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -77,6 +78,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [userLocales, setUserLocales] = useState<Option[]>([]);
     const [ucmUsers, setUcmUsers] = useState<Option[]>([]);
     const [mobilityUsers, setMobilityUsers] = useState<Option[]>([]);
+    const [phones, setPhones] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -416,6 +418,18 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setMobilityUsers(responseData);
             } catch (error) {
                 console.error('Failed to load mobility users:', error);
+            }
+        }
+    };
+
+    const loadPhones = async () => {
+        if (phones.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/phones`);
+                const responseData = await response.json();
+                setPhones(responseData);
+            } catch (error) {
+                console.error('Failed to load phones:', error);
             }
         }
     };
@@ -1061,6 +1075,37 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <p className="mt-1 text-sm text-destructive">{errors.mobilityUserIdName}</p>
                                                 )}
                                             </div>
+                                            {data.model === 'Cisco Unified Client Services Framework' && (
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Primary Phone</label>
+                                                    <Combobox
+                                                        options={phones.map((o) => ({
+                                                            value: o.uuid || o.id,
+                                                            label: o.name || '',
+                                                        }))}
+                                                        value={data.primaryPhoneName?._ || ''}
+                                                        onValueChange={(value) => {
+                                                            const selectedPhone = phones.find((p) => (p.uuid || p.id) === value);
+                                                            if (selectedPhone) {
+                                                                setData('primaryPhoneName', {
+                                                                    _: selectedPhone.name || '',
+                                                                    uuid: selectedPhone.uuid || selectedPhone.id,
+                                                                });
+                                                            } else {
+                                                                setData('primaryPhoneName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a primary phone..."
+                                                        searchPlaceholder="Search phones..."
+                                                        emptyMessage="No phones found."
+                                                        onMouseEnter={loadPhones}
+                                                        displayValue={data.primaryPhoneName?._ || ''}
+                                                    />
+                                                    {errors.primaryPhoneName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.primaryPhoneName}</p>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </form>
                                 </div>

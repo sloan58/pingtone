@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ucm;
+use App\Models\Phone;
 use App\Models\UcmUser;
 use App\Models\Location;
 use App\Models\AarGroup;
@@ -44,6 +45,22 @@ class InfrastructureOptionsController extends Controller
             ->get(['_id', 'name'])
             ->map(fn ($row) => [
                 'id' => (string) $row->_id,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function phones(Ucm $ucm): JsonResponse
+    {
+        $options = Phone::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
                 'name' => $row->name ?? ($row['name'] ?? null),
             ])
             ->values();

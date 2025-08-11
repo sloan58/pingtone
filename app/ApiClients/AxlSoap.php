@@ -552,7 +552,9 @@ class AxlSoap extends SoapClient
             $updateObject['userLocale'] = is_null($updateObject['userLocale']) ? '' : $updateObject['userLocale'];
 
             // UCM doesn't like the capital uuid (which we also got from UCM)
-            $updateObject['ownerUserName']['uuid'] = strtolower($updateObject['ownerUserName']['uuid']);
+            if (isset($updateObject['ownerUserName']['uuid'])) {
+                $updateObject['ownerUserName']['uuid'] = strtolower($updateObject['ownerUserName']['uuid']);
+            }
 
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,
@@ -569,8 +571,8 @@ class AxlSoap extends SoapClient
             Log::error("Failed to update phone in UCM", [
                 'ucm' => $this->ucm->name,
                 'phone_name' => $updateObject['name'] ?? 'unknown',
-                'faultcode' => $e->faultcode,
-                'faultstring' => $e->faultstring,
+                'faultcode' => $e->faultcode ?? '',
+                'faultstring' => $e->faultstring ?? '',
                 'debug_info' => $this->getDebugInfo(),
             ]);
 
