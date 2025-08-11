@@ -45,15 +45,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
     const isSaving = useRef(false);
 
-    // Debug logging for props
-    console.log('Edit component props:', {
-        phoneButtonTemplate,
-        phoneButtons: phone.buttons,
-        phoneLines: phone.lines,
-        phoneSpeedDials: phone.speedDials,
-        phoneBlfs: phone.blfs,
-    });
-
     // Handle toast messages from backend
     const page = usePage<any>();
     useEffect(() => {
@@ -106,13 +97,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 target: '',
                 feature: templateButton.feature || 'Line',
             };
-
-            // Debug logging to see what's happening with button types
-            console.log(`Button ${buttonNum}:`, {
-                templateFeature: templateButton.feature,
-                buttonType: button.type,
-                templateButton,
-            });
 
             // Map based on feature type
             switch (templateButton.feature?.toLowerCase()) {
@@ -168,7 +152,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
         if (!phoneButtonTemplate?.buttons) return;
 
         const mappedButtons = mapTemplateToPhoneButtons();
-        console.log('rebuildButtonArrays - mappedButtons:', mappedButtons);
         setData('buttons', mappedButtons);
     }, [phoneButtonTemplate, mapTemplateToPhoneButtons, setData]);
 

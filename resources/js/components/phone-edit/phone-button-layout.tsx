@@ -17,14 +17,12 @@ interface PhoneButtonLayoutProps {
 }
 
 const getButtonIcon = (type: string) => {
-    console.log('getButtonIcon called with type:', type, 'lowercase:', type?.toLowerCase());
     switch (type?.toLowerCase()) {
         case 'line':
             return <PhoneCall className="h-4 w-4" />;
         case 'speed_dial':
         case 'speeddial':
         case 'speed dial':
-            console.log('Speed dial icon detected, returning Zap');
             return <Zap className="h-4 w-4" />;
         case 'blf':
         case 'speed dial blf':
@@ -37,23 +35,20 @@ const getButtonIcon = (type: string) => {
 };
 
 const getButtonColor = (type: string) => {
-    console.log('getButtonColor called with type:', type, 'lowercase:', type?.toLowerCase());
     switch (type?.toLowerCase()) {
         case 'line':
             return 'bg-blue-500/10 text-blue-600 border-blue-200';
         case 'speed_dial':
         case 'speeddial':
         case 'speed dial':
-            console.log('Speed dial detected, returning green');
-            return '!bg-green-500/10 !text-green-600 !border-green-200';
+            return 'bg-green-500/10 text-green-600 border-green-200';
         case 'blf':
         case 'speed dial blf':
-            return '!bg-purple-500/10 !text-purple-600 !border-purple-200';
+            return 'bg-purple-500/10 text-purple-600 border-purple-200';
         case 'service':
-            return '!bg-orange-500/10 !text-orange-600 !border-orange-200';
+            return 'bg-orange-500/10 text-orange-600 border-orange-200';
         default:
-            console.log('No match for type:', type, 'using default gray');
-            return '!bg-gray-500/10 !text-gray-600 !border-gray-200';
+            return 'bg-gray-500/10 text-gray-600 border-gray-200';
     }
 };
 
@@ -81,19 +76,7 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
     const [draggedButton, setDraggedButton] = useState<PhoneButton | null>(null);
     const [dragOverButton, setDragOverButton] = useState<PhoneButton | null>(null);
 
-    // Debug logging to see what button types are being received
-    console.log(
-        'PhoneButtonLayout received buttons:',
-        buttons.map((btn) => ({
-            index: btn.index,
-            type: btn.type,
-            label: btn.label,
-            feature: btn.feature,
-        })),
-    );
-
     // Use the buttons prop, fallback to mock data if empty
-    console.log('buttons prop length:', buttons.length);
     const displayButtons =
         buttons.length > 0
             ? buttons.sort((a, b) => (a.index || 0) - (b.index || 0))
@@ -287,7 +270,45 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, button)}
                         onClick={() => onButtonClick?.(button)}
-                        className={`group relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${getButtonColor(button.type)} ${onButtonClick ? 'hover:ring-2 hover:ring-primary/20' : ''} ${dragOverButton?.index === button.index && canDropOn(button) ? 'ring-opacity-50 bg-primary/5 ring-2 ring-primary' : ''} ${draggedButton?.index === button.index ? 'opacity-50' : ''} `}
+                        className={`group relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${onButtonClick ? 'hover:ring-2 hover:ring-primary/20' : ''} ${dragOverButton?.index === button.index && canDropOn(button) ? 'ring-opacity-50 bg-primary/5 ring-2 ring-primary' : ''} ${draggedButton?.index === button.index ? 'opacity-50' : ''} `}
+                        style={{
+                            backgroundColor:
+                                button.type?.toLowerCase() === 'speed_dial' ||
+                                button.type?.toLowerCase() === 'speeddial' ||
+                                button.type?.toLowerCase() === 'speed dial'
+                                    ? 'rgba(34, 197, 94, 0.1)'
+                                    : button.type?.toLowerCase() === 'line'
+                                      ? 'rgba(59, 130, 246, 0.1)'
+                                      : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
+                                        ? 'rgba(168, 85, 247, 0.1)'
+                                        : button.type?.toLowerCase() === 'service'
+                                          ? 'rgba(249, 115, 22, 0.1)'
+                                          : 'rgba(107, 114, 128, 0.1)',
+                            color:
+                                button.type?.toLowerCase() === 'speed_dial' ||
+                                button.type?.toLowerCase() === 'speeddial' ||
+                                button.type?.toLowerCase() === 'speed dial'
+                                    ? 'rgb(22, 163, 74)'
+                                    : button.type?.toLowerCase() === 'line'
+                                      ? 'rgb(37, 99, 235)'
+                                      : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
+                                        ? 'rgb(147, 51, 234)'
+                                        : button.type?.toLowerCase() === 'service'
+                                          ? 'rgb(234, 88, 12)'
+                                          : 'rgb(75, 85, 99)',
+                            borderColor:
+                                button.type?.toLowerCase() === 'speed_dial' ||
+                                button.type?.toLowerCase() === 'speeddial' ||
+                                button.type?.toLowerCase() === 'speed dial'
+                                    ? 'rgb(187, 247, 208)'
+                                    : button.type?.toLowerCase() === 'line'
+                                      ? 'rgb(191, 219, 254)'
+                                      : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
+                                        ? 'rgb(233, 213, 255)'
+                                        : button.type?.toLowerCase() === 'service'
+                                          ? 'rgb(254, 215, 170)'
+                                          : 'rgb(229, 231, 235)',
+                        }}
                     >
                         {/* Button Number */}
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-sm font-semibold text-gray-700 shadow-sm">
