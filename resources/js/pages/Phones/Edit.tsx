@@ -720,41 +720,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 )}
                                             </div>
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">Location</label>
-                                                <Combobox
-                                                    options={locations.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.locationName === 'string'
-                                                            ? data.locationName
-                                                            : data.locationName?._ || data.locationName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedLocation = locations.find((location) => location.name === value);
-                                                        if (selectedLocation) {
-                                                            setData('locationName', {
-                                                                _: selectedLocation.name,
-                                                                uuid: selectedLocation.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('locationName', { _: '', uuid: '' });
-                                                        }
-                                                    }}
-                                                    placeholder="Select a location..."
-                                                    searchPlaceholder="Search locations..."
-                                                    emptyMessage="No locations found."
-                                                    onMouseEnter={loadLocations}
-                                                    displayValue={
-                                                        typeof data.locationName === 'string'
-                                                            ? data.locationName
-                                                            : data.locationName?._ || data.locationName?.name || ''
-                                                    }
-                                                />
-                                                {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
-                                            </div>
-                                            <div>
                                                 <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
                                                 <Combobox
                                                     options={(mohAudioSources || []).map((o) => ({
@@ -764,7 +729,8 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     value={data.userHoldMohAudioSourceId || ''}
                                                     onValueChange={(value) => {
                                                         const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) => String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
+                                                            (audioSource) =>
+                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
                                                         );
                                                         if (selectedAudioSource) {
                                                             setData(
@@ -801,7 +767,8 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     value={data.networkHoldMohAudioSourceId || ''}
                                                     onValueChange={(value) => {
                                                         const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) => String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
+                                                            (audioSource) =>
+                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
                                                         );
                                                         if (selectedAudioSource) {
                                                             setData(
@@ -827,6 +794,41 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 {errors.networkHoldMohAudioSourceId && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.networkHoldMohAudioSourceId}</p>
                                                 )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Location</label>
+                                                <Combobox
+                                                    options={locations.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.locationName === 'string'
+                                                            ? data.locationName
+                                                            : data.locationName?._ || data.locationName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedLocation = locations.find((location) => location.name === value);
+                                                        if (selectedLocation) {
+                                                            setData('locationName', {
+                                                                _: selectedLocation.name,
+                                                                uuid: selectedLocation.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('locationName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a location..."
+                                                    searchPlaceholder="Search locations..."
+                                                    emptyMessage="No locations found."
+                                                    onMouseEnter={loadLocations}
+                                                    displayValue={
+                                                        typeof data.locationName === 'string'
+                                                            ? data.locationName
+                                                            : data.locationName?._ || data.locationName?.name || ''
+                                                    }
+                                                />
+                                                {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
                                             </div>
                                         </div>
                                     </form>
