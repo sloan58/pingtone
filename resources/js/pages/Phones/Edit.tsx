@@ -2,9 +2,9 @@ import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
-import { ButtonsEditor, PhoneButton } from '@/components/phone-edit/buttons-editor';
+import { PhoneButton } from '@/components/phone-edit/buttons-editor';
+import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
-import { PhoneInnerNav } from '@/components/phone-edit/phone-inner-nav';
 import { Combobox } from '@/components/ui/combobox';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -203,228 +203,228 @@ export default function Edit({ phone }: Props) {
                             canSave={isDirty}
                             saving={processing}
                         />
-                        <PhoneInnerNav active={activeTab} onChange={setActiveTab} />
-                        <div className="overflow-hidden rounded-lg border bg-card shadow">
-                            <div className="border-b p-6">
-                                <h2 className="text-lg font-semibold">
-                                    {activeTab === 'device'
-                                        ? 'Device'
-                                        : activeTab === 'lines'
-                                          ? 'Lines'
-                                          : activeTab === 'speed_dials'
-                                            ? 'Speed Dials'
-                                            : 'BLFs'}
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    {activeTab === 'device' ? 'Update basic phone settings' : 'Configure items for this phone'}
-                                </p>
-                            </div>
-                            <form onSubmit={submit} className="space-y-6 p-6">
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Name</label>
-                                    <input
-                                        className="w-full rounded-md border bg-background p-2"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                    />
-                                    {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Protocol</label>
-                                    <input
-                                        type="text"
-                                        className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
-                                        value={data.protocol || ''}
-                                        readOnly
-                                        disabled
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Model</label>
-                                    <Combobox
-                                        options={phoneModels.map((o) => ({
-                                            value: o.name,
-                                            label: o.name,
-                                        }))}
-                                        value={data.model || ''}
-                                        onValueChange={(value) => {
-                                            setData('model', value);
-                                        }}
-                                        placeholder="Select a model..."
-                                        searchPlaceholder="Search models..."
-                                        emptyMessage="No models found."
-                                        onMouseEnter={loadPhoneModels}
-                                        displayValue={data.model || ''}
-                                    />
-                                    {errors.model && <p className="mt-1 text-sm text-destructive">{errors.model}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Description</label>
-                                    <input
-                                        className="w-full rounded-md border bg-background p-2"
-                                        value={data.description || ''}
-                                        onChange={(e) => setData('description', e.target.value)}
-                                    />
-                                    {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Device Pool</label>
-                                    <Combobox
-                                        options={devicePools.map((o) => ({
-                                            value: o.name,
-                                            label: o.name,
-                                        }))}
-                                        value={
-                                            typeof data.devicePoolName === 'string'
-                                                ? data.devicePoolName
-                                                : data.devicePoolName?._ || data.devicePoolName?.name || ''
-                                        }
-                                        onValueChange={(value) => {
-                                            const selectedPool = devicePools.find((pool) => pool.name === value);
-                                            if (selectedPool) {
-                                                setData('devicePoolName', {
-                                                    _: selectedPool.name,
-                                                    uuid: selectedPool.uuid || '',
-                                                });
-                                            } else {
-                                                setData('devicePoolName', { _: '', uuid: '' });
-                                            }
-                                        }}
-                                        placeholder="Select a device pool..."
-                                        searchPlaceholder="Search device pools..."
-                                        emptyMessage="No device pools found."
-                                        onMouseEnter={loadDevicePools}
-                                        displayValue={
-                                            typeof data.devicePoolName === 'string'
-                                                ? data.devicePoolName
-                                                : data.devicePoolName?._ || data.devicePoolName?.name || ''
-                                        }
-                                    />
-                                    {errors.devicePoolName && <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Common Device Configuration</label>
-                                    <Combobox
-                                        options={commonDeviceConfigs.map((o) => ({
-                                            value: o.name,
-                                            label: o.name,
-                                        }))}
-                                        value={
-                                            typeof data.commonDeviceConfigName === 'string'
-                                                ? data.commonDeviceConfigName
-                                                : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
-                                        }
-                                        onValueChange={(value) => {
-                                            const selectedConfig = commonDeviceConfigs.find((config) => config.name === value);
-                                            if (selectedConfig) {
-                                                setData('commonDeviceConfigName', {
-                                                    _: selectedConfig.name,
-                                                    uuid: selectedConfig.uuid || '',
-                                                });
-                                            } else {
-                                                setData('commonDeviceConfigName', { _: '', uuid: '' });
-                                            }
-                                        }}
-                                        placeholder="Select a common device configuration..."
-                                        searchPlaceholder="Search common device configurations..."
-                                        emptyMessage="No common device configurations found."
-                                        onMouseEnter={loadCommonDeviceConfigs}
-                                        displayValue={
-                                            typeof data.commonDeviceConfigName === 'string'
-                                                ? data.commonDeviceConfigName
-                                                : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
-                                        }
-                                    />
-                                    {errors.commonDeviceConfigName && (
-                                        <p className="mt-1 text-sm text-destructive">{errors.commonDeviceConfigName}</p>
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Phone Button Template</label>
-                                    <Combobox
-                                        options={phoneButtonTemplates.map((o) => ({
-                                            value: o.name,
-                                            label: o.name,
-                                        }))}
-                                        value={
-                                            typeof data.phoneTemplateName === 'string'
-                                                ? data.phoneTemplateName
-                                                : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
-                                        }
-                                        onValueChange={(value) => {
-                                            const selectedTemplate = phoneButtonTemplates.find((template) => template.name === value);
-                                            if (selectedTemplate) {
-                                                setData('phoneTemplateName', {
-                                                    _: selectedTemplate.name,
-                                                    uuid: selectedTemplate.uuid || '',
-                                                });
-                                            } else {
-                                                setData('phoneTemplateName', { _: '', uuid: '' });
-                                            }
-                                        }}
-                                        placeholder="Select a phone button template..."
-                                        searchPlaceholder="Search phone button templates..."
-                                        emptyMessage="No phone button templates found."
-                                        onMouseEnter={loadPhoneButtonTemplates}
-                                        displayValue={
-                                            typeof data.phoneTemplateName === 'string'
-                                                ? data.phoneTemplateName
-                                                : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
-                                        }
-                                    />
-                                    {errors.phoneTemplateName && <p className="mt-1 text-sm text-destructive">{errors.phoneTemplateName}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Common Phone Profile</label>
-                                    <Combobox
-                                        options={commonPhoneConfigs.map((o) => ({
-                                            value: o.name,
-                                            label: o.name,
-                                        }))}
-                                        value={
-                                            typeof data.commonPhoneConfigName === 'string'
-                                                ? data.commonPhoneConfigName
-                                                : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
-                                        }
-                                        onValueChange={(value) => {
-                                            const selectedConfig = commonPhoneConfigs.find((config) => config.name === value);
-                                            if (selectedConfig) {
-                                                setData('commonPhoneConfigName', {
-                                                    _: selectedConfig.name,
-                                                    uuid: selectedConfig.uuid || '',
-                                                });
-                                            } else {
-                                                setData('commonPhoneConfigName', { _: '', uuid: '' });
-                                            }
-                                        }}
-                                        placeholder="Select a common phone profile..."
-                                        searchPlaceholder="Search common phone profiles..."
-                                        emptyMessage="No common phone profiles found."
-                                        onMouseEnter={loadCommonPhoneConfigs}
-                                        displayValue={
-                                            typeof data.commonPhoneConfigName === 'string'
-                                                ? data.commonPhoneConfigName
-                                                : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
-                                        }
-                                    />
-                                    {errors.commonPhoneConfigName && <p className="mt-1 text-sm text-destructive">{errors.commonPhoneConfigName}</p>}
-                                </div>
-
-                                {activeTab !== 'device' && (
-                                    <div className="space-y-3">
-                                        <h3 className="text-lg font-semibold">
-                                            {activeTab === 'lines' ? 'Lines' : activeTab === 'speed_dials' ? 'Speed Dials' : 'BLFs'}
-                                        </h3>
-                                        <ButtonsEditor
-                                            value={data.buttons || []}
-                                            onChange={(next) => {
-                                                setData('buttons', next);
-                                                setIsDirty(true);
+                        {/* Two Column Layout */}
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                            {/* Left Column - Phone Button Configuration */}
+                            <div className="lg:col-span-1">
+                                <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                    <div className="p-6">
+                                        <PhoneButtonLayout
+                                            buttons={data.buttons || []}
+                                            onButtonClick={(button) => {
+                                                console.log('Button clicked:', button);
+                                                // TODO: Open button configuration modal
+                                            }}
+                                            onAddButton={() => {
+                                                console.log('Add button clicked');
+                                                // TODO: Open add button modal
+                                            }}
+                                            onReorderButtons={(reorderedButtons) => {
+                                                console.log('Buttons reordered:', reorderedButtons);
+                                                setData('buttons', reorderedButtons);
                                             }}
                                         />
                                     </div>
-                                )}
-                            </form>
+                                </div>
+                            </div>
+
+                            {/* Right Column - Device Settings */}
+                            <div className="lg:col-span-2">
+                                <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                    <div className="border-b p-6">
+                                        <h2 className="text-lg font-semibold">Device Settings</h2>
+                                        <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
+                                    </div>
+                                    <form onSubmit={submit} className="space-y-6 p-6">
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Name</label>
+                                                <input
+                                                    className="w-full rounded-md border bg-background p-2"
+                                                    value={data.name}
+                                                    onChange={(e) => setData('name', e.target.value)}
+                                                />
+                                                {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Model</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
+                                                    value={data.model || ''}
+                                                    readOnly
+                                                    disabled
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Protocol</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
+                                                    value={data.protocol || ''}
+                                                    readOnly
+                                                    disabled
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Description</label>
+                                                <input
+                                                    className="w-full rounded-md border bg-background p-2"
+                                                    value={data.description || ''}
+                                                    onChange={(e) => setData('description', e.target.value)}
+                                                />
+                                                {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Device Pool</label>
+                                                <Combobox
+                                                    options={devicePools.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.devicePoolName === 'string'
+                                                            ? data.devicePoolName
+                                                            : data.devicePoolName?._ || data.devicePoolName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedPool = devicePools.find((pool) => pool.name === value);
+                                                        if (selectedPool) {
+                                                            setData('devicePoolName', {
+                                                                _: selectedPool.name,
+                                                                uuid: selectedPool.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('devicePoolName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a device pool..."
+                                                    searchPlaceholder="Search device pools..."
+                                                    emptyMessage="No device pools found."
+                                                    onMouseEnter={loadDevicePools}
+                                                    displayValue={
+                                                        typeof data.devicePoolName === 'string'
+                                                            ? data.devicePoolName
+                                                            : data.devicePoolName?._ || data.devicePoolName?.name || ''
+                                                    }
+                                                />
+                                                {errors.devicePoolName && <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Common Device Configuration</label>
+                                                <Combobox
+                                                    options={commonDeviceConfigs.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.commonDeviceConfigName === 'string'
+                                                            ? data.commonDeviceConfigName
+                                                            : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedConfig = commonDeviceConfigs.find((config) => config.name === value);
+                                                        if (selectedConfig) {
+                                                            setData('commonDeviceConfigName', {
+                                                                _: selectedConfig.name,
+                                                                uuid: selectedConfig.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('commonDeviceConfigName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a common device configuration..."
+                                                    searchPlaceholder="Search common device configurations..."
+                                                    emptyMessage="No common device configurations found."
+                                                    onMouseEnter={loadCommonDeviceConfigs}
+                                                    displayValue={
+                                                        typeof data.commonDeviceConfigName === 'string'
+                                                            ? data.commonDeviceConfigName
+                                                            : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
+                                                    }
+                                                />
+                                                {errors.commonDeviceConfigName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.commonDeviceConfigName}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Phone Button Template</label>
+                                                <Combobox
+                                                    options={phoneButtonTemplates.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.phoneTemplateName === 'string'
+                                                            ? data.phoneTemplateName
+                                                            : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedTemplate = phoneButtonTemplates.find((template) => template.name === value);
+                                                        if (selectedTemplate) {
+                                                            setData('phoneTemplateName', {
+                                                                _: selectedTemplate.name,
+                                                                uuid: selectedTemplate.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('phoneTemplateName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a phone button template..."
+                                                    searchPlaceholder="Search phone button templates..."
+                                                    emptyMessage="No phone button templates found."
+                                                    onMouseEnter={loadPhoneButtonTemplates}
+                                                    displayValue={
+                                                        typeof data.phoneTemplateName === 'string'
+                                                            ? data.phoneTemplateName
+                                                            : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
+                                                    }
+                                                />
+                                                {errors.phoneTemplateName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.phoneTemplateName}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Common Phone Profile</label>
+                                                <Combobox
+                                                    options={commonPhoneConfigs.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.commonPhoneConfigName === 'string'
+                                                            ? data.commonPhoneConfigName
+                                                            : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedConfig = commonPhoneConfigs.find((config) => config.name === value);
+                                                        if (selectedConfig) {
+                                                            setData('commonPhoneConfigName', {
+                                                                _: selectedConfig.name,
+                                                                uuid: selectedConfig.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('commonPhoneConfigName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a common phone profile..."
+                                                    searchPlaceholder="Search common phone profiles..."
+                                                    emptyMessage="No common phone profiles found."
+                                                    onMouseEnter={loadCommonPhoneConfigs}
+                                                    displayValue={
+                                                        typeof data.commonPhoneConfigName === 'string'
+                                                            ? data.commonPhoneConfigName
+                                                            : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
+                                                    }
+                                                />
+                                                {errors.commonPhoneConfigName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.commonPhoneConfigName}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </AppContent>
