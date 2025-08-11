@@ -97,6 +97,7 @@ class PhoneController extends Controller
             'callingSearchSpaceName' => ['nullable'],
             'locationName' => ['nullable'],
             'mediaResourceListName' => ['nullable'],
+            'automatedAlternateRoutingCssName' => ['nullable'],
             'buttons' => ['sometimes', 'array'],
             'buttons.*.index' => ['nullable'],
             'buttons.*.type' => ['nullable', 'string'],

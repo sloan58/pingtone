@@ -23,6 +23,7 @@ type PhoneForm = {
     callingSearchSpaceName?: any;
     locationName?: any;
     mediaResourceListName?: any;
+    automatedAlternateRoutingCssName?: any;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -61,6 +62,7 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
     const [callingSearchSpaces, setCallingSearchSpaces] = useState<Option[]>([]);
     const [locations, setLocations] = useState<Option[]>([]);
     const [mediaResourceGroupLists, setMediaResourceGroupLists] = useState<Option[]>([]);
+    const [aarCallingSearchSpaces, setAarCallingSearchSpaces] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -361,6 +363,18 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                 setMediaResourceGroupLists(responseData);
             } catch (error) {
                 console.error('Failed to load media resource group lists:', error);
+            }
+        }
+    };
+
+    const loadAarCallingSearchSpaces = async () => {
+        if (aarCallingSearchSpaces.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/calling-search-spaces`);
+                const responseData = await response.json();
+                setAarCallingSearchSpaces(responseData);
+            } catch (error) {
+                console.error('Failed to load AAR calling search spaces:', error);
             }
         }
     };
@@ -724,6 +738,47 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                 />
                                                 {errors.mediaResourceListName && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.mediaResourceListName}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">AAR Calling Search Space</label>
+                                                <Combobox
+                                                    options={aarCallingSearchSpaces.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.automatedAlternateRoutingCssName === 'string'
+                                                            ? data.automatedAlternateRoutingCssName
+                                                            : data.automatedAlternateRoutingCssName?._ ||
+                                                              data.automatedAlternateRoutingCssName?.name ||
+                                                              ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedCss = aarCallingSearchSpaces.find((css) => css.name === value);
+                                                        if (selectedCss) {
+                                                            setData('automatedAlternateRoutingCssName', {
+                                                                _: selectedCss.name,
+                                                                uuid: selectedCss.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('automatedAlternateRoutingCssName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select an AAR calling search space..."
+                                                    searchPlaceholder="Search AAR calling search spaces..."
+                                                    emptyMessage="No AAR calling search spaces found."
+                                                    onMouseEnter={loadAarCallingSearchSpaces}
+                                                    displayValue={
+                                                        typeof data.automatedAlternateRoutingCssName === 'string'
+                                                            ? data.automatedAlternateRoutingCssName
+                                                            : data.automatedAlternateRoutingCssName?._ ||
+                                                              data.automatedAlternateRoutingCssName?.name ||
+                                                              ''
+                                                    }
+                                                />
+                                                {errors.automatedAlternateRoutingCssName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.automatedAlternateRoutingCssName}</p>
                                                 )}
                                             </div>
                                         </div>
