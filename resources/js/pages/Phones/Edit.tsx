@@ -991,7 +991,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Owner</label>
-                                                <div className="space-y-2">
+                                                <div className="space-y-3">
                                                     <div className="flex items-center space-x-2">
                                                         <input
                                                             type="radio"
@@ -1025,7 +1025,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                             Anonymous (Public/Shared Space)
                                                         </label>
                                                     </div>
-                                                    <div className="ml-6">
+                                                    <div>
                                                         <label className="mb-1 block text-sm font-medium">Owner User ID</label>
                                                         <Combobox
                                                             options={ucmUsers.map((o) => ({
