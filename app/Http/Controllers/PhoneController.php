@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Models\Phone;
 use App\ApiClients\AxlSoap;
 use Illuminate\Http\Request;
+use App\Models\PhoneButtonTemplate;
 use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
 class PhoneController extends Controller
@@ -65,25 +66,18 @@ class PhoneController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Phone $phone)
-    {
-        $phone->load(['ucm', 'lines']);
-
-        return Inertia::render('Phones/Show', [
-            'phone' => $phone,
-        ]);
-    }
-
-    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Phone $phone)
     {
         $phone->load('ucm');
 
-        return Inertia::render('Phones/Edit', compact('phone'));
+        $phoneButtonTemplate = PhoneButtonTemplate::where('name', $phone->phoneTemplateName['_'])->first();
+
+        return Inertia::render('Phones/Edit', [
+            'phone' => $phone,
+            'phoneButtonTemplate' => $phoneButtonTemplate,
+        ]);
     }
 
     /**

@@ -70,9 +70,6 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
     const [draggedButton, setDraggedButton] = useState<PhoneButton | null>(null);
     const [dragOverButton, setDragOverButton] = useState<PhoneButton | null>(null);
 
-    // Debug logging
-    console.log('PhoneButtonLayout render - buttons prop:', buttons);
-
     // Use the buttons prop, fallback to mock data if empty
     const displayButtons =
         buttons.length > 0
@@ -136,8 +133,6 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                   },
               ];
 
-    console.log('PhoneButtonLayout render - displayButtons:', displayButtons);
-
     const handleDragStart = (e: React.DragEvent, button: PhoneButton) => {
         setDraggedButton(button);
         e.dataTransfer.effectAllowed = 'move';
@@ -176,10 +171,7 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
     const handleDrop = (e: React.DragEvent, targetButton: PhoneButton) => {
         e.preventDefault();
 
-        console.log('handleDrop called - draggedButton:', draggedButton, 'targetButton:', targetButton);
-
         if (!draggedButton || draggedButton.type.toLowerCase() !== targetButton.type.toLowerCase()) {
-            console.log('Drop rejected - type mismatch or no dragged button');
             return;
         }
 
@@ -190,35 +182,21 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
         const buttonType = draggedButton.type.toLowerCase();
         const sameTypeButtons = newButtons.filter((button) => button.type.toLowerCase() === buttonType).sort((a, b) => a.index - b.index);
 
-        console.log(
-            'Same type buttons (sorted by template position):',
-            sameTypeButtons.map((b) => `${b.label}@${b.index}`),
-        );
-
         // Find the positions of the dragged and target buttons in the same-type sequence
         const draggedPositionInSequence = sameTypeButtons.findIndex((button) => button.index === draggedButton.index);
         const targetPositionInSequence = sameTypeButtons.findIndex((button) => button.index === targetButton.index);
 
-        console.log('Dragged position in sequence:', draggedPositionInSequence, 'Target position in sequence:', targetPositionInSequence);
-
         if (draggedPositionInSequence === -1 || targetPositionInSequence === -1) {
-            console.log('Could not find positions in sequence');
             return;
         }
 
         // Get the template positions for this type (e.g., [1, 2, 8] for lines)
         const templatePositions = sameTypeButtons.map((button) => button.index).sort((a, b) => a - b);
-        console.log('Template positions:', templatePositions);
 
         // Create a new sequence where the dragged button moves to the target position
         const newSequence = [...sameTypeButtons];
         const [movedButton] = newSequence.splice(draggedPositionInSequence, 1);
         newSequence.splice(targetPositionInSequence, 0, movedButton);
-
-        console.log(
-            'New sequence:',
-            newSequence.map((b) => b.label),
-        );
 
         // Reassign template positions to the new sequence
         // We need to work with the button objects directly, not find them by index
@@ -240,12 +218,9 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                 const buttonIndex = newButtons.findIndex((b) => b === buttonInNewArray);
                 if (buttonIndex !== -1) {
                     newButtons[buttonIndex] = newButton;
-                    console.log('Updated button', button.label, 'to position', templatePositions[sequenceIndex]);
                 }
             }
         });
-
-        console.log('Final buttons with cascade effect:', newButtons);
 
         // Call the callback to update parent state
         onReorderButtons?.(newButtons);

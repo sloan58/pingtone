@@ -2,12 +2,11 @@ import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
-import { PhoneButton } from '@/components/phone-edit/buttons-editor';
 import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { Combobox } from '@/components/ui/combobox';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type PhoneForm = {
@@ -17,30 +16,137 @@ type PhoneForm = {
     description?: string;
     model?: string;
     protocol?: string;
-    devicePoolName?: string;
-    commonDeviceConfigName?: string;
-    phoneTemplateName?: string;
-    commonPhoneConfigName?: string;
-    buttons?: PhoneButton[];
+    devicePoolName?: any;
+    commonDeviceConfigName?: any;
+    phoneTemplateName?: any;
+    commonPhoneConfigName?: any;
+    buttons?: any[];
+    lines?: any;
+    speedDials?: any[];
+    blfs?: any[];
 };
 
 type Option = { id: string; name: string; uuid?: string };
 
 interface Props {
     phone: PhoneForm;
+    phoneButtonTemplate?: any; // The phone button template data from the API
 }
 
-export default function Edit({ phone }: Props) {
-    const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone);
-    const [activeTab, setActiveTab] = useState<'device' | 'lines' | 'speed_dials' | 'blfs'>('device');
-    const [isDirty, setIsDirty] = useState(false);
-    const [originalData, setOriginalData] = useState(phone);
+export default function Edit({ phone, phoneButtonTemplate }: Props) {
+    const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
+    const isSaving = useRef(false);
+
+    // Handle toast messages from backend
+    const page = usePage<any>();
+    useEffect(() => {
+        if (page.props.flash?.toast) {
+            const toastData = page.props.flash.toast;
+            if (toastData.type === 'success') {
+                toast.success(toastData.message);
+            } else if (toastData.type === 'error') {
+                toast.error(toastData.message);
+            }
+        }
+    }, [page.props.flash?.toast]);
 
     const [devicePools, setDevicePools] = useState<Option[]>([]);
     const [phoneModels, setPhoneModels] = useState<Option[]>([]);
     const [commonDeviceConfigs, setCommonDeviceConfigs] = useState<Option[]>([]);
     const [phoneButtonTemplates, setPhoneButtonTemplates] = useState<Option[]>([]);
     const [commonPhoneConfigs, setCommonPhoneConfigs] = useState<Option[]>([]);
+
+    // Function to map phone button template to phone configuration
+    const mapTemplateToPhoneButtons = useCallback(() => {
+        if (!phoneButtonTemplate?.buttons || !Array.isArray(phoneButtonTemplate.buttons)) {
+            return [];
+        }
+
+        // Sort template buttons by buttonnum
+        const sortedTemplateButtons = [...phoneButtonTemplate.buttons].sort((a, b) => {
+            const aNum = parseInt(a.buttonnum) || 0;
+            const bNum = parseInt(b.buttonnum) || 0;
+            return aNum - bNum;
+        });
+
+        // Create arrays from phone data for each feature type
+        const availableLines = phone.lines?.line ? [...phone.lines.line] : [];
+        const availableSpeedDials = phone.speedDials || [];
+        const availableBlfs = phone.blfs || [];
+
+        // Map template buttons to phone configuration
+        const mappedButtons = sortedTemplateButtons.map((templateButton: any) => {
+            const button = {
+                index: parseInt(templateButton.buttonnum) || 1,
+                type: templateButton.feature?.toLowerCase() || 'line',
+                label: '',
+                target: '',
+                feature: templateButton.feature || 'Line',
+            };
+
+            // Map based on feature type
+            switch (templateButton.feature?.toLowerCase()) {
+                case 'line':
+                    if (availableLines.length > 0) {
+                        const line = availableLines.shift(); // Pop the next available line
+                        button.label = line?.dirn?.pattern || line?.label || 'Line';
+                        button.target = line?.dirn?.pattern || '';
+                    } else {
+                        button.label = 'Add Line';
+                        button.target = '';
+                    }
+                    break;
+                case 'speed_dial':
+                case 'speeddial':
+                    if (availableSpeedDials.length > 0) {
+                        const speedDial = availableSpeedDials.shift();
+                        button.label = speedDial?.label || speedDial?.dirn?.pattern || 'Speed Dial';
+                        button.target = speedDial?.dirn?.pattern || '';
+                    } else {
+                        button.label = 'Add Speed Dial';
+                        button.target = '';
+                    }
+                    break;
+                case 'blf':
+                    if (availableBlfs.length > 0) {
+                        const blf = availableBlfs.shift();
+                        button.label = blf?.label || blf?.dirn?.pattern || 'BLF';
+                        button.target = blf?.dirn?.pattern || '';
+                    } else {
+                        button.label = 'Add BLF';
+                        button.target = '';
+                    }
+                    break;
+                default:
+                    button.label = templateButton.label || 'Add Button';
+                    button.target = '';
+            }
+
+            return button;
+        });
+
+        return mappedButtons;
+    }, [phoneButtonTemplate, phone]);
+
+    // Function to rebuild button arrays when template changes
+    const rebuildButtonArrays = useCallback(() => {
+        if (!phoneButtonTemplate?.buttons) return;
+
+        const mappedButtons = mapTemplateToPhoneButtons();
+        setData('buttons', mappedButtons);
+    }, [phoneButtonTemplate, mapTemplateToPhoneButtons, setData]);
+
+    // Set initial buttons when phone button template changes
+    useEffect(() => {
+        rebuildButtonArrays();
+    }, [rebuildButtonArrays]);
+
+    // Function to handle phone button template changes
+    const handlePhoneButtonTemplateChange = (value: string) => {
+        // This would be called when the user selects a different phone button template
+        // For now, we'll just rebuild the arrays
+        rebuildButtonArrays();
+    };
 
     // Lazy load functions
     const loadDevicePools = async () => {
@@ -112,73 +218,6 @@ export default function Edit({ phone }: Props) {
         }
     };
 
-    useEffect(() => {
-        // Handle devicePoolName properly - compare the actual values
-        const currentDevicePool =
-            typeof data.devicePoolName === 'string' ? data.devicePoolName : data.devicePoolName?._ || data.devicePoolName?.name || '';
-        const originalDevicePool =
-            typeof originalData.devicePoolName === 'string'
-                ? originalData.devicePoolName
-                : originalData.devicePoolName?._ || originalData.devicePoolName?.name || '';
-
-        // Handle model properly - it's a simple string
-        const currentModel = data.model || '';
-        const originalModel = originalData.model || '';
-
-        const isDataDirty =
-            data.name !== originalData.name ||
-            (data.description || '') !== (originalData.description || '') ||
-            currentModel !== originalModel ||
-            currentDevicePool !== originalDevicePool ||
-            JSON.stringify(data.buttons || []) !== JSON.stringify(originalData.buttons || []);
-
-        console.log('Dirty state check:', {
-            name: { current: data.name, original: originalData.name, dirty: data.name !== originalData.name },
-            description: {
-                current: data.description || '',
-                original: originalData.description || '',
-                dirty: (data.description || '') !== (originalData.description || ''),
-            },
-            model: { current: currentModel, original: originalModel, dirty: currentModel !== originalModel },
-            devicePoolName: { current: currentDevicePool, original: originalDevicePool, dirty: currentDevicePool !== originalDevicePool },
-            isDirty,
-        });
-
-        setIsDirty(isDataDirty);
-    }, [data.name, data.description, data.model, data.devicePoolName, data.buttons, originalData]);
-
-    // Handle toast messages from backend
-    const page = usePage();
-    useEffect(() => {
-        if (page.props.flash?.toast) {
-            const toastData = page.props.flash.toast;
-            if (toastData.type === 'success') {
-                toast.success(toastData.message);
-                // Update originalData to match the current data after successful save
-                setOriginalData({ ...data });
-                setIsDirty(false);
-            } else if (toastData.type === 'error') {
-                toast.error(toastData.message);
-            }
-        }
-    }, [page.props.flash?.toast]);
-
-    const submit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        // Data is already in the correct MongoDB object structure from the combobox handlers
-        const transformedData = { ...data };
-
-        patch(`/phones/${data.id}`, transformedData, {
-            onStart: () => {
-                setIsSaving(true);
-            },
-            onFinish: () => {
-                setIsSaving(false);
-            },
-        });
-    };
-
     return (
         <AppShell variant="sidebar">
             <Head title={`Edit Phone - ${data.name}`} />
@@ -192,15 +231,20 @@ export default function Edit({ phone }: Props) {
                             model={data.model}
                             ucmName={(phone as any).ucm?.name}
                             onSave={() => {
-                                console.log('Save button clicked');
-
+                                if (isSaving.current) {
+                                    return;
+                                }
+                                isSaving.current = true;
                                 // Data is already in the correct MongoDB object structure from the combobox handlers
-                                const transformedData = { ...data };
-
+                                const transformedData = { ...data } as any;
                                 patch(`/phones/${data.id}`, transformedData);
+                                // Reset the saving flag after a short delay to allow the request to complete
+                                setTimeout(() => {
+                                    isSaving.current = false;
+                                }, 1000);
                             }}
                             onRevert={() => window.location.reload()}
-                            canSave={isDirty}
+                            canSave={true}
                             saving={processing}
                         />
                         {/* Two Column Layout */}
@@ -235,7 +279,7 @@ export default function Edit({ phone }: Props) {
                                         <h2 className="text-lg font-semibold">Device Settings</h2>
                                         <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
                                     </div>
-                                    <form onSubmit={submit} className="space-y-6 p-6">
+                                    <form className="space-y-6 p-6">
                                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Name</label>

@@ -75,18 +75,7 @@ class InfrastructureOptionsController extends Controller
             $query->where('model', $request->model);
         }
 
-        $options = $query->orderBy('name')
-            ->get(['_id', 'uuid', 'name', 'model', 'protocol'])
-            ->map(fn ($row) => [
-                'id' => (string) $row->_id,
-                'uuid' => $row->uuid ?? null,
-                'name' => $row->name ?? ($row['name'] ?? null),
-                'model' => $row->model ?? null,
-                'protocol' => $row->protocol ?? null,
-            ])
-            ->values();
-
-        return response()->json($options);
+        return response()->json($query->orderBy('name')->get());
     }
 
     public function commonPhoneConfigs(Ucm $ucm): JsonResponse
