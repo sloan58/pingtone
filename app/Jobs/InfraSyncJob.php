@@ -16,6 +16,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Bus\Batchable;
 use App\Models\ServiceProfile;
 use App\Models\RoutePartition;
+use App\Models\MohAudioSource;
 use App\Models\CallPickupGroup;
 use App\Models\SoftkeyTemplate;
 use App\Models\RecordingProfile;
@@ -26,7 +27,6 @@ use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use App\Models\MediaResourceGroupList;
-use App\Models\MohAudioSource;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -178,11 +178,11 @@ class InfraSyncJob implements ShouldQueue
             case 'moh_audio_sources':
                 $audioSources = $axlApi->listUcmObjects('listMohAudioSource', [
                     'searchCriteria' => ['name' => '%'],
-                    'returnedTags' => ['name' => ''],
+                    'returnedTags' => ['name' => '', 'sourceId' => ''],
                 ], 'mohAudioSource');
                 foreach ($audioSources as $audioSource) {
                     try {
-                        MohAudioSource::storeUcmDetails($axlApi->getMohAudioSourceByName($audioSource['name']), $this->ucm);
+                        MohAudioSource::storeUcmDetails($axlApi->getMohAudioSourceBySourceId($audioSource['sourceId']), $this->ucm);
                     } catch (Exception $e) {
                         Log::warning("{$this->ucm->name}: get MOH audio source failed: {$audioSource['name']} - {$e->getMessage()}");
                     }

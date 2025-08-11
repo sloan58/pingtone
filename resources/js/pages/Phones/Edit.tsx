@@ -32,7 +32,7 @@ type PhoneForm = {
     blfs?: any[];
 };
 
-type Option = { id: string; name: string; uuid?: string };
+type Option = { id: string; name: string; uuid?: string; sourceId?: string };
 
 interface Props {
     phone: PhoneForm;
@@ -800,14 +800,16 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                 <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
                                                 <Combobox
                                                     options={mohAudioSources.map((o) => ({
-                                                        value: o.name,
+                                                        value: o.sourceId || o.uuid || o.name,
                                                         label: o.name,
                                                     }))}
                                                     value={data.userHoldMohAudioSourceId || ''}
                                                     onValueChange={(value) => {
-                                                        const selectedAudioSource = mohAudioSources.find((audioSource) => audioSource.name === value);
+                                                        const selectedAudioSource = mohAudioSources.find((audioSource) => 
+                                                            (audioSource.sourceId || audioSource.uuid || audioSource.name) === value
+                                                        );
                                                         if (selectedAudioSource) {
-                                                            setData('userHoldMohAudioSourceId', selectedAudioSource.name);
+                                                            setData('userHoldMohAudioSourceId', selectedAudioSource.sourceId || selectedAudioSource.uuid || selectedAudioSource.name);
                                                         } else {
                                                             setData('userHoldMohAudioSourceId', '');
                                                         }
@@ -816,7 +818,14 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                     searchPlaceholder="Search MOH audio sources..."
                                                     emptyMessage="No MOH audio sources found."
                                                     onMouseEnter={loadMohAudioSources}
-                                                    displayValue={data.userHoldMohAudioSourceId || ''}
+                                                    displayValue={
+                                                        (() => {
+                                                            const selectedAudioSource = mohAudioSources.find((audioSource) => 
+                                                                (audioSource.sourceId || audioSource.uuid || audioSource.name) === data.userHoldMohAudioSourceId
+                                                            );
+                                                            return selectedAudioSource ? selectedAudioSource.name : (data.userHoldMohAudioSourceId || '');
+                                                        })()
+                                                    }
                                                 />
                                                 {errors.userHoldMohAudioSourceId && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.userHoldMohAudioSourceId}</p>
@@ -826,14 +835,16 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                 <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source</label>
                                                 <Combobox
                                                     options={mohAudioSources.map((o) => ({
-                                                        value: o.name,
+                                                        value: o.sourceId || o.uuid || o.name,
                                                         label: o.name,
                                                     }))}
                                                     value={data.networkHoldMohAudioSourceId || ''}
                                                     onValueChange={(value) => {
-                                                        const selectedAudioSource = mohAudioSources.find((audioSource) => audioSource.name === value);
+                                                        const selectedAudioSource = mohAudioSources.find((audioSource) => 
+                                                            (audioSource.sourceId || audioSource.uuid || audioSource.name) === value
+                                                        );
                                                         if (selectedAudioSource) {
-                                                            setData('networkHoldMohAudioSourceId', selectedAudioSource.name);
+                                                            setData('networkHoldMohAudioSourceId', selectedAudioSource.sourceId || selectedAudioSource.uuid || selectedAudioSource.name);
                                                         } else {
                                                             setData('networkHoldMohAudioSourceId', '');
                                                         }
@@ -842,7 +853,14 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                     searchPlaceholder="Search MOH audio sources..."
                                                     emptyMessage="No MOH audio sources found."
                                                     onMouseEnter={loadMohAudioSources}
-                                                    displayValue={data.networkHoldMohAudioSourceId || ''}
+                                                    displayValue={
+                                                        (() => {
+                                                            const selectedAudioSource = mohAudioSources.find((audioSource) => 
+                                                                (audioSource.sourceId || audioSource.uuid || audioSource.name) === data.networkHoldMohAudioSourceId
+                                                            );
+                                                            return selectedAudioSource ? selectedAudioSource.name : (data.networkHoldMohAudioSourceId || '');
+                                                        })()
+                                                    }
                                                 />
                                                 {errors.networkHoldMohAudioSourceId && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.networkHoldMohAudioSourceId}</p>
