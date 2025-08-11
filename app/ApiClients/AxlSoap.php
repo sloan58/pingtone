@@ -546,7 +546,10 @@ class AxlSoap extends SoapClient
 
             $updateObject['addLines'] = $updateObject['lines'];
 
-            unset($updateObject['confidentialAccess']); // Application is not currently supporting MLPP
+            // Application is not currently supporting MLPP
+            unset($updateObject['confidentialAccess']);
+            // userLocale needs to be an empty string if null
+            $updateObject['userLocale'] = is_null($updateObject['userLocale']) ? '' : $updateObject['userLocale'];
 
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,

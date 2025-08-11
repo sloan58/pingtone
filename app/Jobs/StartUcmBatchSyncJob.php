@@ -31,6 +31,7 @@ class StartUcmBatchSyncJob implements ShouldQueue
         }
 
         $infraTypes = [
+            'user_locales',
             'aar_groups',
             'moh_audio_sources',
             'media_resource_group_lists',
