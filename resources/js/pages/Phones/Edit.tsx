@@ -28,7 +28,7 @@ type PhoneForm = {
     networkHoldMohAudioSourceId?: string;
     aarNeighborhoodName?: any;
     userLocale?: string;
-    builtInBridge?: string;
+    builtInBridgeStatus?: string;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -389,6 +389,12 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
             }
         }
     };
+
+    console.log('Select value:', data.builtInBridgeStatus);
+    console.log('Phone object keys:', Object.keys(phone));
+    console.log('Phone object:', phone);
+    console.log('builtInBridge field:', (phone as any).builtInBridge);
+    console.log('builtInBridgeStatus field:', (phone as any).builtInBridgeStatus);
 
     return (
         <AppShell variant="sidebar">
@@ -921,16 +927,18 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Built In Bridge</label>
                                                 <select
-                                                    value={data.builtInBridge || ''}
-                                                    onChange={(e) => setData('builtInBridge', e.target.value)}
-                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    value={data.builtInBridgeStatus || ''}
+                                                    onChange={(e) => setData('builtInBridgeStatus', e.target.value)}
+                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                                 >
                                                     <option value="">&lt; None &gt;</option>
                                                     <option value="Off">Off</option>
                                                     <option value="On">On</option>
                                                     <option value="Default">Default</option>
                                                 </select>
-                                                {errors.builtInBridge && <p className="mt-1 text-sm text-destructive">{errors.builtInBridge}</p>}
+                                                {errors.builtInBridgeStatus && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.builtInBridgeStatus}</p>
+                                                )}
                                             </div>
                                         </div>
                                     </form>
