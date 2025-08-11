@@ -27,6 +27,7 @@ type PhoneForm = {
     userHoldMohAudioSourceId?: string;
     networkHoldMohAudioSourceId?: string;
     aarNeighborhoodName?: any;
+    userLocale?: string;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -68,6 +69,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [mediaResourceGroupLists, setMediaResourceGroupLists] = useState<Option[]>([]);
     const [aarCallingSearchSpaces, setAarCallingSearchSpaces] = useState<Option[]>([]);
     const [aarGroups, setAarGroups] = useState<Option[]>([]);
+    const [userLocales, setUserLocales] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -371,6 +373,18 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setAarGroups(responseData);
             } catch (error) {
                 console.error('Failed to load AAR groups:', error);
+            }
+        }
+    };
+
+    const loadUserLocales = async () => {
+        if (userLocales.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/user-locales`);
+                const responseData = await response.json();
+                setUserLocales(responseData);
+            } catch (error) {
+                console.error('Failed to load user locales:', error);
             }
         }
     };
@@ -883,6 +897,25 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 {errors.aarNeighborhoodName && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.aarNeighborhoodName}</p>
                                                 )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">User Locale</label>
+                                                <Combobox
+                                                    options={userLocales.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={data.userLocale || ''}
+                                                    onValueChange={(value) => {
+                                                        setData('userLocale', value);
+                                                    }}
+                                                    placeholder="Select a user locale..."
+                                                    searchPlaceholder="Search user locales..."
+                                                    emptyMessage="No user locales found."
+                                                    onMouseEnter={loadUserLocales}
+                                                    displayValue={data.userLocale || ''}
+                                                />
+                                                {errors.userLocale && <p className="mt-1 text-sm text-destructive">{errors.userLocale}</p>}
                                             </div>
                                         </div>
                                     </form>

@@ -28,6 +28,7 @@ use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use App\Models\MediaResourceGroupList;
 use App\Models\AarGroup;
+use App\Models\UserLocale;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -283,6 +284,12 @@ class InfraSyncJob implements ShouldQueue
                 ], 'aarGroup');
                 AarGroup::storeUcmData($data, $this->ucm);
                 $this->ucm->aarGroups()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'user_locales':
+                $data = $axlApi->performSqlQuery('SELECT * FROM typeuserlocale');
+                UserLocale::storeUcmData($data, $this->ucm);
+                $this->ucm->userLocales()->where('updated_at', '<', $start)->delete();
                 break;
         }
     }

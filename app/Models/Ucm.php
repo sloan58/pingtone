@@ -143,6 +143,11 @@ class Ucm extends Model
         return $this->hasMany(AarGroup::class);
     }
 
+    public function userLocales(): HasMany
+    {
+        return $this->hasMany(UserLocale::class);
+    }
+
     public function callPickupGroups(): HasMany
     {
         return $this->hasMany(CallPickupGroup::class);
