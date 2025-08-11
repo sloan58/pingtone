@@ -243,10 +243,19 @@
 */
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+    * {
+        @apply border-border outline-ring/50;
     }
-  body {
-    @apply bg-background text-foreground;
+    body {
+        @apply bg-background text-foreground;
     }
+}
+
+/* Toast border styles */
+[data-sonner-toaster] [data-sonner-toast][data-type='success'] {
+    border: 2px solid rgb(34 197 94) !important; /* green-500 */
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='error'] {
+    border: 2px solid rgb(239 68 68) !important; /* red-500 */
 }
