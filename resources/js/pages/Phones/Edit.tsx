@@ -247,6 +247,15 @@ export default function Edit({ phone }: Props) {
                                                 {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
                                             </div>
                                             <div>
+                                                <label className="mb-1 block text-sm font-medium">Description</label>
+                                                <input
+                                                    className="w-full rounded-md border bg-background p-2"
+                                                    value={data.description || ''}
+                                                    onChange={(e) => setData('description', e.target.value)}
+                                                />
+                                                {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
+                                            </div>
+                                            <div>
                                                 <label className="mb-1 block text-sm font-medium">Model</label>
                                                 <input
                                                     type="text"
@@ -265,15 +274,6 @@ export default function Edit({ phone }: Props) {
                                                     readOnly
                                                     disabled
                                                 />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Description</label>
-                                                <input
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={data.description || ''}
-                                                    onChange={(e) => setData('description', e.target.value)}
-                                                />
-                                                {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Device Pool</label>

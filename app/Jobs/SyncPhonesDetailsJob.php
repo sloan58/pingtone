@@ -2,15 +2,16 @@
 
 namespace App\Jobs;
 
-use App\Models\Phone;
-use App\Models\Ucm;
+use SoapFault;
 use Exception;
+use App\Models\Ucm;
+use App\Models\Phone;
 use Illuminate\Bus\Queueable;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 class SyncPhonesDetailsJob implements ShouldQueue
 {
@@ -20,6 +21,10 @@ class SyncPhonesDetailsJob implements ShouldQueue
     {
     }
 
+    /**
+     * @throws SoapFault
+     * @throws Exception
+     */
     public function handle(): void
     {
         $axlApi = $this->ucm->axlApi();
@@ -34,9 +39,21 @@ class SyncPhonesDetailsJob implements ShouldQueue
             'phone'
         );
 
+        $phonesLastStatuses = $axlApi->performSqlQuery(
+            'SELECT UPPER(fkdevice) as uuid, lastactive, lastseen, lastknownucm FROM registrationdynamic'
+        );
+
         foreach ($phoneList as $phone) {
             try {
-                Phone::storeUcmDetails($axlApi->getPhoneByName($phone['name']), $this->ucm);
+                $phoneDetails = $axlApi->getPhoneByName($phone['name']);
+                $lastStatuses = array_find(
+                    $phonesLastStatuses,
+                    fn($item) => "{{$item['uuid']}}" == $phone['uuid']
+                );
+                if($lastStatuses) {
+                    $phoneDetails = $phoneDetails + $lastStatuses;
+                }
+                Phone::storeUcmDetails($phoneDetails, $this->ucm);
             } catch (Exception $e) {
                 Log::warning("{$this->ucm->name}: get phone failed: {$phone['name']} - {$e->getMessage()}");
             }
