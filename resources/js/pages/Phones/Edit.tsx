@@ -20,6 +20,8 @@ type PhoneForm = {
     commonDeviceConfigName?: any;
     phoneTemplateName?: any;
     commonPhoneConfigName?: any;
+    callingSearchSpaceName?: any;
+    locationName?: any;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -55,6 +57,8 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
     const [commonDeviceConfigs, setCommonDeviceConfigs] = useState<Option[]>([]);
     const [phoneButtonTemplates, setPhoneButtonTemplates] = useState<Option[]>([]);
     const [commonPhoneConfigs, setCommonPhoneConfigs] = useState<Option[]>([]);
+    const [callingSearchSpaces, setCallingSearchSpaces] = useState<Option[]>([]);
+    const [locations, setLocations] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -323,6 +327,30 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
         }
     };
 
+    const loadCallingSearchSpaces = async () => {
+        if (callingSearchSpaces.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/calling-search-spaces`);
+                const responseData = await response.json();
+                setCallingSearchSpaces(responseData);
+            } catch (error) {
+                console.error('Failed to load calling search spaces:', error);
+            }
+        }
+    };
+
+    const loadLocations = async () => {
+        if (locations.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/locations`);
+                const responseData = await response.json();
+                setLocations(responseData);
+            } catch (error) {
+                console.error('Failed to load locations:', error);
+            }
+        }
+    };
+
     return (
         <AppShell variant="sidebar">
             <Head title={`Edit Phone - ${data.name}`} />
@@ -574,6 +602,78 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                 {errors.commonPhoneConfigName && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.commonPhoneConfigName}</p>
                                                 )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
+                                                <Combobox
+                                                    options={callingSearchSpaces.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.callingSearchSpaceName === 'string'
+                                                            ? data.callingSearchSpaceName
+                                                            : data.callingSearchSpaceName?._ || data.callingSearchSpaceName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedCss = callingSearchSpaces.find((css) => css.name === value);
+                                                        if (selectedCss) {
+                                                            setData('callingSearchSpaceName', {
+                                                                _: selectedCss.name,
+                                                                uuid: selectedCss.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('callingSearchSpaceName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a calling search space..."
+                                                    searchPlaceholder="Search calling search spaces..."
+                                                    emptyMessage="No calling search spaces found."
+                                                    onMouseEnter={loadCallingSearchSpaces}
+                                                    displayValue={
+                                                        typeof data.callingSearchSpaceName === 'string'
+                                                            ? data.callingSearchSpaceName
+                                                            : data.callingSearchSpaceName?._ || data.callingSearchSpaceName?.name || ''
+                                                    }
+                                                />
+                                                {errors.callingSearchSpaceName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.callingSearchSpaceName}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Location</label>
+                                                <Combobox
+                                                    options={locations.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={
+                                                        typeof data.locationName === 'string'
+                                                            ? data.locationName
+                                                            : data.locationName?._ || data.locationName?.name || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const selectedLocation = locations.find((location) => location.name === value);
+                                                        if (selectedLocation) {
+                                                            setData('locationName', {
+                                                                _: selectedLocation.name,
+                                                                uuid: selectedLocation.uuid || '',
+                                                            });
+                                                        } else {
+                                                            setData('locationName', { _: '', uuid: '' });
+                                                        }
+                                                    }}
+                                                    placeholder="Select a location..."
+                                                    searchPlaceholder="Search locations..."
+                                                    emptyMessage="No locations found."
+                                                    onMouseEnter={loadLocations}
+                                                    displayValue={
+                                                        typeof data.locationName === 'string'
+                                                            ? data.locationName
+                                                            : data.locationName?._ || data.locationName?.name || ''
+                                                    }
+                                                />
+                                                {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
                                             </div>
                                         </div>
                                     </form>

@@ -10,6 +10,8 @@ use App\Models\CommonPhoneConfig;
 use Illuminate\Http\JsonResponse;
 use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
+use App\Models\CallingSearchSpace;
+use App\Models\Location;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -81,6 +83,38 @@ class InfrastructureOptionsController extends Controller
     public function commonPhoneConfigs(Ucm $ucm): JsonResponse
     {
         $options = CommonPhoneConfig::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function callingSearchSpaces(Ucm $ucm): JsonResponse
+    {
+        $options = CallingSearchSpace::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function locations(Ucm $ucm): JsonResponse
+    {
+        $options = Location::query()
             ->where('ucm_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])

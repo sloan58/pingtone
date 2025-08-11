@@ -43,6 +43,8 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/common-device-configs', [InfrastructureOptionsController::class, 'commonDeviceConfigs']);
     Route::get('/ucm/{ucm}/options/phone-button-templates', [InfrastructureOptionsController::class, 'phoneButtonTemplates']);
     Route::get('/ucm/{ucm}/options/common-phone-configs', [InfrastructureOptionsController::class, 'commonPhoneConfigs']);
+    Route::get('/ucm/{ucm}/options/calling-search-spaces', [InfrastructureOptionsController::class, 'callingSearchSpaces']);
+    Route::get('/ucm/{ucm}/options/locations', [InfrastructureOptionsController::class, 'locations']);
 });
 
 Route::get('/test-toast', function () {
