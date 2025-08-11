@@ -38,7 +38,7 @@ type PhoneForm = {
     blfs?: any[];
 };
 
-type Option = { id: string; name: string; uuid?: string; sourceId?: string };
+type Option = { id: string; name: string; uuid?: string; sourceId?: string; userid?: string };
 
 interface Props {
     phone: PhoneForm;
@@ -995,7 +995,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                         { value: 'anonymous', label: 'Anonymous (Public/Shared Space)' },
                                                         ...ucmUsers.map((o) => ({
                                                             value: o.uuid || o.id,
-                                                            label: o.name,
+                                                            label: o.userid || o.name || '',
                                                         })),
                                                     ]}
                                                     value={data.ownerUserName?._ || 'anonymous'}
@@ -1006,7 +1006,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                             const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
                                                             if (selectedUser) {
                                                                 setData('ownerUserName', {
-                                                                    _: selectedUser.name,
+                                                                    _: selectedUser.userid,
                                                                     uuid: selectedUser.uuid || selectedUser.id,
                                                                 });
                                                             }
