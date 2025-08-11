@@ -74,7 +74,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [aarCallingSearchSpaces, setAarCallingSearchSpaces] = useState<Option[]>([]);
     const [aarGroups, setAarGroups] = useState<Option[]>([]);
     const [userLocales, setUserLocales] = useState<Option[]>([]);
-    const [ownerType, setOwnerType] = useState<'user' | 'anonymous'>('user');
     const [ucmUsers, setUcmUsers] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
@@ -991,69 +990,35 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Owner</label>
-                                                <div className="space-y-3">
-                                                    <div className="flex items-center space-x-2">
-                                                        <input
-                                                            type="radio"
-                                                            id="owner-user"
-                                                            name="ownerType"
-                                                            value="user"
-                                                            checked={ownerType === 'user'}
-                                                            onChange={(e) => setOwnerType(e.target.value as 'user' | 'anonymous')}
-                                                            className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-                                                        />
-                                                        <label htmlFor="owner-user" className="text-sm font-medium">
-                                                            User
-                                                        </label>
-                                                    </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <input
-                                                            type="radio"
-                                                            id="owner-anonymous"
-                                                            name="ownerType"
-                                                            value="anonymous"
-                                                            checked={ownerType === 'anonymous'}
-                                                            onChange={(e) => {
-                                                                setOwnerType(e.target.value as 'user' | 'anonymous');
-                                                                if (e.target.value === 'anonymous') {
-                                                                    setData('ownerUserName', { _: '', uuid: '' });
-                                                                }
-                                                            }}
-                                                            className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-                                                        />
-                                                        <label htmlFor="owner-anonymous" className="text-sm font-medium">
-                                                            Anonymous (Public/Shared Space)
-                                                        </label>
-                                                    </div>
-                                                    <div>
-                                                        <label className="mb-1 block text-sm font-medium">Owner User ID</label>
-                                                        <Combobox
-                                                            options={ucmUsers.map((o) => ({
-                                                                value: o.uuid || o.id,
-                                                                label: o.name,
-                                                            }))}
-                                                            value={data.ownerUserName?._ || ''}
-                                                            onValueChange={(value) => {
-                                                                const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
-                                                                if (selectedUser) {
-                                                                    setData('ownerUserName', {
-                                                                        _: selectedUser.name,
-                                                                        uuid: selectedUser.uuid || selectedUser.id,
-                                                                    });
-                                                                }
-                                                            }}
-                                                            placeholder="Select a user..."
-                                                            searchPlaceholder="Search users..."
-                                                            emptyMessage="No users found."
-                                                            onMouseEnter={loadUcmUsers}
-                                                            displayValue={data.ownerUserName?._ || ''}
-                                                            disabled={ownerType === 'anonymous'}
-                                                        />
-                                                        {errors.ownerUserName && (
-                                                            <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>
-                                                        )}
-                                                    </div>
-                                                </div>
+                                                <Combobox
+                                                    options={[
+                                                        { value: 'anonymous', label: 'Anonymous (Public/Shared Space)' },
+                                                        ...ucmUsers.map((o) => ({
+                                                            value: o.uuid || o.id,
+                                                            label: o.name,
+                                                        })),
+                                                    ]}
+                                                    value={data.ownerUserName?._ || 'anonymous'}
+                                                    onValueChange={(value) => {
+                                                        if (value === 'anonymous') {
+                                                            setData('ownerUserName', { _: '', uuid: '' });
+                                                        } else {
+                                                            const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
+                                                            if (selectedUser) {
+                                                                setData('ownerUserName', {
+                                                                    _: selectedUser.name,
+                                                                    uuid: selectedUser.uuid || selectedUser.id,
+                                                                });
+                                                            }
+                                                        }
+                                                    }}
+                                                    placeholder="Select owner..."
+                                                    searchPlaceholder="Search users..."
+                                                    emptyMessage="No users found."
+                                                    onMouseEnter={loadUcmUsers}
+                                                    displayValue={data.ownerUserName?._ || 'Anonymous (Public/Shared Space)'}
+                                                />
+                                                {errors.ownerUserName && <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>}
                                             </div>
                                         </div>
                                     </form>
