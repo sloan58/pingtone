@@ -73,7 +73,7 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
     // Use the buttons prop, fallback to mock data if empty
     const displayButtons =
         buttons.length > 0
-            ? buttons
+            ? buttons.sort((a, b) => (a.index || 0) - (b.index || 0))
             : [
                   {
                       index: 1,
@@ -132,6 +132,9 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                       feature: 'shared_line',
                   },
               ];
+
+    console.log('PhoneButtonLayout - Original buttons:', buttons);
+    console.log('PhoneButtonLayout - Sorted displayButtons:', displayButtons);
 
     const handleDragStart = (e: React.DragEvent, button: PhoneButton) => {
         setDraggedButton(button);

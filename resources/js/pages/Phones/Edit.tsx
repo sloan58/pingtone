@@ -74,23 +74,36 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
         const availableSpeedDials = phone.speedDials || [];
         const availableBlfs = phone.blfs || [];
 
+        console.log('Available lines:', availableLines);
+        console.log('Available speed dials:', availableSpeedDials);
+        console.log('Available BLFs:', availableBlfs);
+
         // Map template buttons to phone configuration
         const mappedButtons = sortedTemplateButtons.map((templateButton: any) => {
+            const buttonNum = parseInt(templateButton.buttonnum) || 1;
             const button = {
-                index: parseInt(templateButton.buttonnum) || 1,
+                index: buttonNum,
                 type: templateButton.feature?.toLowerCase() || 'line',
                 label: '',
                 target: '',
                 feature: templateButton.feature || 'Line',
             };
 
+            console.log('Creating button from template:', {
+                templateButton,
+                buttonIndex: button.index,
+                buttonType: button.type,
+            });
+
             // Map based on feature type
             switch (templateButton.feature?.toLowerCase()) {
                 case 'line':
-                    if (availableLines.length > 0) {
-                        const line = availableLines.shift(); // Pop the next available line
-                        button.label = line?.dirn?.pattern || line?.label || 'Line';
-                        button.target = line?.dirn?.pattern || '';
+                    // Find the line that matches this buttonnum position
+                    const matchingLine = availableLines.find((line: any) => parseInt(line.index) === buttonNum);
+                    if (matchingLine) {
+                        button.label = matchingLine?.dirn?.pattern || matchingLine?.label || 'Line';
+                        button.target = matchingLine?.dirn?.pattern || '';
+                        console.log('Mapped line button:', { button, matchingLine });
                     } else {
                         button.label = 'Add Line';
                         button.target = '';
@@ -98,20 +111,22 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                     break;
                 case 'speed_dial':
                 case 'speeddial':
-                    if (availableSpeedDials.length > 0) {
-                        const speedDial = availableSpeedDials.shift();
-                        button.label = speedDial?.label || speedDial?.dirn?.pattern || 'Speed Dial';
-                        button.target = speedDial?.dirn?.pattern || '';
+                    // Find the speed dial that matches this buttonnum position
+                    const matchingSpeedDial = availableSpeedDials.find((sd: any) => parseInt(sd.index) === buttonNum);
+                    if (matchingSpeedDial) {
+                        button.label = matchingSpeedDial?.label || matchingSpeedDial?.dirn?.pattern || 'Speed Dial';
+                        button.target = matchingSpeedDial?.dirn?.pattern || '';
                     } else {
                         button.label = 'Add Speed Dial';
                         button.target = '';
                     }
                     break;
                 case 'blf':
-                    if (availableBlfs.length > 0) {
-                        const blf = availableBlfs.shift();
-                        button.label = blf?.label || blf?.dirn?.pattern || 'BLF';
-                        button.target = blf?.dirn?.pattern || '';
+                    // Find the BLF that matches this buttonnum position
+                    const matchingBlf = availableBlfs.find((blf: any) => parseInt(blf.index) === buttonNum);
+                    if (matchingBlf) {
+                        button.label = matchingBlf?.label || matchingBlf?.dirn?.pattern || 'BLF';
+                        button.target = matchingBlf?.dirn?.pattern || '';
                     } else {
                         button.label = 'Add BLF';
                         button.target = '';
@@ -125,6 +140,7 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
             return button;
         });
 
+        console.log('Final mapped buttons:', mappedButtons);
         return mappedButtons;
     }, [phoneButtonTemplate, phone]);
 
@@ -135,6 +151,95 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
         const mappedButtons = mapTemplateToPhoneButtons();
         setData('buttons', mappedButtons);
     }, [phoneButtonTemplate, mapTemplateToPhoneButtons, setData]);
+
+    // Function to handle button reordering and update underlying phone data
+    const handleButtonReorder = useCallback(
+        (reorderedButtons: any[]) => {
+            console.log('=== HANDLE BUTTON REORDER ===');
+            console.log('Reordered buttons:', reorderedButtons);
+            console.log('Current data.lines:', data.lines);
+
+            // Update the buttons state
+            setData('buttons', reorderedButtons);
+
+            // Create a mapping of button positions to their new order
+            const buttonPositionMap = new Map();
+
+            // Group buttons by type and create position mappings
+            const lineButtons = reorderedButtons.filter((btn) => btn.type?.toLowerCase() === 'line');
+            const speedDialButtons = reorderedButtons.filter(
+                (btn) => btn.type?.toLowerCase() === 'speed_dial' || btn.type?.toLowerCase() === 'speeddial',
+            );
+            const blfButtons = reorderedButtons.filter((btn) => btn.type?.toLowerCase() === 'blf');
+
+            console.log('Line buttons:', lineButtons);
+            console.log('Speed dial buttons:', speedDialButtons);
+            console.log('BLF buttons:', blfButtons);
+
+            // Update lines - map button positions to line indices
+            if (lineButtons.length > 0 && data.lines?.line) {
+                const newLines = { ...data.lines };
+                const updatedLines = [...data.lines.line];
+
+                lineButtons.forEach((button, sequenceIndex) => {
+                    // Find the line that matches this button's target/label
+                    const lineIndex = updatedLines.findIndex((line: any) => line.dirn?.pattern === button.target || line.label === button.label);
+
+                    if (lineIndex !== -1) {
+                        // Update the line's index to match the new button position
+                        updatedLines[lineIndex] = {
+                            ...updatedLines[lineIndex],
+                            index: button.index, // This is the new position from the button
+                        };
+                        console.log(`Updated line ${button.label} to index ${button.index}`);
+                    }
+                });
+
+                newLines.line = updatedLines;
+                setData('lines', newLines);
+                console.log('Updated lines data:', newLines);
+            }
+
+            // Update speed dials - similar logic
+            if (speedDialButtons.length > 0 && data.speedDials) {
+                const updatedSpeedDials = [...data.speedDials];
+
+                speedDialButtons.forEach((button) => {
+                    const speedDialIndex = updatedSpeedDials.findIndex((sd: any) => sd.dirn?.pattern === button.target || sd.label === button.label);
+
+                    if (speedDialIndex !== -1) {
+                        updatedSpeedDials[speedDialIndex] = {
+                            ...updatedSpeedDials[speedDialIndex],
+                            index: button.index,
+                        };
+                    }
+                });
+
+                setData('speedDials', updatedSpeedDials);
+                console.log('Updated speed dials data:', updatedSpeedDials);
+            }
+
+            // Update BLFs - similar logic
+            if (blfButtons.length > 0 && data.blfs) {
+                const updatedBlfs = [...data.blfs];
+
+                blfButtons.forEach((button) => {
+                    const blfIndex = updatedBlfs.findIndex((blf: any) => blf.dirn?.pattern === button.target || blf.label === button.label);
+
+                    if (blfIndex !== -1) {
+                        updatedBlfs[blfIndex] = {
+                            ...updatedBlfs[blfIndex],
+                            index: button.index,
+                        };
+                    }
+                });
+
+                setData('blfs', updatedBlfs);
+                console.log('Updated BLFs data:', updatedBlfs);
+            }
+        },
+        [data.lines, data.speedDials, data.blfs, setData],
+    );
 
     // Set initial buttons when phone button template changes
     useEffect(() => {
@@ -235,8 +340,16 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                     return;
                                 }
                                 isSaving.current = true;
+
+                                console.log('=== SAVE BUTTON CLICKED ===');
+                                console.log('Current data object:', data);
+                                console.log('Data.lines:', data.lines);
+                                console.log('Data.buttons:', data.buttons);
+
                                 // Data is already in the correct MongoDB object structure from the combobox handlers
                                 const transformedData = { ...data } as any;
+                                console.log('Transformed data being sent:', transformedData);
+
                                 patch(`/phones/${data.id}`, transformedData);
                                 // Reset the saving flag after a short delay to allow the request to complete
                                 setTimeout(() => {
@@ -256,16 +369,13 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                         <PhoneButtonLayout
                                             buttons={data.buttons || []}
                                             onButtonClick={(button) => {
-                                                console.log('Button clicked:', button);
                                                 // TODO: Open button configuration modal
                                             }}
                                             onAddButton={() => {
-                                                console.log('Add button clicked');
                                                 // TODO: Open add button modal
                                             }}
                                             onReorderButtons={(reorderedButtons) => {
-                                                console.log('Buttons reordered:', reorderedButtons);
-                                                setData('buttons', reorderedButtons);
+                                                handleButtonReorder(reorderedButtons);
                                             }}
                                         />
                                     </div>

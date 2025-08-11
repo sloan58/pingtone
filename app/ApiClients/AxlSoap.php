@@ -508,7 +508,7 @@ class AxlSoap extends SoapClient
 
     /**
      * Update a phone in UCM via AXL API
-     * 
+     *
      * @param array $updateObject The phone update object
      * @return array The response from UCM
      * @throws SoapFault
@@ -516,11 +516,17 @@ class AxlSoap extends SoapClient
     public function updatePhone(array $updateObject): array
     {
         try {
-            Log::info("Updating phone in UCM", [
+            Log::info("=== AXL UPDATE PHONE DETAILED ===", [
                 'ucm' => $this->ucm->name,
                 'phone_name' => $updateObject['name'] ?? 'unknown',
-                'update_object' => $updateObject,
+                'full_update_object' => $updateObject,
+                'lines_data' => $updateObject['lines'] ?? 'No lines data',
+                'buttons_data' => $updateObject['buttons'] ?? 'No buttons data',
             ]);
+
+            $updateObject['addLines'] = $updateObject['lines'];
+
+            unset($updateObject['confidentialAccess']); // Application is not currently supporting MLPP
 
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,

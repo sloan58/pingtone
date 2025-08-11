@@ -106,10 +106,10 @@ class PhoneController extends Controller
             $axlApi = new AxlSoap($phone->ucm);
 
             // Send the validated data as-is to UCM (same format we received)
-            $axlApi->updatePhone($validated);
+            $axlApi->updatePhone($request->all());
 
             // Step 2: If UCM update succeeds, update our local database
-            $phone->update($validated);
+            $phone->update($axlApi->getPhoneByName($phone->name));
 
             return back()->with('toast', [
                 'type' => 'success',
