@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Ucm;
 use App\Models\DevicePool;
 use App\Models\PhoneModel;
-use App\Models\CommonDeviceConfig;
-use App\Models\PhoneButtonTemplate;
+use Illuminate\Http\Request;
 use App\Models\CommonPhoneConfig;
 use Illuminate\Http\JsonResponse;
+use App\Models\CommonDeviceConfig;
+use App\Models\PhoneButtonTemplate;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -59,11 +60,22 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function phoneButtonTemplates(Ucm $ucm): JsonResponse
+    public function phoneButtonTemplates(Ucm $ucm, Request $request): JsonResponse
     {
-        $options = PhoneButtonTemplate::query()
-            ->where('ucm_id', $ucm->getKey())
-            ->orderBy('name')
+        $query = PhoneButtonTemplate::query()
+            ->where('ucm_id', $ucm->getKey());
+
+        // Filter by protocol if provided
+        if ($request->has('protocol') && $request->protocol) {
+            $query->where('protocol', $request->protocol);
+        }
+
+        // Filter by model if provided
+        if ($request->has('model') && $request->model) {
+            $query->where('model', $request->model);
+        }
+
+        $options = $query->orderBy('name')
             ->get(['_id', 'uuid', 'name', 'model', 'protocol'])
             ->map(fn ($row) => [
                 'id' => (string) $row->_id,

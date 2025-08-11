@@ -82,7 +82,16 @@ export default function Edit({ phone }: Props) {
     const loadPhoneButtonTemplates = async () => {
         if (phoneButtonTemplates.length === 0) {
             try {
-                const response = await fetch(`/api/ucm/${data.ucm_id}/options/phone-button-templates`);
+                const protocol = data.protocol || '';
+                const model = data.model || '';
+
+                const params = new URLSearchParams();
+                if (protocol) params.append('protocol', protocol);
+                if (model) params.append('model', model);
+
+                const url = `/api/ucm/${data.ucm_id}/options/phone-button-templates${params.toString() ? '?' + params.toString() : ''}`;
+
+                const response = await fetch(url);
                 const responseData = await response.json();
                 setPhoneButtonTemplates(responseData);
             } catch (error) {
@@ -120,7 +129,6 @@ export default function Edit({ phone }: Props) {
             data.name !== originalData.name ||
             (data.description || '') !== (originalData.description || '') ||
             currentModel !== originalModel ||
-            (data.protocol || '') !== (originalData.protocol || '') ||
             currentDevicePool !== originalDevicePool ||
             JSON.stringify(data.buttons || []) !== JSON.stringify(originalData.buttons || []);
 
@@ -222,6 +230,16 @@ export default function Edit({ phone }: Props) {
                                     {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
                                 </div>
                                 <div>
+                                    <label className="mb-1 block text-sm font-medium">Protocol</label>
+                                    <input
+                                        type="text"
+                                        className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
+                                        value={data.protocol || ''}
+                                        readOnly
+                                        disabled
+                                    />
+                                </div>
+                                <div>
                                     <label className="mb-1 block text-sm font-medium">Model</label>
                                     <Combobox
                                         options={phoneModels.map((o) => ({
@@ -239,19 +257,6 @@ export default function Edit({ phone }: Props) {
                                         displayValue={data.model || ''}
                                     />
                                     {errors.model && <p className="mt-1 text-sm text-destructive">{errors.model}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-sm font-medium">Protocol</label>
-                                    <select
-                                        className="w-full rounded-md border bg-background p-2"
-                                        value={data.protocol || ''}
-                                        onChange={(e) => setData('protocol', e.target.value)}
-                                    >
-                                        <option value="">Select a protocol...</option>
-                                        <option value="SIP">SIP</option>
-                                        <option value="SCCP">SCCP</option>
-                                    </select>
-                                    {errors.protocol && <p className="mt-1 text-sm text-destructive">{errors.protocol}</p>}
                                 </div>
                                 <div>
                                     <label className="mb-1 block text-sm font-medium">Description</label>
