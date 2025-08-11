@@ -133,9 +133,6 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                   },
               ];
 
-    console.log('PhoneButtonLayout - Original buttons:', buttons);
-    console.log('PhoneButtonLayout - Sorted displayButtons:', displayButtons);
-
     const handleDragStart = (e: React.DragEvent, button: PhoneButton) => {
         setDraggedButton(button);
         e.dataTransfer.effectAllowed = 'move';

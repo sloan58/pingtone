@@ -85,10 +85,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
         const availableSpeedDials = phone.speedDials || [];
         const availableBlfs = phone.blfs || [];
 
-        console.log('Available lines:', availableLines);
-        console.log('Available speed dials:', availableSpeedDials);
-        console.log('Available BLFs:', availableBlfs);
-
         // Map template buttons to phone configuration
         const mappedButtons = sortedTemplateButtons.map((templateButton: any) => {
             const buttonNum = parseInt(templateButton.buttonnum) || 1;
@@ -100,12 +96,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 feature: templateButton.feature || 'Line',
             };
 
-            console.log('Creating button from template:', {
-                templateButton,
-                buttonIndex: button.index,
-                buttonType: button.type,
-            });
-
             // Map based on feature type
             switch (templateButton.feature?.toLowerCase()) {
                 case 'line':
@@ -114,7 +104,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                     if (matchingLine) {
                         button.label = matchingLine?.dirn?.pattern || matchingLine?.label || 'Line';
                         button.target = matchingLine?.dirn?.pattern || '';
-                        console.log('Mapped line button:', { button, matchingLine });
                     } else {
                         button.label = 'Add Line';
                         button.target = '';
@@ -151,7 +140,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
             return button;
         });
 
-        console.log('Final mapped buttons:', mappedButtons);
         return mappedButtons;
     }, [phoneButtonTemplate, phone]);
 
@@ -166,10 +154,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     // Function to handle button reordering and update underlying phone data
     const handleButtonReorder = useCallback(
         (reorderedButtons: any[]) => {
-            console.log('=== HANDLE BUTTON REORDER ===');
-            console.log('Reordered buttons:', reorderedButtons);
-            console.log('Current data.lines:', data.lines);
-
             // Update the buttons state
             setData('buttons', reorderedButtons);
 
@@ -182,10 +166,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 (btn) => btn.type?.toLowerCase() === 'speed_dial' || btn.type?.toLowerCase() === 'speeddial',
             );
             const blfButtons = reorderedButtons.filter((btn) => btn.type?.toLowerCase() === 'blf');
-
-            console.log('Line buttons:', lineButtons);
-            console.log('Speed dial buttons:', speedDialButtons);
-            console.log('BLF buttons:', blfButtons);
 
             // Update lines - map button positions to line indices
             if (lineButtons.length > 0 && data.lines?.line) {
@@ -202,13 +182,11 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                             ...updatedLines[lineIndex],
                             index: button.index, // This is the new position from the button
                         };
-                        console.log(`Updated line ${button.label} to index ${button.index}`);
                     }
                 });
 
                 newLines.line = updatedLines;
                 setData('lines', newLines);
-                console.log('Updated lines data:', newLines);
             }
 
             // Update speed dials - similar logic
@@ -227,7 +205,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 });
 
                 setData('speedDials', updatedSpeedDials);
-                console.log('Updated speed dials data:', updatedSpeedDials);
             }
 
             // Update BLFs - similar logic
@@ -246,7 +223,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 });
 
                 setData('blfs', updatedBlfs);
-                console.log('Updated BLFs data:', updatedBlfs);
             }
         },
         [data.lines, data.speedDials, data.blfs, setData],
@@ -400,14 +376,8 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                 }
                                 isSaving.current = true;
 
-                                console.log('=== SAVE BUTTON CLICKED ===');
-                                console.log('Current data object:', data);
-                                console.log('Data.lines:', data.lines);
-                                console.log('Data.buttons:', data.buttons);
-
                                 // Data is already in the correct MongoDB object structure from the combobox handlers
                                 const transformedData = { ...data } as any;
-                                console.log('Transformed data being sent:', transformedData);
 
                                 patch(`/phones/${data.id}`, transformedData);
                                 // Reset the saving flag after a short delay to allow the request to complete
@@ -794,7 +764,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     value={data.userHoldMohAudioSourceId || ''}
                                                     onValueChange={(value) => {
                                                         const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) => (audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
+                                                            (audioSource) => String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
                                                         );
                                                         if (selectedAudioSource) {
                                                             setData(
@@ -811,8 +781,8 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     displayValue={(() => {
                                                         const selectedAudioSource = (mohAudioSources || []).find(
                                                             (audioSource) =>
-                                                                (audioSource.sourceId || audioSource.uuid || audioSource.name) ===
-                                                                data.userHoldMohAudioSourceId,
+                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                                String(data.userHoldMohAudioSourceId),
                                                         );
                                                         return selectedAudioSource ? selectedAudioSource.name : '';
                                                     })()}
@@ -831,7 +801,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     value={data.networkHoldMohAudioSourceId || ''}
                                                     onValueChange={(value) => {
                                                         const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) => (audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
+                                                            (audioSource) => String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
                                                         );
                                                         if (selectedAudioSource) {
                                                             setData(
@@ -848,8 +818,8 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     displayValue={(() => {
                                                         const selectedAudioSource = (mohAudioSources || []).find(
                                                             (audioSource) =>
-                                                                (audioSource.sourceId || audioSource.uuid || audioSource.name) ===
-                                                                data.networkHoldMohAudioSourceId,
+                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                                String(data.networkHoldMohAudioSourceId),
                                                         );
                                                         return selectedAudioSource ? selectedAudioSource.name : '';
                                                     })()}

@@ -91,30 +91,11 @@ class PhoneController extends Controller
      */
     public function update(Request $request, Phone $phone)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'devicePoolName' => ['nullable'],
-            'commonDeviceConfigName' => ['nullable'],
-            'phoneTemplateName' => ['nullable'],
-            'commonPhoneConfigName' => ['nullable'],
-            'callingSearchSpaceName' => ['nullable'],
-            'locationName' => ['nullable'],
-            'mediaResourceListName' => ['nullable'],
-            'automatedAlternateRoutingCssName' => ['nullable'],
-            'userHoldMohAudioSourceId' => ['nullable', 'string'],
-            'networkHoldMohAudioSourceId' => ['nullable', 'string'],
-            'buttons' => ['sometimes', 'array'],
-            'lines' => ['sometimes', 'array'],
-            'speedDials' => ['sometimes', 'array'],
-            'blfs' => ['sometimes', 'array'],
-        ]);
-
         try {
             // Step 1: Update the phone in UCM via AXL API
             $axlApi = new AxlSoap($phone->ucm);
 
-            // Send the validated data as-is to UCM (same format we received)
+            // Send the data as-is to UCM (same format we received)
             $axlApi->updatePhone($request->all());
 
             // Step 2: If UCM update succeeds, update our local database
