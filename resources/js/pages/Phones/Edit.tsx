@@ -5,6 +5,8 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { Combobox } from '@/components/ui/combobox';
+import { FormSection } from '@/components/ui/form-section';
+import { Toggle } from '@/components/ui/toggle';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -28,6 +30,7 @@ type PhoneForm = {
     networkHoldMohAudioSourceId?: string;
     aarNeighborhoodName?: any;
     userLocale?: string;
+    geoLocationName?: any;
     builtInBridgeStatus?: string;
     callInfoPrivacyStatus?: string;
     deviceMobilityMode?: string;
@@ -38,6 +41,12 @@ type PhoneForm = {
     ringSettingIdleBlfAudibleAlert?: string;
     ringSettingBusyBlfAudibleAlert?: string;
     alwaysUsePrimeLine?: string;
+    alwaysUsePrimeLineForVoiceMessage?: string;
+    ignorePresentationIndicators?: boolean;
+    allowCtiControlFlag?: boolean;
+    hlogStatus?: boolean;
+    remoteDevice?: boolean;
+    requireOffPremiseLocation?: boolean;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -80,6 +89,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [aarCallingSearchSpaces, setAarCallingSearchSpaces] = useState<Option[]>([]);
     const [aarGroups, setAarGroups] = useState<Option[]>([]);
     const [userLocales, setUserLocales] = useState<Option[]>([]);
+    const [geoLocations, setGeoLocations] = useState<Option[]>([]);
     const [ucmUsers, setUcmUsers] = useState<Option[]>([]);
     const [mobilityUsers, setMobilityUsers] = useState<Option[]>([]);
     const [phones, setPhones] = useState<Option[]>([]);
@@ -402,6 +412,18 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
         }
     };
 
+    const loadGeoLocations = async () => {
+        if (geoLocations.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/geo-locations`);
+                const responseData = await response.json();
+                setGeoLocations(responseData);
+            } catch (error) {
+                console.error('Failed to load geo locations:', error);
+            }
+        }
+    };
+
     const loadUcmUsers = async () => {
         if (ucmUsers.length === 0) {
             try {
@@ -471,7 +493,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                     isSaving.current = false;
                                 }, 1000);
                             }}
-                            onRevert={() => window.location.reload()}
                             canSave={true}
                             saving={processing}
                         />
@@ -504,700 +525,923 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                         <h2 className="text-lg font-semibold">Device Settings</h2>
                                         <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
                                     </div>
-                                    <form className="space-y-6 p-6">
-                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Name</label>
-                                                <input
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={data.name}
-                                                    onChange={(e) => setData('name', e.target.value)}
-                                                />
-                                                {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Description</label>
-                                                <input
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={data.description || ''}
-                                                    onChange={(e) => setData('description', e.target.value)}
-                                                />
-                                                {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Model</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
-                                                    value={data.model || ''}
-                                                    readOnly
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Protocol</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
-                                                    value={data.protocol || ''}
-                                                    readOnly
-                                                    disabled
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Device Pool</label>
-                                                <Combobox
-                                                    options={devicePools.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.devicePoolName === 'string'
-                                                            ? data.devicePoolName
-                                                            : data.devicePoolName?._ || data.devicePoolName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedPool = devicePools.find((pool) => pool.name === value);
-                                                        if (selectedPool) {
-                                                            setData('devicePoolName', {
-                                                                _: selectedPool.name,
-                                                                uuid: selectedPool.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('devicePoolName', { _: '', uuid: '' });
+                                    <form className="space-y-8 p-6">
+                                        {/* Device Information Section */}
+                                        <FormSection title="Device Information">
+                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Name</label>
+                                                    <input
+                                                        className="w-full rounded-md border bg-background p-2"
+                                                        value={data.name}
+                                                        onChange={(e) => setData('name', e.target.value)}
+                                                    />
+                                                    {errors.name && <p className="mt-1 text-sm text-destructive">{errors.name}</p>}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Description</label>
+                                                    <input
+                                                        className="w-full rounded-md border bg-background p-2"
+                                                        value={data.description || ''}
+                                                        onChange={(e) => setData('description', e.target.value)}
+                                                    />
+                                                    {errors.description && <p className="mt-1 text-sm text-destructive">{errors.description}</p>}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Model</label>
+                                                    <input
+                                                        type="text"
+                                                        className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
+                                                        value={data.model || ''}
+                                                        readOnly
+                                                        disabled
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Protocol</label>
+                                                    <input
+                                                        type="text"
+                                                        className="w-full rounded-md border bg-muted p-2 text-muted-foreground"
+                                                        value={data.protocol || ''}
+                                                        readOnly
+                                                        disabled
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Device Pool</label>
+                                                    <Combobox
+                                                        options={devicePools.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.devicePoolName === 'string'
+                                                                ? data.devicePoolName
+                                                                : data.devicePoolName?._ || data.devicePoolName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a device pool..."
-                                                    searchPlaceholder="Search device pools..."
-                                                    emptyMessage="No device pools found."
-                                                    onMouseEnter={loadDevicePools}
-                                                    displayValue={
-                                                        typeof data.devicePoolName === 'string'
-                                                            ? data.devicePoolName
-                                                            : data.devicePoolName?._ || data.devicePoolName?.name || ''
-                                                    }
-                                                />
-                                                {errors.devicePoolName && <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Common Device Configuration</label>
-                                                <Combobox
-                                                    options={commonDeviceConfigs.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.commonDeviceConfigName === 'string'
-                                                            ? data.commonDeviceConfigName
-                                                            : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedConfig = commonDeviceConfigs.find((config) => config.name === value);
-                                                        if (selectedConfig) {
-                                                            setData('commonDeviceConfigName', {
-                                                                _: selectedConfig.name,
-                                                                uuid: selectedConfig.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('commonDeviceConfigName', { _: '', uuid: '' });
+                                                        onValueChange={(value) => {
+                                                            const selectedPool = devicePools.find((pool) => pool.name === value);
+                                                            if (selectedPool) {
+                                                                setData('devicePoolName', {
+                                                                    _: selectedPool.name,
+                                                                    uuid: selectedPool.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('devicePoolName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a device pool..."
+                                                        searchPlaceholder="Search device pools..."
+                                                        emptyMessage="No device pools found."
+                                                        onMouseEnter={loadDevicePools}
+                                                        displayValue={
+                                                            typeof data.devicePoolName === 'string'
+                                                                ? data.devicePoolName
+                                                                : data.devicePoolName?._ || data.devicePoolName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a common device configuration..."
-                                                    searchPlaceholder="Search common device configurations..."
-                                                    emptyMessage="No common device configurations found."
-                                                    onMouseEnter={loadCommonDeviceConfigs}
-                                                    displayValue={
-                                                        typeof data.commonDeviceConfigName === 'string'
-                                                            ? data.commonDeviceConfigName
-                                                            : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
-                                                    }
-                                                />
-                                                {errors.commonDeviceConfigName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.commonDeviceConfigName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Phone Button Template</label>
-                                                <Combobox
-                                                    options={phoneButtonTemplates.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.phoneTemplateName === 'string'
-                                                            ? data.phoneTemplateName
-                                                            : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedTemplate = phoneButtonTemplates.find((template) => template.name === value);
-                                                        if (selectedTemplate) {
-                                                            setData('phoneTemplateName', {
-                                                                _: selectedTemplate.name,
-                                                                uuid: selectedTemplate.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('phoneTemplateName', { _: '', uuid: '' });
+                                                    />
+                                                    {errors.devicePoolName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.devicePoolName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Common Device Configuration</label>
+                                                    <Combobox
+                                                        options={commonDeviceConfigs.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.commonDeviceConfigName === 'string'
+                                                                ? data.commonDeviceConfigName
+                                                                : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a phone button template..."
-                                                    searchPlaceholder="Search phone button templates..."
-                                                    emptyMessage="No phone button templates found."
-                                                    onMouseEnter={loadPhoneButtonTemplates}
-                                                    displayValue={
-                                                        typeof data.phoneTemplateName === 'string'
-                                                            ? data.phoneTemplateName
-                                                            : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
-                                                    }
-                                                />
-                                                {errors.phoneTemplateName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.phoneTemplateName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Common Phone Profile</label>
-                                                <Combobox
-                                                    options={commonPhoneConfigs.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.commonPhoneConfigName === 'string'
-                                                            ? data.commonPhoneConfigName
-                                                            : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedConfig = commonPhoneConfigs.find((config) => config.name === value);
-                                                        if (selectedConfig) {
-                                                            setData('commonPhoneConfigName', {
-                                                                _: selectedConfig.name,
-                                                                uuid: selectedConfig.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('commonPhoneConfigName', { _: '', uuid: '' });
+                                                        onValueChange={(value) => {
+                                                            const selectedConfig = commonDeviceConfigs.find((config) => config.name === value);
+                                                            if (selectedConfig) {
+                                                                setData('commonDeviceConfigName', {
+                                                                    _: selectedConfig.name,
+                                                                    uuid: selectedConfig.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('commonDeviceConfigName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a common device configuration..."
+                                                        searchPlaceholder="Search common device configurations..."
+                                                        emptyMessage="No common device configurations found."
+                                                        onMouseEnter={loadCommonDeviceConfigs}
+                                                        displayValue={
+                                                            typeof data.commonDeviceConfigName === 'string'
+                                                                ? data.commonDeviceConfigName
+                                                                : data.commonDeviceConfigName?._ || data.commonDeviceConfigName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a common phone profile..."
-                                                    searchPlaceholder="Search common phone profiles..."
-                                                    emptyMessage="No common phone profiles found."
-                                                    onMouseEnter={loadCommonPhoneConfigs}
-                                                    displayValue={
-                                                        typeof data.commonPhoneConfigName === 'string'
-                                                            ? data.commonPhoneConfigName
-                                                            : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
-                                                    }
-                                                />
-                                                {errors.commonPhoneConfigName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.commonPhoneConfigName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
-                                                <Combobox
-                                                    options={callingSearchSpaces.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.callingSearchSpaceName === 'string'
-                                                            ? data.callingSearchSpaceName
-                                                            : data.callingSearchSpaceName?._ || data.callingSearchSpaceName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedCss = callingSearchSpaces.find((css) => css.name === value);
-                                                        if (selectedCss) {
-                                                            setData('callingSearchSpaceName', {
-                                                                _: selectedCss.name,
-                                                                uuid: selectedCss.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('callingSearchSpaceName', { _: '', uuid: '' });
+                                                    />
+                                                    {errors.commonDeviceConfigName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.commonDeviceConfigName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Phone Button Template</label>
+                                                    <Combobox
+                                                        options={phoneButtonTemplates.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.phoneTemplateName === 'string'
+                                                                ? data.phoneTemplateName
+                                                                : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a calling search space..."
-                                                    searchPlaceholder="Search calling search spaces..."
-                                                    emptyMessage="No calling search spaces found."
-                                                    onMouseEnter={loadCallingSearchSpaces}
-                                                    displayValue={
-                                                        typeof data.callingSearchSpaceName === 'string'
-                                                            ? data.callingSearchSpaceName
-                                                            : data.callingSearchSpaceName?._ || data.callingSearchSpaceName?.name || ''
-                                                    }
-                                                />
-                                                {errors.callingSearchSpaceName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.callingSearchSpaceName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">AAR Calling Search Space</label>
-                                                <Combobox
-                                                    options={aarCallingSearchSpaces.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.automatedAlternateRoutingCssName === 'string'
-                                                            ? data.automatedAlternateRoutingCssName
-                                                            : data.automatedAlternateRoutingCssName?._ ||
-                                                              data.automatedAlternateRoutingCssName?.name ||
-                                                              ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedCss = aarCallingSearchSpaces.find((css) => css.name === value);
-                                                        if (selectedCss) {
-                                                            setData('automatedAlternateRoutingCssName', {
-                                                                _: selectedCss.name,
-                                                                uuid: selectedCss.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('automatedAlternateRoutingCssName', { _: '', uuid: '' });
+                                                        onValueChange={(value) => {
+                                                            const selectedTemplate = phoneButtonTemplates.find((template) => template.name === value);
+                                                            if (selectedTemplate) {
+                                                                setData('phoneTemplateName', {
+                                                                    _: selectedTemplate.name,
+                                                                    uuid: selectedTemplate.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('phoneTemplateName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a phone button template..."
+                                                        searchPlaceholder="Search phone button templates..."
+                                                        emptyMessage="No phone button templates found."
+                                                        onMouseEnter={loadPhoneButtonTemplates}
+                                                        displayValue={
+                                                            typeof data.phoneTemplateName === 'string'
+                                                                ? data.phoneTemplateName
+                                                                : data.phoneTemplateName?._ || data.phoneTemplateName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select an AAR calling search space..."
-                                                    searchPlaceholder="Search AAR calling search spaces..."
-                                                    emptyMessage="No AAR calling search spaces found."
-                                                    onMouseEnter={loadAarCallingSearchSpaces}
-                                                    displayValue={
-                                                        typeof data.automatedAlternateRoutingCssName === 'string'
-                                                            ? data.automatedAlternateRoutingCssName
-                                                            : data.automatedAlternateRoutingCssName?._ ||
-                                                              data.automatedAlternateRoutingCssName?.name ||
-                                                              ''
-                                                    }
-                                                />
-                                                {errors.automatedAlternateRoutingCssName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.automatedAlternateRoutingCssName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Media Resource Group List</label>
-                                                <Combobox
-                                                    options={mediaResourceGroupLists.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.mediaResourceListName === 'string'
-                                                            ? data.mediaResourceListName
-                                                            : data.mediaResourceListName?._ || data.mediaResourceListName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedMrgl = mediaResourceGroupLists.find((mrgl) => mrgl.name === value);
-                                                        if (selectedMrgl) {
-                                                            setData('mediaResourceListName', {
-                                                                _: selectedMrgl.name,
-                                                                uuid: selectedMrgl.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('mediaResourceListName', { _: '', uuid: '' });
+                                                    />
+                                                    {errors.phoneTemplateName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.phoneTemplateName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Common Phone Profile</label>
+                                                    <Combobox
+                                                        options={commonPhoneConfigs.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.commonPhoneConfigName === 'string'
+                                                                ? data.commonPhoneConfigName
+                                                                : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a media resource group list..."
-                                                    searchPlaceholder="Search media resource group lists..."
-                                                    emptyMessage="No media resource group lists found."
-                                                    onMouseEnter={loadMediaResourceGroupLists}
-                                                    displayValue={
-                                                        typeof data.mediaResourceListName === 'string'
-                                                            ? data.mediaResourceListName
-                                                            : data.mediaResourceListName?._ || data.mediaResourceListName?.name || ''
-                                                    }
-                                                />
-                                                {errors.mediaResourceListName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.mediaResourceListName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
-                                                <Combobox
-                                                    options={(mohAudioSources || []).map((o) => ({
-                                                        value: o.sourceId || o.uuid || o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={data.userHoldMohAudioSourceId || ''}
-                                                    onValueChange={(value) => {
-                                                        const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) =>
-                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
-                                                        );
-                                                        if (selectedAudioSource) {
-                                                            setData(
-                                                                'userHoldMohAudioSourceId',
-                                                                selectedAudioSource.sourceId || selectedAudioSource.uuid || selectedAudioSource.name,
+                                                        onValueChange={(value) => {
+                                                            const selectedConfig = commonPhoneConfigs.find((config) => config.name === value);
+                                                            if (selectedConfig) {
+                                                                setData('commonPhoneConfigName', {
+                                                                    _: selectedConfig.name,
+                                                                    uuid: selectedConfig.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('commonPhoneConfigName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a common phone profile..."
+                                                        searchPlaceholder="Search common phone profiles..."
+                                                        emptyMessage="No common phone profiles found."
+                                                        onMouseEnter={loadCommonPhoneConfigs}
+                                                        displayValue={
+                                                            typeof data.commonPhoneConfigName === 'string'
+                                                                ? data.commonPhoneConfigName
+                                                                : data.commonPhoneConfigName?._ || data.commonPhoneConfigName?.name || ''
+                                                        }
+                                                    />
+                                                    {errors.commonPhoneConfigName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.commonPhoneConfigName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
+                                                    <Combobox
+                                                        options={callingSearchSpaces.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.callingSearchSpaceName === 'string'
+                                                                ? data.callingSearchSpaceName
+                                                                : data.callingSearchSpaceName?._ || data.callingSearchSpaceName?.name || ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedCss = callingSearchSpaces.find((css) => css.name === value);
+                                                            if (selectedCss) {
+                                                                setData('callingSearchSpaceName', {
+                                                                    _: selectedCss.name,
+                                                                    uuid: selectedCss.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('callingSearchSpaceName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a calling search space..."
+                                                        searchPlaceholder="Search calling search spaces..."
+                                                        emptyMessage="No calling search spaces found."
+                                                        onMouseEnter={loadCallingSearchSpaces}
+                                                        displayValue={
+                                                            typeof data.callingSearchSpaceName === 'string'
+                                                                ? data.callingSearchSpaceName
+                                                                : data.callingSearchSpaceName?._ || data.callingSearchSpaceName?.name || ''
+                                                        }
+                                                    />
+                                                    {errors.callingSearchSpaceName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.callingSearchSpaceName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">AAR Calling Search Space</label>
+                                                    <Combobox
+                                                        options={aarCallingSearchSpaces.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.automatedAlternateRoutingCssName === 'string'
+                                                                ? data.automatedAlternateRoutingCssName
+                                                                : data.automatedAlternateRoutingCssName?._ ||
+                                                                  data.automatedAlternateRoutingCssName?.name ||
+                                                                  ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedCss = aarCallingSearchSpaces.find((css) => css.name === value);
+                                                            if (selectedCss) {
+                                                                setData('automatedAlternateRoutingCssName', {
+                                                                    _: selectedCss.name,
+                                                                    uuid: selectedCss.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('automatedAlternateRoutingCssName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select an AAR calling search space..."
+                                                        searchPlaceholder="Search AAR calling search spaces..."
+                                                        emptyMessage="No AAR calling search spaces found."
+                                                        onMouseEnter={loadAarCallingSearchSpaces}
+                                                        displayValue={
+                                                            typeof data.automatedAlternateRoutingCssName === 'string'
+                                                                ? data.automatedAlternateRoutingCssName
+                                                                : data.automatedAlternateRoutingCssName?._ ||
+                                                                  data.automatedAlternateRoutingCssName?.name ||
+                                                                  ''
+                                                        }
+                                                    />
+                                                    {errors.automatedAlternateRoutingCssName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.automatedAlternateRoutingCssName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Media Resource Group List</label>
+                                                    <Combobox
+                                                        options={mediaResourceGroupLists.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.mediaResourceListName === 'string'
+                                                                ? data.mediaResourceListName
+                                                                : data.mediaResourceListName?._ || data.mediaResourceListName?.name || ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedMrgl = mediaResourceGroupLists.find((mrgl) => mrgl.name === value);
+                                                            if (selectedMrgl) {
+                                                                setData('mediaResourceListName', {
+                                                                    _: selectedMrgl.name,
+                                                                    uuid: selectedMrgl.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('mediaResourceListName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a media resource group list..."
+                                                        searchPlaceholder="Search media resource group lists..."
+                                                        emptyMessage="No media resource group lists found."
+                                                        onMouseEnter={loadMediaResourceGroupLists}
+                                                        displayValue={
+                                                            typeof data.mediaResourceListName === 'string'
+                                                                ? data.mediaResourceListName
+                                                                : data.mediaResourceListName?._ || data.mediaResourceListName?.name || ''
+                                                        }
+                                                    />
+                                                    {errors.mediaResourceListName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.mediaResourceListName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
+                                                    <Combobox
+                                                        options={(mohAudioSources || []).map((o) => ({
+                                                            value: o.sourceId || o.uuid || o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={data.userHoldMohAudioSourceId || ''}
+                                                        onValueChange={(value) => {
+                                                            const selectedAudioSource = (mohAudioSources || []).find(
+                                                                (audioSource) =>
+                                                                    String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
                                                             );
-                                                        } else {
-                                                            setData('userHoldMohAudioSourceId', '');
-                                                        }
-                                                    }}
-                                                    placeholder="Select a user hold MOH audio source..."
-                                                    searchPlaceholder="Search MOH audio sources..."
-                                                    emptyMessage="No MOH audio sources found."
-                                                    displayValue={(() => {
-                                                        const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) =>
-                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
-                                                                String(data.userHoldMohAudioSourceId),
-                                                        );
-                                                        return selectedAudioSource ? selectedAudioSource.name : '';
-                                                    })()}
-                                                />
-                                                {errors.userHoldMohAudioSourceId && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.userHoldMohAudioSourceId}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source</label>
-                                                <Combobox
-                                                    options={(mohAudioSources || []).map((o) => ({
-                                                        value: o.sourceId || o.uuid || o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={data.networkHoldMohAudioSourceId || ''}
-                                                    onValueChange={(value) => {
-                                                        const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) =>
-                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
-                                                        );
-                                                        if (selectedAudioSource) {
-                                                            setData(
-                                                                'networkHoldMohAudioSourceId',
-                                                                selectedAudioSource.sourceId || selectedAudioSource.uuid || selectedAudioSource.name,
+                                                            if (selectedAudioSource) {
+                                                                setData(
+                                                                    'userHoldMohAudioSourceId',
+                                                                    selectedAudioSource.sourceId ||
+                                                                        selectedAudioSource.uuid ||
+                                                                        selectedAudioSource.name,
+                                                                );
+                                                            } else {
+                                                                setData('userHoldMohAudioSourceId', '');
+                                                            }
+                                                        }}
+                                                        placeholder="Select a user hold MOH audio source..."
+                                                        searchPlaceholder="Search MOH audio sources..."
+                                                        emptyMessage="No MOH audio sources found."
+                                                        displayValue={(() => {
+                                                            const selectedAudioSource = (mohAudioSources || []).find(
+                                                                (audioSource) =>
+                                                                    String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                                    String(data.userHoldMohAudioSourceId),
                                                             );
-                                                        } else {
-                                                            setData('networkHoldMohAudioSourceId', '');
+                                                            return selectedAudioSource ? selectedAudioSource.name : '';
+                                                        })()}
+                                                    />
+                                                    {errors.userHoldMohAudioSourceId && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.userHoldMohAudioSourceId}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source</label>
+                                                    <Combobox
+                                                        options={(mohAudioSources || []).map((o) => ({
+                                                            value: o.sourceId || o.uuid || o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={data.networkHoldMohAudioSourceId || ''}
+                                                        onValueChange={(value) => {
+                                                            const selectedAudioSource = (mohAudioSources || []).find(
+                                                                (audioSource) =>
+                                                                    String(audioSource.sourceId || audioSource.uuid || audioSource.name) === value,
+                                                            );
+                                                            if (selectedAudioSource) {
+                                                                setData(
+                                                                    'networkHoldMohAudioSourceId',
+                                                                    selectedAudioSource.sourceId ||
+                                                                        selectedAudioSource.uuid ||
+                                                                        selectedAudioSource.name,
+                                                                );
+                                                            } else {
+                                                                setData('networkHoldMohAudioSourceId', '');
+                                                            }
+                                                        }}
+                                                        placeholder="Select a network hold MOH audio source..."
+                                                        searchPlaceholder="Search MOH audio sources..."
+                                                        emptyMessage="No MOH audio sources found."
+                                                        displayValue={(() => {
+                                                            const selectedAudioSource = (mohAudioSources || []).find(
+                                                                (audioSource) =>
+                                                                    String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                                    String(data.networkHoldMohAudioSourceId),
+                                                            );
+                                                            return selectedAudioSource ? selectedAudioSource.name : '';
+                                                        })()}
+                                                    />
+                                                    {errors.networkHoldMohAudioSourceId && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.networkHoldMohAudioSourceId}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Location</label>
+                                                    <Combobox
+                                                        options={locations.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.locationName === 'string'
+                                                                ? data.locationName
+                                                                : data.locationName?._ || data.locationName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a network hold MOH audio source..."
-                                                    searchPlaceholder="Search MOH audio sources..."
-                                                    emptyMessage="No MOH audio sources found."
-                                                    displayValue={(() => {
-                                                        const selectedAudioSource = (mohAudioSources || []).find(
-                                                            (audioSource) =>
-                                                                String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
-                                                                String(data.networkHoldMohAudioSourceId),
-                                                        );
-                                                        return selectedAudioSource ? selectedAudioSource.name : '';
-                                                    })()}
-                                                />
-                                                {errors.networkHoldMohAudioSourceId && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.networkHoldMohAudioSourceId}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Location</label>
-                                                <Combobox
-                                                    options={locations.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.locationName === 'string'
-                                                            ? data.locationName
-                                                            : data.locationName?._ || data.locationName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedLocation = locations.find((location) => location.name === value);
-                                                        if (selectedLocation) {
-                                                            setData('locationName', {
-                                                                _: selectedLocation.name,
-                                                                uuid: selectedLocation.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('locationName', { _: '', uuid: '' });
+                                                        onValueChange={(value) => {
+                                                            const selectedLocation = locations.find((location) => location.name === value);
+                                                            if (selectedLocation) {
+                                                                setData('locationName', {
+                                                                    _: selectedLocation.name,
+                                                                    uuid: selectedLocation.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('locationName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a location..."
+                                                        searchPlaceholder="Search locations..."
+                                                        emptyMessage="No locations found."
+                                                        onMouseEnter={loadLocations}
+                                                        displayValue={
+                                                            typeof data.locationName === 'string'
+                                                                ? data.locationName
+                                                                : data.locationName?._ || data.locationName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select a location..."
-                                                    searchPlaceholder="Search locations..."
-                                                    emptyMessage="No locations found."
-                                                    onMouseEnter={loadLocations}
-                                                    displayValue={
-                                                        typeof data.locationName === 'string'
-                                                            ? data.locationName
-                                                            : data.locationName?._ || data.locationName?.name || ''
-                                                    }
-                                                />
-                                                {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">AAR Group</label>
-                                                <Combobox
-                                                    options={aarGroups.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={
-                                                        typeof data.aarNeighborhoodName === 'string'
-                                                            ? data.aarNeighborhoodName
-                                                            : data.aarNeighborhoodName?._ || data.aarNeighborhoodName?.name || ''
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        const selectedAarGroup = aarGroups.find((aarGroup) => aarGroup.name === value);
-                                                        if (selectedAarGroup) {
-                                                            setData('aarNeighborhoodName', {
-                                                                _: selectedAarGroup.name,
-                                                                uuid: selectedAarGroup.uuid || '',
-                                                            });
-                                                        } else {
-                                                            setData('aarNeighborhoodName', { _: '', uuid: '' });
+                                                    />
+                                                    {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">AAR Group</label>
+                                                    <Combobox
+                                                        options={aarGroups.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.aarNeighborhoodName === 'string'
+                                                                ? data.aarNeighborhoodName
+                                                                : data.aarNeighborhoodName?._ || data.aarNeighborhoodName?.name || ''
                                                         }
-                                                    }}
-                                                    placeholder="Select an AAR group..."
-                                                    searchPlaceholder="Search AAR groups..."
-                                                    emptyMessage="No AAR groups found."
-                                                    onMouseEnter={loadAarGroups}
-                                                    displayValue={
-                                                        typeof data.aarNeighborhoodName === 'string'
-                                                            ? data.aarNeighborhoodName
-                                                            : data.aarNeighborhoodName?._ || data.aarNeighborhoodName?.name || ''
-                                                    }
-                                                />
-                                                {errors.aarNeighborhoodName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.aarNeighborhoodName}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">User Locale</label>
-                                                <Combobox
-                                                    options={userLocales.map((o) => ({
-                                                        value: o.name,
-                                                        label: o.name,
-                                                    }))}
-                                                    value={data.userLocale || ''}
-                                                    onValueChange={(value) => {
-                                                        setData('userLocale', value);
-                                                    }}
-                                                    placeholder="Select a user locale..."
-                                                    searchPlaceholder="Search user locales..."
-                                                    emptyMessage="No user locales found."
-                                                    onMouseEnter={loadUserLocales}
-                                                    displayValue={data.userLocale || ''}
-                                                />
-                                                {errors.userLocale && <p className="mt-1 text-sm text-destructive">{errors.userLocale}</p>}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Built In Bridge</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: '', label: '< None >' },
-                                                        { value: 'Off', label: 'Off' },
-                                                        { value: 'On', label: 'On' },
-                                                        { value: 'Default', label: 'Default' },
-                                                    ]}
-                                                    value={data.builtInBridgeStatus || ''}
-                                                    onValueChange={(value) => setData('builtInBridgeStatus', value)}
-                                                    placeholder="Select built in bridge status..."
-                                                    searchPlaceholder="Search options..."
-                                                    emptyMessage="No options found."
-                                                    displayValue={data.builtInBridgeStatus || ''}
-                                                />
-                                                {errors.builtInBridgeStatus && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.builtInBridgeStatus}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Privacy</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: '', label: '< None >' },
-                                                        { value: 'Off', label: 'Off' },
-                                                        { value: 'On', label: 'On' },
-                                                        { value: 'Default', label: 'Default' },
-                                                    ]}
-                                                    value={data.callInfoPrivacyStatus || ''}
-                                                    onValueChange={(value) => setData('callInfoPrivacyStatus', value)}
-                                                    placeholder="Select privacy status..."
-                                                    searchPlaceholder="Search options..."
-                                                    emptyMessage="No options found."
-                                                    displayValue={data.callInfoPrivacyStatus || ''}
-                                                />
-                                                {errors.callInfoPrivacyStatus && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.callInfoPrivacyStatus}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Device Mobility Mode</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: 'Off', label: 'Off' },
-                                                        { value: 'On', label: 'On' },
-                                                        { value: 'Default', label: 'Default' },
-                                                    ]}
-                                                    value={data.deviceMobilityMode || ''}
-                                                    onValueChange={(value) => setData('deviceMobilityMode', value)}
-                                                    placeholder="Select device mobility mode..."
-                                                    searchPlaceholder="Search options..."
-                                                    emptyMessage="No options found."
-                                                    displayValue={data.deviceMobilityMode || ''}
-                                                />
-                                                {errors.deviceMobilityMode && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.deviceMobilityMode}</p>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Owner</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: 'anonymous', label: 'Anonymous (Public/Shared Space)' },
-                                                        ...ucmUsers.map((o) => ({
+                                                        onValueChange={(value) => {
+                                                            const selectedAarGroup = aarGroups.find((aarGroup) => aarGroup.name === value);
+                                                            if (selectedAarGroup) {
+                                                                setData('aarNeighborhoodName', {
+                                                                    _: selectedAarGroup.name,
+                                                                    uuid: selectedAarGroup.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('aarNeighborhoodName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select an AAR group..."
+                                                        searchPlaceholder="Search AAR groups..."
+                                                        emptyMessage="No AAR groups found."
+                                                        onMouseEnter={loadAarGroups}
+                                                        displayValue={
+                                                            typeof data.aarNeighborhoodName === 'string'
+                                                                ? data.aarNeighborhoodName
+                                                                : data.aarNeighborhoodName?._ || data.aarNeighborhoodName?.name || ''
+                                                        }
+                                                    />
+                                                    {errors.aarNeighborhoodName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.aarNeighborhoodName}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">User Locale</label>
+                                                    <Combobox
+                                                        options={userLocales.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={data.userLocale || ''}
+                                                        onValueChange={(value) => {
+                                                            setData('userLocale', value);
+                                                        }}
+                                                        placeholder="Select a user locale..."
+                                                        searchPlaceholder="Search user locales..."
+                                                        emptyMessage="No user locales found."
+                                                        onMouseEnter={loadUserLocales}
+                                                        displayValue={data.userLocale || ''}
+                                                    />
+                                                    {errors.userLocale && <p className="mt-1 text-sm text-destructive">{errors.userLocale}</p>}
+                                                </div>
+
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Built In Bridge</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: '', label: '< None >' },
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.builtInBridgeStatus || ''}
+                                                        onValueChange={(value) => setData('builtInBridgeStatus', value)}
+                                                        placeholder="Select built in bridge status..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.builtInBridgeStatus || ''}
+                                                    />
+                                                    {errors.builtInBridgeStatus && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.builtInBridgeStatus}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Privacy</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: '', label: '< None >' },
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.callInfoPrivacyStatus || ''}
+                                                        onValueChange={(value) => setData('callInfoPrivacyStatus', value)}
+                                                        placeholder="Select privacy status..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.callInfoPrivacyStatus || ''}
+                                                    />
+                                                    {errors.callInfoPrivacyStatus && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.callInfoPrivacyStatus}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Device Mobility Mode</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.deviceMobilityMode || ''}
+                                                        onValueChange={(value) => setData('deviceMobilityMode', value)}
+                                                        placeholder="Select device mobility mode..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.deviceMobilityMode || ''}
+                                                    />
+                                                    {errors.deviceMobilityMode && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.deviceMobilityMode}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Owner</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'anonymous', label: 'Anonymous (Public/Shared Space)' },
+                                                            ...ucmUsers.map((o) => ({
+                                                                value: o.uuid || o.id,
+                                                                label: o.userid || o.name || '',
+                                                            })),
+                                                        ]}
+                                                        value={data.ownerUserName?._ || 'anonymous'}
+                                                        onValueChange={(value) => {
+                                                            if (value === 'anonymous') {
+                                                                setData('ownerUserName', { _: '', uuid: '' });
+                                                            } else {
+                                                                const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
+                                                                if (selectedUser) {
+                                                                    setData('ownerUserName', {
+                                                                        _: selectedUser.userid,
+                                                                        uuid: selectedUser.uuid || selectedUser.id,
+                                                                    });
+                                                                }
+                                                            }
+                                                        }}
+                                                        placeholder="Select owner..."
+                                                        searchPlaceholder="Search users..."
+                                                        emptyMessage="No users found."
+                                                        onMouseEnter={loadUcmUsers}
+                                                        displayValue={data.ownerUserName?._ || 'Anonymous (Public/Shared Space)'}
+                                                    />
+                                                    {errors.ownerUserName && <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Mobility User ID</label>
+                                                    <Combobox
+                                                        options={mobilityUsers.map((o) => ({
                                                             value: o.uuid || o.id,
                                                             label: o.userid || o.name || '',
-                                                        })),
-                                                    ]}
-                                                    value={data.ownerUserName?._ || 'anonymous'}
-                                                    onValueChange={(value) => {
-                                                        if (value === 'anonymous') {
-                                                            setData('ownerUserName', { _: '', uuid: '' });
-                                                        } else {
-                                                            const selectedUser = ucmUsers.find((u) => (u.uuid || u.id) === value);
+                                                        }))}
+                                                        value={data.mobilityUserIdName?._ || ''}
+                                                        onValueChange={(value) => {
+                                                            const selectedUser = mobilityUsers.find((u) => (u.uuid || u.id) === value);
                                                             if (selectedUser) {
-                                                                setData('ownerUserName', {
-                                                                    _: selectedUser.userid,
+                                                                setData('mobilityUserIdName', {
+                                                                    _: selectedUser.userid || selectedUser.name || '',
                                                                     uuid: selectedUser.uuid || selectedUser.id,
                                                                 });
                                                             }
-                                                        }
-                                                    }}
-                                                    placeholder="Select owner..."
-                                                    searchPlaceholder="Search users..."
-                                                    emptyMessage="No users found."
-                                                    onMouseEnter={loadUcmUsers}
-                                                    displayValue={data.ownerUserName?._ || 'Anonymous (Public/Shared Space)'}
-                                                />
-                                                {errors.ownerUserName && <p className="mt-1 text-sm text-destructive">{errors.ownerUserName}</p>}
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Mobility User ID</label>
-                                                <Combobox
-                                                    options={mobilityUsers.map((o) => ({
-                                                        value: o.uuid || o.id,
-                                                        label: o.userid || o.name || '',
-                                                    }))}
-                                                    value={data.mobilityUserIdName?._ || ''}
-                                                    onValueChange={(value) => {
-                                                        const selectedUser = mobilityUsers.find((u) => (u.uuid || u.id) === value);
-                                                        if (selectedUser) {
-                                                            setData('mobilityUserIdName', {
-                                                                _: selectedUser.userid || selectedUser.name || '',
-                                                                uuid: selectedUser.uuid || selectedUser.id,
-                                                            });
-                                                        }
-                                                    }}
-                                                    placeholder="Select a mobility user..."
-                                                    searchPlaceholder="Search mobility users..."
-                                                    emptyMessage="No mobility users found."
-                                                    onMouseEnter={loadMobilityUsers}
-                                                    displayValue={data.mobilityUserIdName?._ || ''}
-                                                />
-                                                {errors.mobilityUserIdName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.mobilityUserIdName}</p>
-                                                )}
-                                            </div>
-                                            {data.model === 'Cisco Unified Client Services Framework' && (
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">Primary Phone</label>
-                                                    <Combobox
-                                                        options={phones.map((o) => ({
-                                                            value: o.uuid || o.id,
-                                                            label: o.name || '',
-                                                        }))}
-                                                        value={data.primaryPhoneName?._ || ''}
-                                                        onValueChange={(value) => {
-                                                            const selectedPhone = phones.find((p) => (p.uuid || p.id) === value);
-                                                            if (selectedPhone) {
-                                                                setData('primaryPhoneName', {
-                                                                    _: selectedPhone.name || '',
-                                                                    uuid: selectedPhone.uuid || selectedPhone.id,
-                                                                });
-                                                            } else {
-                                                                setData('primaryPhoneName', { _: '', uuid: '' });
-                                                            }
                                                         }}
-                                                        placeholder="Select a primary phone..."
-                                                        searchPlaceholder="Search phones..."
-                                                        emptyMessage="No phones found."
-                                                        onMouseEnter={loadPhones}
-                                                        displayValue={data.primaryPhoneName?._ || ''}
+                                                        placeholder="Select a mobility user..."
+                                                        searchPlaceholder="Search mobility users..."
+                                                        emptyMessage="No mobility users found."
+                                                        onMouseEnter={loadMobilityUsers}
+                                                        displayValue={data.mobilityUserIdName?._ || ''}
                                                     />
-                                                    {errors.primaryPhoneName && (
-                                                        <p className="mt-1 text-sm text-destructive">{errors.primaryPhoneName}</p>
+                                                    {errors.mobilityUserIdName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.mobilityUserIdName}</p>
                                                     )}
                                                 </div>
-                                            )}
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Use Trusted Relay Point*</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: 'Off', label: 'Off' },
-                                                        { value: 'On', label: 'On' },
-                                                        { value: 'Default', label: 'Default' },
-                                                    ]}
-                                                    value={data.useTrustedRelayPoint || ''}
-                                                    onValueChange={(value) => setData('useTrustedRelayPoint', value)}
-                                                    placeholder="Select trusted relay point setting..."
-                                                    searchPlaceholder="Search options..."
-                                                    emptyMessage="No options found."
-                                                    displayValue={data.useTrustedRelayPoint || ''}
-                                                />
-                                                {errors.useTrustedRelayPoint && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.useTrustedRelayPoint}</p>
+                                                {data.model === 'Cisco Unified Client Services Framework' && (
+                                                    <div>
+                                                        <label className="mb-1 block text-sm font-medium">Primary Phone</label>
+                                                        <Combobox
+                                                            options={phones.map((o) => ({
+                                                                value: o.uuid || o.id,
+                                                                label: o.name || '',
+                                                            }))}
+                                                            value={data.primaryPhoneName?._ || ''}
+                                                            onValueChange={(value) => {
+                                                                const selectedPhone = phones.find((p) => (p.uuid || p.id) === value);
+                                                                if (selectedPhone) {
+                                                                    setData('primaryPhoneName', {
+                                                                        _: selectedPhone.name || '',
+                                                                        uuid: selectedPhone.uuid || selectedPhone.id,
+                                                                    });
+                                                                } else {
+                                                                    setData('primaryPhoneName', { _: '', uuid: '' });
+                                                                }
+                                                            }}
+                                                            placeholder="Select a primary phone..."
+                                                            searchPlaceholder="Search phones..."
+                                                            emptyMessage="No phones found."
+                                                            onMouseEnter={loadPhones}
+                                                            displayValue={data.primaryPhoneName?._ || ''}
+                                                        />
+                                                        {errors.primaryPhoneName && (
+                                                            <p className="mt-1 text-sm text-destructive">{errors.primaryPhoneName}</p>
+                                                        )}
+                                                    </div>
                                                 )}
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Use Trusted Relay Point*</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.useTrustedRelayPoint || ''}
+                                                        onValueChange={(value) => setData('useTrustedRelayPoint', value)}
+                                                        placeholder="Select trusted relay point setting..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.useTrustedRelayPoint || ''}
+                                                    />
+                                                    {errors.useTrustedRelayPoint && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.useTrustedRelayPoint}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">BLF Audible Alert Setting (Phone Idle)*</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.ringSettingIdleBlfAudibleAlert || ''}
+                                                        onValueChange={(value) => setData('ringSettingIdleBlfAudibleAlert', value)}
+                                                        placeholder="Select BLF audible alert setting..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.ringSettingIdleBlfAudibleAlert || ''}
+                                                    />
+                                                    {errors.ringSettingIdleBlfAudibleAlert && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.ringSettingIdleBlfAudibleAlert}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">BLF Audible Alert Setting (Phone Busy)*</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.ringSettingBusyBlfAudibleAlert || ''}
+                                                        onValueChange={(value) => setData('ringSettingBusyBlfAudibleAlert', value)}
+                                                        placeholder="Select BLF audible alert setting..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.ringSettingBusyBlfAudibleAlert || ''}
+                                                    />
+                                                    {errors.ringSettingBusyBlfAudibleAlert && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.ringSettingBusyBlfAudibleAlert}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Always Use Prime Line*</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.alwaysUsePrimeLine || ''}
+                                                        onValueChange={(value) => setData('alwaysUsePrimeLine', value)}
+                                                        placeholder="Select always use prime line setting..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.alwaysUsePrimeLine || ''}
+                                                    />
+                                                    {errors.alwaysUsePrimeLine && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.alwaysUsePrimeLine}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Always Use Prime Line for Voice Message*</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'Off', label: 'Off' },
+                                                            { value: 'On', label: 'On' },
+                                                            { value: 'Default', label: 'Default' },
+                                                        ]}
+                                                        value={data.alwaysUsePrimeLineForVoiceMessage || ''}
+                                                        onValueChange={(value) => setData('alwaysUsePrimeLineForVoiceMessage', value)}
+                                                        placeholder="Select always use prime line for voice message setting..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue={data.alwaysUsePrimeLineForVoiceMessage || ''}
+                                                    />
+                                                    {errors.alwaysUsePrimeLineForVoiceMessage && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.alwaysUsePrimeLineForVoiceMessage}</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Geo Location</label>
+                                                    <Combobox
+                                                        options={geoLocations.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.geoLocationName === 'string'
+                                                                ? data.geoLocationName
+                                                                : data.geoLocationName?._ || data.geoLocationName?.name || ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedGeoLocation = geoLocations.find(
+                                                                (geoLocation) => geoLocation.name === value,
+                                                            );
+                                                            if (selectedGeoLocation) {
+                                                                setData('geoLocationName', {
+                                                                    _: selectedGeoLocation.name,
+                                                                    uuid: selectedGeoLocation.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('geoLocationName', { _: '', uuid: '' });
+                                                            }
+                                                        }}
+                                                        placeholder="Select a geo location..."
+                                                        searchPlaceholder="Search geo locations..."
+                                                        emptyMessage="No geo locations found."
+                                                        onMouseEnter={loadGeoLocations}
+                                                        displayValue={
+                                                            typeof data.geoLocationName === 'string'
+                                                                ? data.geoLocationName
+                                                                : data.geoLocationName?._ || data.geoLocationName?.name || ''
+                                                        }
+                                                    />
+                                                    {errors.geoLocationName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.geoLocationName}</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">BLF Audible Alert Setting (Phone Idle)*</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: 'Off', label: 'Off' },
-                                                        { value: 'On', label: 'On' },
-                                                        { value: 'Default', label: 'Default' },
-                                                    ]}
-                                                    value={data.ringSettingIdleBlfAudibleAlert || ''}
-                                                    onValueChange={(value) => setData('ringSettingIdleBlfAudibleAlert', value)}
-                                                    placeholder="Select BLF audible alert setting..."
-                                                    searchPlaceholder="Search options..."
-                                                    emptyMessage="No options found."
-                                                    displayValue={data.ringSettingIdleBlfAudibleAlert || ''}
-                                                />
-                                                {errors.ringSettingIdleBlfAudibleAlert && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.ringSettingIdleBlfAudibleAlert}</p>
-                                                )}
+
+                                            {/* Device Options Section */}
+                                            <div className="border-t pt-6">
+                                                <h4 className="mb-4 text-sm font-medium text-muted-foreground">Device Options</h4>
+                                                <div className="space-y-4">
+                                                    <Toggle
+                                                        label="Ignore Presentation Indicators (internal calls only)"
+                                                        checked={data.ignorePresentationIndicators || false}
+                                                        onCheckedChange={(checked: boolean) => setData('ignorePresentationIndicators', checked)}
+                                                    />
+                                                    <Toggle
+                                                        label="Allow Control of Device from CTI"
+                                                        checked={data.allowCtiControlFlag || false}
+                                                        onCheckedChange={(checked: boolean) => setData('allowCtiControlFlag', checked)}
+                                                    />
+                                                    <Toggle
+                                                        label="Logged Into Hunt Group"
+                                                        checked={data.hlogStatus || false}
+                                                        onCheckedChange={(checked: boolean) => setData('hlogStatus', checked)}
+                                                    />
+                                                    <Toggle
+                                                        label="Remote Device"
+                                                        checked={data.remoteDevice || false}
+                                                        onCheckedChange={(checked: boolean) => setData('remoteDevice', checked)}
+                                                    />
+                                                    <Toggle
+                                                        label="Require off-premise location"
+                                                        checked={data.requireOffPremiseLocation || false}
+                                                        onCheckedChange={(checked: boolean) => setData('requireOffPremiseLocation', checked)}
+                                                    />
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">BLF Audible Alert Setting (Phone Busy)*</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: 'Off', label: 'Off' },
-                                                        { value: 'On', label: 'On' },
-                                                        { value: 'Default', label: 'Default' },
-                                                    ]}
-                                                    value={data.ringSettingBusyBlfAudibleAlert || ''}
-                                                    onValueChange={(value) => setData('ringSettingBusyBlfAudibleAlert', value)}
-                                                    placeholder="Select BLF audible alert setting..."
-                                                    searchPlaceholder="Search options..."
-                                                    emptyMessage="No options found."
-                                                    displayValue={data.ringSettingBusyBlfAudibleAlert || ''}
-                                                />
-                                                {errors.ringSettingBusyBlfAudibleAlert && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.ringSettingBusyBlfAudibleAlert}</p>
-                                                )}
+                                        </FormSection>
+
+                                        {/* Number Presentation Transformation Section */}
+                                        <FormSection title="Number Presentation Transformation">
+                                            <div className="space-y-6">
+                                                <div>
+                                                    <h4 className="mb-4 text-sm font-medium text-muted-foreground">
+                                                        Caller ID For Calls From This Phone
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                        <div>
+                                                            <label className="mb-1 block text-sm font-medium">Calling Party Transformation CSS</label>
+                                                            <Combobox
+                                                                options={[
+                                                                    { value: '', label: '< None >' },
+                                                                    ...callingSearchSpaces.map((o) => ({
+                                                                        value: o.name,
+                                                                        label: o.name,
+                                                                    })),
+                                                                ]}
+                                                                value=""
+                                                                onValueChange={(value) => {
+                                                                    // TODO: Implement calling party transformation CSS
+                                                                }}
+                                                                placeholder="Select a calling party transformation CSS..."
+                                                                searchPlaceholder="Search calling party transformation CSS..."
+                                                                emptyMessage="No calling party transformation CSS found."
+                                                                displayValue=""
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center space-x-3">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="useDevicePoolCallingPartyTransformationCSS"
+                                                                className="h-4 w-4 rounded border-gray-300"
+                                                                defaultChecked={true}
+                                                            />
+                                                            <label
+                                                                htmlFor="useDevicePoolCallingPartyTransformationCSS"
+                                                                className="text-sm font-medium"
+                                                            >
+                                                                Use Device Pool Calling Party Transformation CSS (Caller ID For Calls From This Phone)
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h4 className="mb-4 text-sm font-medium text-muted-foreground">Remote Number</h4>
+                                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                        <div>
+                                                            <label className="mb-1 block text-sm font-medium">Calling Party Transformation CSS</label>
+                                                            <Combobox
+                                                                options={[
+                                                                    { value: '', label: '< None >' },
+                                                                    ...callingSearchSpaces.map((o) => ({
+                                                                        value: o.name,
+                                                                        label: o.name,
+                                                                    })),
+                                                                ]}
+                                                                value=""
+                                                                onValueChange={(value) => {
+                                                                    // TODO: Implement calling party transformation CSS
+                                                                }}
+                                                                placeholder="Select a calling party transformation CSS..."
+                                                                searchPlaceholder="Search calling party transformation CSS..."
+                                                                emptyMessage="No calling party transformation CSS found."
+                                                                displayValue=""
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center space-x-3">
+                                                            <input
+                                                                type="checkbox"
+                                                                id="useDevicePoolCallingPartyTransformationCSSDeviceMobility"
+                                                                className="h-4 w-4 rounded border-gray-300"
+                                                                defaultChecked={true}
+                                                            />
+                                                            <label
+                                                                htmlFor="useDevicePoolCallingPartyTransformationCSSDeviceMobility"
+                                                                className="text-sm font-medium"
+                                                            >
+                                                                Use Device Pool Calling Party Transformation CSS (Device Mobility Related Information)
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Always Use Prime Line*</label>
-                                                <Combobox
-                                                    options={[
-                                                        { value: 'Off', label: 'Off' },
-                                                        { value: 'On', label: 'On' },
-                                                        { value: 'Default', label: 'Default' },
-                                                    ]}
-                                                    value={data.alwaysUsePrimeLine || ''}
-                                                    onValueChange={(value) => setData('alwaysUsePrimeLine', value)}
-                                                    placeholder="Select always use prime line setting..."
-                                                    searchPlaceholder="Search options..."
-                                                    emptyMessage="No options found."
-                                                    displayValue={data.alwaysUsePrimeLine || ''}
-                                                />
-                                                {errors.alwaysUsePrimeLine && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.alwaysUsePrimeLine}</p>
-                                                )}
+                                        </FormSection>
+
+                                        {/* Protocol Specific Information Section */}
+                                        <FormSection title="Protocol Specific Information">
+                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Packet Capture Mode*</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'None', label: 'None' },
+                                                            { value: 'Full', label: 'Full' },
+                                                            { value: 'Header', label: 'Header' },
+                                                        ]}
+                                                        value="None"
+                                                        onValueChange={(value) => {
+                                                            // TODO: Implement packet capture mode
+                                                        }}
+                                                        placeholder="Select packet capture mode..."
+                                                        searchPlaceholder="Search options..."
+                                                        emptyMessage="No options found."
+                                                        displayValue="None"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Packet Capture Duration</label>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full rounded-md border bg-background p-2"
+                                                        value="0"
+                                                        onChange={(e) => {
+                                                            // TODO: Implement packet capture duration
+                                                        }}
+                                                        min="0"
+                                                        max="3600"
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
+                                        </FormSection>
                                     </form>
                                 </div>
                             </div>

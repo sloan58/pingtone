@@ -18,6 +18,7 @@ use App\Models\CommonDeviceConfig;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
 use App\Models\MediaResourceGroupList;
+use App\Models\GeoLocation;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -243,6 +244,22 @@ class InfrastructureOptionsController extends Controller
                 'uuid' => $row->uuid ?? null,
                 'name' => $row->name ?? ($row['name'] ?? null),
                 'userid' => $row->userid ?? null,
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function geoLocations(Ucm $ucm): JsonResponse
+    {
+        $options = GeoLocation::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
             ])
             ->values();
 

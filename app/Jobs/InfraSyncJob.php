@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\MediaResourceGroupList;
 use App\Models\AarGroup;
 use App\Models\UserLocale;
+use App\Models\GeoLocation;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -290,6 +291,15 @@ class InfraSyncJob implements ShouldQueue
                 $data = $axlApi->performSqlQuery('SELECT * FROM typeuserlocale');
                 UserLocale::storeUcmData($data, $this->ucm);
                 $this->ucm->userLocales()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'geo_locations':
+                $data = $axlApi->listUcmObjects('listGeoLocation', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ], 'geoLocation');
+                GeoLocation::storeUcmData($data, $this->ucm);
+                $this->ucm->geoLocations()->where('updated_at', '<', $start)->delete();
                 break;
         }
     }

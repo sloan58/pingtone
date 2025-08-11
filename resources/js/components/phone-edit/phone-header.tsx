@@ -4,12 +4,11 @@ interface PhoneHeaderProps {
     ucmName?: string;
     status?: string;
     onSave?: () => void;
-    onRevert?: () => void;
     saving?: boolean;
     canSave?: boolean;
 }
 
-export function PhoneHeader({ name, model, ucmName, status, onSave, onRevert, saving, canSave = true }: PhoneHeaderProps) {
+export function PhoneHeader({ name, model, ucmName, status, onSave, saving, canSave = true }: PhoneHeaderProps) {
     return (
         <div className="flex items-center justify-between rounded-lg border bg-card p-4">
             <div>
@@ -19,14 +18,6 @@ export function PhoneHeader({ name, model, ucmName, status, onSave, onRevert, sa
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                <span
-                    className={`rounded-full px-2 py-1 text-xs ${status === 'Registered' ? 'bg-green-600/10 text-green-400' : 'bg-muted text-muted-foreground'}`}
-                >
-                    {status || 'Unknown'}
-                </span>
-                <button type="button" className="rounded-md border px-3 py-2 text-sm" onClick={onRevert}>
-                    Revert
-                </button>
                 <button
                     type="button"
                     className="flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"

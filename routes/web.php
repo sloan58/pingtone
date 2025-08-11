@@ -52,6 +52,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/user-locales', [InfrastructureOptionsController::class, 'userLocales']);
     Route::get('/ucm/{ucm}/options/ucm-users', [InfrastructureOptionsController::class, 'ucmUsers']);
     Route::get('/ucm/{ucm}/options/mobility-users', [InfrastructureOptionsController::class, 'mobilityUsers']);
+    Route::get('/ucm/{ucm}/options/geo-locations', [InfrastructureOptionsController::class, 'geoLocations']);
 });
 
 Route::get('/test-toast', function () {

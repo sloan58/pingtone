@@ -148,6 +148,11 @@ class Ucm extends Model
         return $this->hasMany(UserLocale::class);
     }
 
+    public function geoLocations(): HasMany
+    {
+        return $this->hasMany(GeoLocation::class);
+    }
+
     public function callPickupGroups(): HasMany
     {
         return $this->hasMany(CallPickupGroup::class);
