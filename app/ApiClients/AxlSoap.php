@@ -487,6 +487,26 @@ class AxlSoap extends SoapClient
     }
 
     /**
+     * Get full MOH audio source details by name
+     * @throws SoapFault
+     */
+    public function getMohAudioSourceByName(string $name): array
+    {
+        try {
+            $res = $this->__soapCall('getMohAudioSource', [
+                'getMohAudioSource' => [
+                    'name' => $name,
+                ],
+            ]);
+
+            return json_decode(json_encode($res->return->mohAudioSource), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$name]);
+        }
+    }
+
+    /**
      * Format SQL query for pagination
      *
      * @param string $query
