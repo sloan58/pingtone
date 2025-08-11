@@ -24,6 +24,8 @@ type PhoneForm = {
     locationName?: any;
     mediaResourceListName?: any;
     automatedAlternateRoutingCssName?: any;
+    userHoldMohAudioSourceId?: string;
+    networkHoldMohAudioSourceId?: string;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -63,6 +65,7 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
     const [locations, setLocations] = useState<Option[]>([]);
     const [mediaResourceGroupLists, setMediaResourceGroupLists] = useState<Option[]>([]);
     const [aarCallingSearchSpaces, setAarCallingSearchSpaces] = useState<Option[]>([]);
+    const [mohAudioSources, setMohAudioSources] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -379,6 +382,18 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
         }
     };
 
+    const loadMohAudioSources = async () => {
+        if (mohAudioSources.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/moh-audio-sources`);
+                const responseData = await response.json();
+                setMohAudioSources(responseData);
+            } catch (error) {
+                console.error('Failed to load MOH audio sources:', error);
+            }
+        }
+    };
+
     return (
         <AppShell variant="sidebar">
             <Head title={`Edit Phone - ${data.name}`} />
@@ -669,39 +684,45 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                 )}
                                             </div>
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">Location</label>
+                                                <label className="mb-1 block text-sm font-medium">AAR Calling Search Space</label>
                                                 <Combobox
-                                                    options={locations.map((o) => ({
+                                                    options={aarCallingSearchSpaces.map((o) => ({
                                                         value: o.name,
                                                         label: o.name,
                                                     }))}
                                                     value={
-                                                        typeof data.locationName === 'string'
-                                                            ? data.locationName
-                                                            : data.locationName?._ || data.locationName?.name || ''
+                                                        typeof data.automatedAlternateRoutingCssName === 'string'
+                                                            ? data.automatedAlternateRoutingCssName
+                                                            : data.automatedAlternateRoutingCssName?._ ||
+                                                              data.automatedAlternateRoutingCssName?.name ||
+                                                              ''
                                                     }
                                                     onValueChange={(value) => {
-                                                        const selectedLocation = locations.find((location) => location.name === value);
-                                                        if (selectedLocation) {
-                                                            setData('locationName', {
-                                                                _: selectedLocation.name,
-                                                                uuid: selectedLocation.uuid || '',
+                                                        const selectedCss = aarCallingSearchSpaces.find((css) => css.name === value);
+                                                        if (selectedCss) {
+                                                            setData('automatedAlternateRoutingCssName', {
+                                                                _: selectedCss.name,
+                                                                uuid: selectedCss.uuid || '',
                                                             });
                                                         } else {
-                                                            setData('locationName', { _: '', uuid: '' });
+                                                            setData('automatedAlternateRoutingCssName', { _: '', uuid: '' });
                                                         }
                                                     }}
-                                                    placeholder="Select a location..."
-                                                    searchPlaceholder="Search locations..."
-                                                    emptyMessage="No locations found."
-                                                    onMouseEnter={loadLocations}
+                                                    placeholder="Select an AAR calling search space..."
+                                                    searchPlaceholder="Search AAR calling search spaces..."
+                                                    emptyMessage="No AAR calling search spaces found."
+                                                    onMouseEnter={loadAarCallingSearchSpaces}
                                                     displayValue={
-                                                        typeof data.locationName === 'string'
-                                                            ? data.locationName
-                                                            : data.locationName?._ || data.locationName?.name || ''
+                                                        typeof data.automatedAlternateRoutingCssName === 'string'
+                                                            ? data.automatedAlternateRoutingCssName
+                                                            : data.automatedAlternateRoutingCssName?._ ||
+                                                              data.automatedAlternateRoutingCssName?.name ||
+                                                              ''
                                                     }
                                                 />
-                                                {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
+                                                {errors.automatedAlternateRoutingCssName && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.automatedAlternateRoutingCssName}</p>
+                                                )}
                                             </div>
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Media Resource Group List</label>
@@ -741,44 +762,90 @@ export default function Edit({ phone, phoneButtonTemplate }: Props) {
                                                 )}
                                             </div>
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">AAR Calling Search Space</label>
+                                                <label className="mb-1 block text-sm font-medium">Location</label>
                                                 <Combobox
-                                                    options={aarCallingSearchSpaces.map((o) => ({
+                                                    options={locations.map((o) => ({
                                                         value: o.name,
                                                         label: o.name,
                                                     }))}
                                                     value={
-                                                        typeof data.automatedAlternateRoutingCssName === 'string'
-                                                            ? data.automatedAlternateRoutingCssName
-                                                            : data.automatedAlternateRoutingCssName?._ ||
-                                                              data.automatedAlternateRoutingCssName?.name ||
-                                                              ''
+                                                        typeof data.locationName === 'string'
+                                                            ? data.locationName
+                                                            : data.locationName?._ || data.locationName?.name || ''
                                                     }
                                                     onValueChange={(value) => {
-                                                        const selectedCss = aarCallingSearchSpaces.find((css) => css.name === value);
-                                                        if (selectedCss) {
-                                                            setData('automatedAlternateRoutingCssName', {
-                                                                _: selectedCss.name,
-                                                                uuid: selectedCss.uuid || '',
+                                                        const selectedLocation = locations.find((location) => location.name === value);
+                                                        if (selectedLocation) {
+                                                            setData('locationName', {
+                                                                _: selectedLocation.name,
+                                                                uuid: selectedLocation.uuid || '',
                                                             });
                                                         } else {
-                                                            setData('automatedAlternateRoutingCssName', { _: '', uuid: '' });
+                                                            setData('locationName', { _: '', uuid: '' });
                                                         }
                                                     }}
-                                                    placeholder="Select an AAR calling search space..."
-                                                    searchPlaceholder="Search AAR calling search spaces..."
-                                                    emptyMessage="No AAR calling search spaces found."
-                                                    onMouseEnter={loadAarCallingSearchSpaces}
+                                                    placeholder="Select a location..."
+                                                    searchPlaceholder="Search locations..."
+                                                    emptyMessage="No locations found."
+                                                    onMouseEnter={loadLocations}
                                                     displayValue={
-                                                        typeof data.automatedAlternateRoutingCssName === 'string'
-                                                            ? data.automatedAlternateRoutingCssName
-                                                            : data.automatedAlternateRoutingCssName?._ ||
-                                                              data.automatedAlternateRoutingCssName?.name ||
-                                                              ''
+                                                        typeof data.locationName === 'string'
+                                                            ? data.locationName
+                                                            : data.locationName?._ || data.locationName?.name || ''
                                                     }
                                                 />
-                                                {errors.automatedAlternateRoutingCssName && (
-                                                    <p className="mt-1 text-sm text-destructive">{errors.automatedAlternateRoutingCssName}</p>
+                                                {errors.locationName && <p className="mt-1 text-sm text-destructive">{errors.locationName}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
+                                                <Combobox
+                                                    options={mohAudioSources.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={data.userHoldMohAudioSourceId || ''}
+                                                    onValueChange={(value) => {
+                                                        const selectedAudioSource = mohAudioSources.find((audioSource) => audioSource.name === value);
+                                                        if (selectedAudioSource) {
+                                                            setData('userHoldMohAudioSourceId', selectedAudioSource.name);
+                                                        } else {
+                                                            setData('userHoldMohAudioSourceId', '');
+                                                        }
+                                                    }}
+                                                    placeholder="Select a user hold MOH audio source..."
+                                                    searchPlaceholder="Search MOH audio sources..."
+                                                    emptyMessage="No MOH audio sources found."
+                                                    onMouseEnter={loadMohAudioSources}
+                                                    displayValue={data.userHoldMohAudioSourceId || ''}
+                                                />
+                                                {errors.userHoldMohAudioSourceId && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.userHoldMohAudioSourceId}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source</label>
+                                                <Combobox
+                                                    options={mohAudioSources.map((o) => ({
+                                                        value: o.name,
+                                                        label: o.name,
+                                                    }))}
+                                                    value={data.networkHoldMohAudioSourceId || ''}
+                                                    onValueChange={(value) => {
+                                                        const selectedAudioSource = mohAudioSources.find((audioSource) => audioSource.name === value);
+                                                        if (selectedAudioSource) {
+                                                            setData('networkHoldMohAudioSourceId', selectedAudioSource.name);
+                                                        } else {
+                                                            setData('networkHoldMohAudioSourceId', '');
+                                                        }
+                                                    }}
+                                                    placeholder="Select a network hold MOH audio source..."
+                                                    searchPlaceholder="Search MOH audio sources..."
+                                                    emptyMessage="No MOH audio sources found."
+                                                    onMouseEnter={loadMohAudioSources}
+                                                    displayValue={data.networkHoldMohAudioSourceId || ''}
+                                                />
+                                                {errors.networkHoldMohAudioSourceId && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.networkHoldMohAudioSourceId}</p>
                                                 )}
                                             </div>
                                         </div>

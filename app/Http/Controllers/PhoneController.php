@@ -87,9 +87,7 @@ class PhoneController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'model' => ['nullable'],
-            'protocol' => ['nullable', 'string', 'in:SIP,SCCP'],
+            'description' => ['nullable', 'string'],
             'devicePoolName' => ['nullable'],
             'commonDeviceConfigName' => ['nullable'],
             'phoneTemplateName' => ['nullable'],
@@ -98,11 +96,12 @@ class PhoneController extends Controller
             'locationName' => ['nullable'],
             'mediaResourceListName' => ['nullable'],
             'automatedAlternateRoutingCssName' => ['nullable'],
+            'userHoldMohAudioSourceId' => ['nullable', 'string'],
+            'networkHoldMohAudioSourceId' => ['nullable', 'string'],
             'buttons' => ['sometimes', 'array'],
-            'buttons.*.index' => ['nullable'],
-            'buttons.*.type' => ['nullable', 'string'],
-            'buttons.*.label' => ['nullable', 'string'],
-            'buttons.*.target' => ['nullable', 'string'],
+            'lines' => ['sometimes', 'array'],
+            'speedDials' => ['sometimes', 'array'],
+            'blfs' => ['sometimes', 'array'],
         ]);
 
         try {

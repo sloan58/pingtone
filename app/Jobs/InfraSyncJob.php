@@ -26,6 +26,7 @@ use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
 use App\Models\MediaResourceGroupList;
+use App\Models\MohAudioSource;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -172,6 +173,21 @@ class InfraSyncJob implements ShouldQueue
                 ], 'mediaResourceList');
                 MediaResourceGroupList::storeUcmData($data, $this->ucm);
                 $this->ucm->mediaResourceGroupLists()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'moh_audio_sources':
+                $audioSources = $axlApi->listUcmObjects('listMohAudioSource', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => ''],
+                ], 'mohAudioSource');
+                foreach ($audioSources as $audioSource) {
+                    try {
+                        MohAudioSource::storeUcmDetails($axlApi->getMohAudioSourceByName($audioSource['name']), $this->ucm);
+                    } catch (Exception $e) {
+                        Log::warning("{$this->ucm->name}: get MOH audio source failed: {$audioSource['name']} - {$e->getMessage()}");
+                    }
+                }
+                $this->ucm->mohAudioSources()->where('updated_at', '<', $start)->delete();
                 break;
 
             case 'call_pickup_groups':
