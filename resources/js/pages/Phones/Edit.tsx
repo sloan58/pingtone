@@ -29,6 +29,7 @@ type PhoneForm = {
     aarNeighborhoodName?: any;
     userLocale?: string;
     builtInBridgeStatus?: string;
+    callInfoPrivacyStatus?: string;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -938,6 +939,22 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 </select>
                                                 {errors.builtInBridgeStatus && (
                                                     <p className="mt-1 text-sm text-destructive">{errors.builtInBridgeStatus}</p>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Privacy</label>
+                                                <select
+                                                    value={data.callInfoPrivacyStatus || ''}
+                                                    onChange={(e) => setData('callInfoPrivacyStatus', e.target.value)}
+                                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    <option value="">&lt; None &gt;</option>
+                                                    <option value="Off">Off</option>
+                                                    <option value="On">On</option>
+                                                    <option value="Default">Default</option>
+                                                </select>
+                                                {errors.callInfoPrivacyStatus && (
+                                                    <p className="mt-1 text-sm text-destructive">{errors.callInfoPrivacyStatus}</p>
                                                 )}
                                             </div>
                                         </div>

@@ -536,7 +536,6 @@ class AxlSoap extends SoapClient
     public function updatePhone(array $updateObject): array
     {
         try {
-            throw new Exception("whoops!");
             Log::info("=== AXL UPDATE PHONE DETAILED ===", [
                 'ucm' => $this->ucm->name,
                 'phone_name' => $updateObject['name'] ?? 'unknown',
