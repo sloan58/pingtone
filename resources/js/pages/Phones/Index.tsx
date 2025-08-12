@@ -31,7 +31,15 @@ export default function Index({
     const [perPage, setPerPage] = React.useState<number>(tableState?.perPage ?? phones.per_page ?? 20);
 
     const columns: ColumnDef<Phone & any>[] = [
-        { accessorKey: 'name', header: 'Name', cell: (info) => info.getValue() as string },
+        {
+            accessorKey: 'name',
+            header: 'Name',
+            cell: ({ row }) => (
+                <Link href={`/phones/${(row.original as any).id}/edit`} className="text-primary hover:underline">
+                    {(row.original as any).name}
+                </Link>
+            ),
+        },
         { accessorKey: 'description', header: 'Description', cell: (info) => (info.getValue() as string) || '' },
         { accessorKey: 'model', header: 'Model', cell: (info) => (info.getValue() as string) || '' },
         {
