@@ -31,6 +31,9 @@ class StartUcmBatchSyncJob implements ShouldQueue
         }
 
         $infraTypes = [
+            'presence_groups',
+            'sip_dial_rules',
+            'phone_security_profiles',
             'geo_locations',
             'user_locales',
             'aar_groups',

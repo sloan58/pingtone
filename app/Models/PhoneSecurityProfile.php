@@ -5,7 +5,7 @@ namespace App\Models;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SipProfile extends Model
+class PhoneSecurityProfile extends Model
 {
     protected $guarded = [];
 

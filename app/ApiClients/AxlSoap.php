@@ -582,6 +582,9 @@ class AxlSoap extends SoapClient
                 'enableExtensionMobility',           // axlapi:boolean
                 'useDevicePoolCgpnIngressDN',           // axlapi:boolean
                 'useDevicePoolCgpnTransformCss',           // axlapi:boolean
+                'mtpRequired',                       // axlapi:boolean - Protocol Specific
+                'unattendedPort',                    // axlapi:boolean - Protocol Specific
+                'requireDtmfReception',              // axlapi:boolean - Protocol Specific
             ];
 
             // Fields that use axlapi:XStatus type accept: Off|On|Default

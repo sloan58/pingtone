@@ -5,7 +5,7 @@ namespace App\Models;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SipProfile extends Model
+class PresenceGroup extends Model
 {
     protected $guarded = [];
 
@@ -16,22 +16,22 @@ class SipProfile extends Model
 
     public static function storeUcmData(array $data, Ucm $ucm): void
     {
-        foreach ($data as $profile) {
-            $profile['ucm_id'] = $ucm->id;
+        foreach ($data as $presenceGroup) {
+            $presenceGroup['ucm_id'] = $ucm->id;
             $model = self::updateOrCreate(
-                ['uuid' => $profile['uuid'], 'ucm_id' => $ucm->id],
-                $profile
+                ['uuid' => $presenceGroup['uuid'], 'ucm_id' => $ucm->id],
+                $presenceGroup
             );
             $model->touch();
         }
     }
 
-    public static function storeUcmDetails(array $profile, Ucm $ucm): void
+    public static function storeUcmDetails(array $presenceGroup, Ucm $ucm): void
     {
-        $profile['ucm_id'] = $ucm->id;
+        $presenceGroup['ucm_id'] = $ucm->id;
         $model = self::updateOrCreate(
-            ['uuid' => $profile['uuid'], 'ucm_id' => $ucm->id],
-            $profile
+            ['uuid' => $presenceGroup['uuid'], 'ucm_id' => $ucm->id],
+            $presenceGroup
         );
         $model->touch();
     }

@@ -8,12 +8,17 @@ use App\Models\Ucm;
 use App\Models\UcmUser;
 use App\Models\UcmRole;
 use App\Models\Location;
+use App\Models\AarGroup;
 use App\Models\LineGroup;
 use App\Models\DevicePool;
 use App\Models\SipProfile;
 use App\Models\PhoneModel;
+use App\Models\UserLocale;
+use App\Models\GeoLocation;
+use App\Models\SipDialRules;
 use Illuminate\Bus\Queueable;
 use Illuminate\Bus\Batchable;
+use App\Models\PresenceGroup;
 use App\Models\ServiceProfile;
 use App\Models\RoutePartition;
 use App\Models\MohAudioSource;
@@ -26,10 +31,8 @@ use App\Models\CallingSearchSpace;
 use App\Models\CommonDeviceConfig;
 use App\Models\PhoneButtonTemplate;
 use Illuminate\Support\Facades\Log;
+use App\Models\PhoneSecurityProfile;
 use App\Models\MediaResourceGroupList;
-use App\Models\AarGroup;
-use App\Models\UserLocale;
-use App\Models\GeoLocation;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -311,6 +314,33 @@ class InfraSyncJob implements ShouldQueue
                 ], 'geoLocation');
                 GeoLocation::storeUcmData($data, $this->ucm);
                 $this->ucm->geoLocations()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'presence_groups':
+                $data = $axlApi->listUcmObjects('listPresenceGroup', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ], 'presenceGroup');
+                PresenceGroup::storeUcmData($data, $this->ucm);
+                $this->ucm->presenceGroups()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'sip_dial_rules':
+                $data = $axlApi->listUcmObjects('listSipDialRules', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ], 'sipDialRules');
+                SipDialRules::storeUcmData($data, $this->ucm);
+                $this->ucm->sipDialRules()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'phone_security_profiles':
+                $data = $axlApi->listUcmObjects('listPhoneSecurityProfile', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => '', 'phoneType' => ''],
+                ], 'phoneSecurityProfile');
+                PhoneSecurityProfile::storeUcmData($data, $this->ucm);
+                $this->ucm->phoneSecurityProfiles()->where('updated_at', '<', $start)->delete();
                 break;
         }
     }

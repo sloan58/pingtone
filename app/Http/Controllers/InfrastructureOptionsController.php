@@ -19,6 +19,10 @@ use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
 use App\Models\MediaResourceGroupList;
 use App\Models\GeoLocation;
+use App\Models\PresenceGroup;
+use App\Models\SipDialRules;
+use App\Models\PhoneSecurityProfile;
+use App\Models\SipProfile;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -253,6 +257,82 @@ class InfrastructureOptionsController extends Controller
     public function geoLocations(Ucm $ucm): JsonResponse
     {
         $options = GeoLocation::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function presenceGroups(Ucm $ucm): JsonResponse
+    {
+        $options = PresenceGroup::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function sipDialRules(Ucm $ucm): JsonResponse
+    {
+        $options = SipDialRules::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function phoneSecurityProfiles(Ucm $ucm, Request $request): JsonResponse
+    {
+        $query = PhoneSecurityProfile::query()
+            ->where('ucm_id', $ucm->getKey());
+
+        // Filter by phone type if provided
+        if ($request->has('phoneType') && $request->phoneType) {
+            $query->where('phoneType', $request->phoneType);
+        } else {
+            // If no phone type provided, still return profiles but log for debugging
+            \Log::info('Phone security profiles requested without phoneType filter', [
+                'ucm_id' => $ucm->getKey(),
+                'phoneType' => $request->phoneType ?? 'not provided'
+            ]);
+        }
+
+        $options = $query->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function sipProfiles(Ucm $ucm): JsonResponse
+    {
+        $options = SipProfile::query()
             ->where('ucm_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])

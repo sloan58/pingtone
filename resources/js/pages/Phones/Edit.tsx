@@ -55,6 +55,20 @@ type PhoneForm = {
     lines?: any;
     speedDials?: any[];
     blfs?: any[];
+    // Protocol Specific Information fields
+    packetCaptureMode?: string;
+    packetCaptureDuration?: number;
+    presenceGroupName?: any;
+    dialRulesName?: any;
+    mtpPreferedCodec?: string;
+    securityProfileName?: any;
+    rerouteCallingSearchSpaceName?: any;
+    subscribeCallingSearchSpaceName?: any;
+    sipProfileName?: any;
+    digestUser?: string;
+    mtpRequired?: boolean | string;
+    unattendedPort?: boolean | string;
+    requireDtmfReception?: boolean | string;
 };
 
 type Option = { id: string; name: string; uuid?: string; sourceId?: string; userid?: string };
@@ -116,6 +130,10 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [ucmUsers, setUcmUsers] = useState<Option[]>([]);
     const [mobilityUsers, setMobilityUsers] = useState<Option[]>([]);
     const [phones, setPhones] = useState<Option[]>([]);
+    const [presenceGroups, setPresenceGroups] = useState<Option[]>([]);
+    const [sipDialRules, setSipDialRules] = useState<Option[]>([]);
+    const [phoneSecurityProfiles, setPhoneSecurityProfiles] = useState<Option[]>([]);
+    const [sipProfiles, setSipProfiles] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -335,6 +353,15 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
         rebuildButtonArrays();
     }, [rebuildButtonArrays]);
 
+    // Reload phone security profiles when phone model changes
+    useEffect(() => {
+        if (data.model) {
+            // Clear existing profiles and reload with new model filter
+            setPhoneSecurityProfiles([]);
+            loadPhoneSecurityProfiles();
+        }
+    }, [data.model]);
+
     // Set default values for Number Presentation Transformation fields if not present
     useEffect(() => {
         if (data.useDevicePoolCgpnIngressDN === undefined) {
@@ -538,6 +565,62 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setPhones(responseData);
             } catch (error) {
                 console.error('Failed to load phones:', error);
+            }
+        }
+    };
+
+    const loadPresenceGroups = async () => {
+        if (presenceGroups.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/presence-groups`);
+                const responseData = await response.json();
+                setPresenceGroups(responseData);
+            } catch (error) {
+                console.error('Failed to load presence groups:', error);
+            }
+        }
+    };
+
+    const loadSipDialRules = async () => {
+        if (sipDialRules.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/sip-dial-rules`);
+                const responseData = await response.json();
+                setSipDialRules(responseData);
+            } catch (error) {
+                console.error('Failed to load SIP dial rules:', error);
+            }
+        }
+    };
+
+    const loadPhoneSecurityProfiles = async () => {
+        if (phoneSecurityProfiles.length === 0) {
+            try {
+                const phoneType = data.model || '';
+                const params = new URLSearchParams();
+                if (phoneType) params.append('phoneType', phoneType);
+
+                const url = `/api/ucm/${data.ucm_id}/options/phone-security-profiles${params.toString() ? '?' + params.toString() : ''}`;
+
+                console.log('Loading phone security profiles with phoneType:', phoneType);
+                const response = await fetch(url);
+                const responseData = await response.json();
+                console.log('Phone security profiles loaded:', responseData.length, 'profiles');
+                setPhoneSecurityProfiles(responseData);
+            } catch (error) {
+                console.error('Failed to load phone security profiles:', error);
+            }
+        }
+    };
+
+    const loadSipProfiles = async () => {
+        if (sipProfiles.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${data.ucm_id}/options/sip-profiles`);
+                const responseData = await response.json();
+                setSipProfiles(responseData);
+            } catch (error) {
+                console.error('Failed to load SIP profiles:', error);
             }
         }
     };
@@ -1526,17 +1609,14 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <Combobox
                                                         options={[
                                                             { value: 'None', label: 'None' },
-                                                            { value: 'Full', label: 'Full' },
-                                                            { value: 'Header', label: 'Header' },
+                                                            { value: 'Batch Processing Mode', label: 'Batch Processing Mode' },
                                                         ]}
-                                                        value="None"
-                                                        onValueChange={(value) => {
-                                                            // TODO: Implement packet capture mode
-                                                        }}
+                                                        value={data.packetCaptureMode || 'None'}
+                                                        onValueChange={(value) => setData('packetCaptureMode', value)}
                                                         placeholder="Select packet capture mode..."
                                                         searchPlaceholder="Search options..."
                                                         emptyMessage="No options found."
-                                                        displayValue="None"
+                                                        displayValue={data.packetCaptureMode || 'None'}
                                                     />
                                                 </div>
                                                 <div>
@@ -1544,12 +1624,306 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <input
                                                         type="number"
                                                         className="w-full rounded-md border bg-background p-2"
-                                                        value="0"
-                                                        onChange={(e) => {
-                                                            // TODO: Implement packet capture duration
-                                                        }}
+                                                        value={data.packetCaptureDuration || 0}
+                                                        onChange={(e) => setData('packetCaptureDuration', parseInt(e.target.value) || 0)}
                                                         min="0"
-                                                        max="3600"
+                                                        max="300000"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">BLF Presence Group*</label>
+                                                    <Combobox
+                                                        options={presenceGroups.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.presenceGroupName === 'string'
+                                                                ? data.presenceGroupName
+                                                                : data.presenceGroupName?._ || data.presenceGroupName?.name || ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedGroup = presenceGroups.find((group) => group.name === value);
+                                                            if (selectedGroup) {
+                                                                setData('presenceGroupName', {
+                                                                    _: selectedGroup.name,
+                                                                    uuid: selectedGroup.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('presenceGroupName', null);
+                                                            }
+                                                        }}
+                                                        placeholder="Select BLF Presence Group..."
+                                                        searchPlaceholder="Search presence groups..."
+                                                        emptyMessage="No presence groups found."
+                                                        onMouseEnter={loadPresenceGroups}
+                                                        displayValue={
+                                                            typeof data.presenceGroupName === 'string'
+                                                                ? data.presenceGroupName
+                                                                : data.presenceGroupName?._ || data.presenceGroupName?.name || ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">SIP Dial Rules</label>
+                                                    <Combobox
+                                                        options={sipDialRules.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.dialRulesName === 'string'
+                                                                ? data.dialRulesName
+                                                                : data.dialRulesName?._ || data.dialRulesName?.name || ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedRules = sipDialRules.find((rules) => rules.name === value);
+                                                            if (selectedRules) {
+                                                                setData('dialRulesName', {
+                                                                    _: selectedRules.name,
+                                                                    uuid: selectedRules.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('dialRulesName', null);
+                                                            }
+                                                        }}
+                                                        placeholder="Select SIP Dial Rules..."
+                                                        searchPlaceholder="Search SIP dial rules..."
+                                                        emptyMessage="No SIP dial rules found."
+                                                        onMouseEnter={loadSipDialRules}
+                                                        displayValue={
+                                                            typeof data.dialRulesName === 'string'
+                                                                ? data.dialRulesName
+                                                                : data.dialRulesName?._ || data.dialRulesName?.name || ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">MTP Preferred Originating Codec*</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: '711ulaw', label: '711ulaw' },
+                                                            { value: '711alaw', label: '711alaw' },
+                                                            { value: 'G729', label: 'G729' },
+                                                            { value: 'G722', label: 'G722' },
+                                                            { value: 'G723', label: 'G723' },
+                                                            { value: 'G726', label: 'G726' },
+                                                            { value: 'G728', label: 'G728' },
+                                                            { value: 'G729a', label: 'G729a' },
+                                                            { value: 'G729b', label: 'G729b' },
+                                                            { value: 'G729ab', label: 'G729ab' },
+                                                            { value: 'G7231', label: 'G7231' },
+                                                            { value: 'G7231a', label: 'G7231a' },
+                                                            { value: 'G7231b', label: 'G7231b' },
+                                                            { value: 'G7231ab', label: 'G7231ab' },
+                                                            { value: 'G726-16', label: 'G726-16' },
+                                                            { value: 'G726-24', label: 'G726-24' },
+                                                            { value: 'G726-32', label: 'G726-32' },
+                                                            { value: 'G726-40', label: 'G726-40' },
+                                                            { value: 'G726-16a', label: 'G726-16a' },
+                                                            { value: 'G726-24a', label: 'G726-24a' },
+                                                            { value: 'G726-32a', label: 'G726-32a' },
+                                                            { value: 'G726-40a', label: 'G726-40a' },
+                                                            { value: 'G726-16b', label: 'G726-16b' },
+                                                            { value: 'G726-24b', label: 'G726-24b' },
+                                                            { value: 'G726-32b', label: 'G726-32b' },
+                                                            { value: 'G726-40b', label: 'G726-40b' },
+                                                            { value: 'G726-16ab', label: 'G726-16ab' },
+                                                            { value: 'G726-24ab', label: 'G726-24ab' },
+                                                            { value: 'G726-32ab', label: 'G726-32ab' },
+                                                            { value: 'G726-40ab', label: 'G726-40ab' },
+                                                        ]}
+                                                        value={data.mtpPreferedCodec || '711ulaw'}
+                                                        onValueChange={(value) => setData('mtpPreferedCodec', value)}
+                                                        placeholder="Select MTP Preferred Codec..."
+                                                        searchPlaceholder="Search codecs..."
+                                                        emptyMessage="No codecs found."
+                                                        displayValue={data.mtpPreferedCodec || '711ulaw'}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Device Security Profile*</label>
+                                                    <Combobox
+                                                        options={phoneSecurityProfiles.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.securityProfileName === 'string'
+                                                                ? data.securityProfileName
+                                                                : data.securityProfileName?._ || data.securityProfileName?.name || ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedProfile = phoneSecurityProfiles.find((profile) => profile.name === value);
+                                                            if (selectedProfile) {
+                                                                setData('securityProfileName', {
+                                                                    _: selectedProfile.name,
+                                                                    uuid: selectedProfile.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('securityProfileName', null);
+                                                            }
+                                                        }}
+                                                        placeholder="Select Device Security Profile..."
+                                                        searchPlaceholder="Search security profiles..."
+                                                        emptyMessage="No security profiles found."
+                                                        onMouseEnter={loadPhoneSecurityProfiles}
+                                                        displayValue={
+                                                            typeof data.securityProfileName === 'string'
+                                                                ? data.securityProfileName
+                                                                : data.securityProfileName?._ || data.securityProfileName?.name || ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Rerouting Calling Search Space</label>
+                                                    <Combobox
+                                                        options={callingSearchSpaces.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.rerouteCallingSearchSpaceName === 'string'
+                                                                ? data.rerouteCallingSearchSpaceName
+                                                                : data.rerouteCallingSearchSpaceName?._ ||
+                                                                  data.rerouteCallingSearchSpaceName?.name ||
+                                                                  ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedCss = callingSearchSpaces.find((css) => css.name === value);
+                                                            if (selectedCss) {
+                                                                setData('rerouteCallingSearchSpaceName', {
+                                                                    _: selectedCss.name,
+                                                                    uuid: selectedCss.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('rerouteCallingSearchSpaceName', null);
+                                                            }
+                                                        }}
+                                                        placeholder="Select Rerouting Calling Search Space..."
+                                                        searchPlaceholder="Search calling search spaces..."
+                                                        emptyMessage="No calling search spaces found."
+                                                        onMouseEnter={loadCallingSearchSpaces}
+                                                        displayValue={
+                                                            typeof data.rerouteCallingSearchSpaceName === 'string'
+                                                                ? data.rerouteCallingSearchSpaceName
+                                                                : data.rerouteCallingSearchSpaceName?._ ||
+                                                                  data.rerouteCallingSearchSpaceName?.name ||
+                                                                  ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">SUBSCRIBE Calling Search Space</label>
+                                                    <Combobox
+                                                        options={callingSearchSpaces.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.subscribeCallingSearchSpaceName === 'string'
+                                                                ? data.subscribeCallingSearchSpaceName
+                                                                : data.subscribeCallingSearchSpaceName?._ ||
+                                                                  data.subscribeCallingSearchSpaceName?.name ||
+                                                                  ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedCss = callingSearchSpaces.find((css) => css.name === value);
+                                                            if (selectedCss) {
+                                                                setData('subscribeCallingSearchSpaceName', {
+                                                                    _: selectedCss.name,
+                                                                    uuid: selectedCss.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('subscribeCallingSearchSpaceName', null);
+                                                            }
+                                                        }}
+                                                        placeholder="Select SUBSCRIBE Calling Search Space..."
+                                                        searchPlaceholder="Search calling search spaces..."
+                                                        emptyMessage="No calling search spaces found."
+                                                        onMouseEnter={loadCallingSearchSpaces}
+                                                        displayValue={
+                                                            typeof data.subscribeCallingSearchSpaceName === 'string'
+                                                                ? data.subscribeCallingSearchSpaceName
+                                                                : data.subscribeCallingSearchSpaceName?._ ||
+                                                                  data.subscribeCallingSearchSpaceName?.name ||
+                                                                  ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">SIP Profile*</label>
+                                                    <Combobox
+                                                        options={sipProfiles.map((o) => ({
+                                                            value: o.name,
+                                                            label: o.name,
+                                                        }))}
+                                                        value={
+                                                            typeof data.sipProfileName === 'string'
+                                                                ? data.sipProfileName
+                                                                : data.sipProfileName?._ || data.sipProfileName?.name || ''
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            const selectedProfile = sipProfiles.find((profile) => profile.name === value);
+                                                            if (selectedProfile) {
+                                                                setData('sipProfileName', {
+                                                                    _: selectedProfile.name,
+                                                                    uuid: selectedProfile.uuid || '',
+                                                                });
+                                                            } else {
+                                                                setData('sipProfileName', null);
+                                                            }
+                                                        }}
+                                                        placeholder="Select SIP Profile..."
+                                                        searchPlaceholder="Search SIP profiles..."
+                                                        emptyMessage="No SIP profiles found."
+                                                        onMouseEnter={loadSipProfiles}
+                                                        displayValue={
+                                                            typeof data.sipProfileName === 'string'
+                                                                ? data.sipProfileName
+                                                                : data.sipProfileName?._ || data.sipProfileName?.name || ''
+                                                        }
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Digest User</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: '', label: '< None >' },
+                                                            ...ucmUsers.map((o) => ({
+                                                                value: o.userid || o.name || '',
+                                                                label: o.userid || o.name || '',
+                                                            })),
+                                                        ]}
+                                                        value={data.digestUser || ''}
+                                                        onValueChange={(value) => setData('digestUser', value)}
+                                                        placeholder="Select Digest User..."
+                                                        searchPlaceholder="Search users..."
+                                                        emptyMessage="No users found."
+                                                        onMouseEnter={loadUcmUsers}
+                                                        displayValue={data.digestUser || '< None >'}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Protocol Specific Checkboxes */}
+                                            <div className="border-t pt-6">
+                                                <h4 className="mb-4 text-sm font-medium text-muted-foreground">Protocol Options</h4>
+                                                <div className="space-y-4">
+                                                    <Toggle
+                                                        label="Media Termination Point Required"
+                                                        checked={toBoolean(data.mtpRequired)}
+                                                        onCheckedChange={(checked: boolean) => setData('mtpRequired', checked)}
+                                                    />
+                                                    <Toggle
+                                                        label="Unattended Port"
+                                                        checked={toBoolean(data.unattendedPort)}
+                                                        onCheckedChange={(checked: boolean) => setData('unattendedPort', checked)}
+                                                    />
+                                                    <Toggle
+                                                        label="Require DTMF Reception"
+                                                        checked={toBoolean(data.requireDtmfReception)}
+                                                        onCheckedChange={(checked: boolean) => setData('requireDtmfReception', checked)}
                                                     />
                                                 </div>
                                             </div>

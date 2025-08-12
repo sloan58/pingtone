@@ -153,6 +153,21 @@ class Ucm extends Model
         return $this->hasMany(GeoLocation::class);
     }
 
+    public function presenceGroups(): HasMany
+    {
+        return $this->hasMany(PresenceGroup::class);
+    }
+
+    public function sipDialRules(): HasMany
+    {
+        return $this->hasMany(SipDialRules::class);
+    }
+
+    public function phoneSecurityProfiles(): HasMany
+    {
+        return $this->hasMany(PhoneSecurityProfile::class);
+    }
+
     public function callPickupGroups(): HasMany
     {
         return $this->hasMany(CallPickupGroup::class);
