@@ -83,6 +83,11 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
     const isSaving = useRef(false);
 
+    // Re-initialize form data when phone prop changes (e.g., after redirect with fresh data)
+    useEffect(() => {
+        setData(phone as any);
+    }, [phone, setData]);
+
     // Helper function to convert string/boolean values to proper booleans for UI display
     const toBoolean = (value: boolean | string | undefined): boolean => {
         if (typeof value === 'boolean') return value;
@@ -624,12 +629,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
             }
         }
     };
-
-    console.log('Select value:', data.builtInBridgeStatus);
-    console.log('Phone object keys:', Object.keys(phone));
-    console.log('Phone object:', phone);
-    console.log('builtInBridge field:', (phone as any).builtInBridge);
-    console.log('builtInBridgeStatus field:', (phone as any).builtInBridgeStatus);
 
     return (
         <AppShell variant="sidebar">
@@ -1888,20 +1887,17 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 <div>
                                                     <label className="mb-1 block text-sm font-medium">Digest User</label>
                                                     <Combobox
-                                                        options={[
-                                                            { value: '', label: '< None >' },
-                                                            ...ucmUsers.map((o) => ({
-                                                                value: o.userid || o.name || '',
-                                                                label: o.userid || o.name || '',
-                                                            })),
-                                                        ]}
+                                                        options={ucmUsers.map((o) => ({
+                                                            value: o.userid || o.name || '',
+                                                            label: o.userid || o.name || '',
+                                                        }))}
                                                         value={data.digestUser || ''}
                                                         onValueChange={(value) => setData('digestUser', value)}
                                                         placeholder="Select Digest User..."
                                                         searchPlaceholder="Search users..."
                                                         emptyMessage="No users found."
                                                         onMouseEnter={loadUcmUsers}
-                                                        displayValue={data.digestUser || '< None >'}
+                                                        displayValue={data.digestUser || ''}
                                                     />
                                                 </div>
                                             </div>

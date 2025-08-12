@@ -527,6 +527,108 @@ class AxlSoap extends SoapClient
 
 
     /**
+     * Normalize phone update payload for UCM AXL API
+     *
+     * @param array $updateObject The phone update object
+     * @return array The normalized update object
+     */
+    private function normalizePhoneUpdatePayload(array $updateObject): array
+    {
+        // Ensure digestUser field is always present (set to empty string if not provided)
+        $updateObject['digestUser'] = $updateObject['digestUser'] ?? '';
+
+        // Add lines to addLines for UCM compatibility
+        $updateObject['addLines'] = $updateObject['lines'];
+
+        // Application is not currently supporting MLPP
+        unset($updateObject['confidentialAccess']);
+
+        // userLocale needs to be an empty string if null
+        $updateObject['userLocale'] = $updateObject['userLocale'] ?? '';
+
+        // UCM doesn't like the capital uuid (which we also got from UCM)
+        if (isset($updateObject['ownerUserName']['uuid'])) {
+            $updateObject['ownerUserName']['uuid'] = strtolower($updateObject['ownerUserName']['uuid']);
+        }
+
+        // Convert boolean toggle values back to UCM string format
+        // hlogStatus uses "On"/"Off" format
+        if (isset($updateObject['hlogStatus'])) {
+            // Convert to boolean first to handle various input formats
+            $value = $updateObject['hlogStatus'];
+            if (is_string($value)) {
+                // Convert string values to boolean
+                $boolValue = ($value === 'On' || $value === 'true' || $value === '1');
+            } else {
+                // Already boolean or treat as boolean
+                $boolValue = (bool)$value;
+            }
+            $updateObject['hlogStatus'] = $boolValue ? 'On' : 'Off';
+        }
+
+        // Fields that use axlapi:boolean type accept: (t)|(f)|(true)|(false)|(0)|(1)
+        // We'll use "true"/"false" format for consistency
+        $booleanFields = [
+            'remoteDevice',
+            'requireOffPremiseLocation',
+            'ignorePresentationIndicators',
+            'allowCtiControlFlag',
+            'dndStatus',
+            'enableExtensionMobility',
+            'useDevicePoolCgpnIngressDN',
+            'useDevicePoolCgpnTransformCss',
+            'mtpRequired',
+            'unattendedPort',
+            'requireDtmfReception',
+        ];
+
+        // Fields that use axlapi:XStatus type accept: Off|On|Default
+        $statusFields = [
+            'useTrustedRelayPoint',
+            'alwaysUsePrimeLine',
+            'alwaysUsePrimeLineForVoiceMessage',
+        ];
+
+        foreach ($booleanFields as $field) {
+            if (isset($updateObject[$field])) {
+                // Convert to boolean first to handle various input formats
+                $value = $updateObject[$field];
+                if (is_string($value)) {
+                    // Convert string values to boolean
+                    $boolValue = ($value === 'true' || $value === '1' || $value === 'On');
+                } else {
+                    // Already boolean or treat as boolean
+                    $boolValue = (bool)$value;
+                }
+                $updateObject[$field] = $boolValue ? 'true' : 'false';
+            }
+        }
+
+        // Convert XStatus fields to proper format
+        foreach ($statusFields as $field) {
+            if (isset($updateObject[$field])) {
+                // If it's already a valid XStatus value, leave it
+                if (in_array($updateObject[$field], ['On', 'Off', 'Default'])) {
+                    continue;
+                }
+                // Convert to boolean first to handle various input formats
+                $value = $updateObject[$field];
+                if (is_string($value)) {
+                    // Convert string values to boolean (anything not 'false' or empty is true)
+                    $boolValue = ($value === 'true' || $value === '1' || $value === 'On');
+                } else {
+                    // Already boolean or treat as boolean
+                    $boolValue = (bool)$value;
+                }
+                // Convert boolean to On/Off (Default is handled above)
+                $updateObject[$field] = $boolValue ? 'On' : 'Off';
+            }
+        }
+
+        return $updateObject;
+    }
+
+    /**
      * Update a phone in UCM via AXL API
      *
      * @param array $updateObject The phone update object
@@ -536,99 +638,17 @@ class AxlSoap extends SoapClient
     public function updatePhone(array $updateObject): array
     {
         try {
-            Log::info("=== AXL UPDATE PHONE DETAILED ===", [
+            Log::info("AXL UPDATE PHONE - digestUser:", [
                 'ucm' => $this->ucm->name,
                 'phone_name' => $updateObject['name'] ?? 'unknown',
-                'full_update_object' => $updateObject,
-                'lines_data' => $updateObject['lines'] ?? 'No lines data',
-                'buttons_data' => $updateObject['buttons'] ?? 'No buttons data',
+                'digestUser' => $updateObject['digestUser'] ?? 'NOT_SET',
+                'has_digestUser' => isset($updateObject['digestUser']),
             ]);
 
-            $updateObject['addLines'] = $updateObject['lines'];
+            // Normalize the update payload
+            $updateObject = $this->normalizePhoneUpdatePayload($updateObject);
 
-            // Application is not currently supporting MLPP
-            unset($updateObject['confidentialAccess']);
-            // userLocale needs to be an empty string if null
-            $updateObject['userLocale'] = is_null($updateObject['userLocale']) ? '' : $updateObject['userLocale'];
 
-            // UCM doesn't like the capital uuid (which we also got from UCM)
-            if (isset($updateObject['ownerUserName']['uuid'])) {
-                $updateObject['ownerUserName']['uuid'] = strtolower($updateObject['ownerUserName']['uuid']);
-            }
-
-            // Convert boolean toggle values back to UCM string format
-            // hlogStatus uses "On"/"Off" format
-            if (isset($updateObject['hlogStatus'])) {
-                // Convert to boolean first to handle various input formats
-                $value = $updateObject['hlogStatus'];
-                if (is_string($value)) {
-                    // Convert string values to boolean
-                    $boolValue = ($value === 'On' || $value === 'true' || $value === '1');
-                } else {
-                    // Already boolean or treat as boolean
-                    $boolValue = (bool)$value;
-                }
-                $updateObject['hlogStatus'] = $boolValue ? 'On' : 'Off';
-            }
-
-            // Fields that use axlapi:boolean type accept: (t)|(f)|(true)|(false)|(0)|(1)
-            // We'll use "true"/"false" format for consistency
-            $booleanFields = [
-                'remoteDevice',                     // axlapi:boolean
-                'requireOffPremiseLocation',         // axlapi:boolean
-                'ignorePresentationIndicators',      // axlapi:boolean
-                'allowCtiControlFlag',               // axlapi:boolean
-                'dndStatus',                         // axlapi:boolean
-                'enableExtensionMobility',           // axlapi:boolean
-                'useDevicePoolCgpnIngressDN',           // axlapi:boolean
-                'useDevicePoolCgpnTransformCss',           // axlapi:boolean
-                'mtpRequired',                       // axlapi:boolean - Protocol Specific
-                'unattendedPort',                    // axlapi:boolean - Protocol Specific
-                'requireDtmfReception',              // axlapi:boolean - Protocol Specific
-            ];
-
-            // Fields that use axlapi:XStatus type accept: Off|On|Default
-            $statusFields = [
-                'useTrustedRelayPoint',              // axlapi:XStatus
-                'alwaysUsePrimeLine',                // axlapi:XStatus
-                'alwaysUsePrimeLineForVoiceMessage', // axlapi:XStatus
-            ];
-
-            foreach ($booleanFields as $field) {
-                if (isset($updateObject[$field])) {
-                    // Convert to boolean first to handle various input formats
-                    $value = $updateObject[$field];
-                    if (is_string($value)) {
-                        // Convert string values to boolean
-                        $boolValue = ($value === 'true' || $value === '1' || $value === 'On');
-                    } else {
-                        // Already boolean or treat as boolean
-                        $boolValue = (bool)$value;
-                    }
-                    $updateObject[$field] = $boolValue ? 'true' : 'false';
-                }
-            }
-
-            // Convert XStatus fields to proper format
-            foreach ($statusFields as $field) {
-                if (isset($updateObject[$field])) {
-                    // If it's already a valid XStatus value, leave it
-                    if (in_array($updateObject[$field], ['On', 'Off', 'Default'])) {
-                        continue;
-                    }
-                    // Convert to boolean first to handle various input formats
-                    $value = $updateObject[$field];
-                    if (is_string($value)) {
-                        // Convert string values to boolean (anything not 'false' or empty is true)
-                        $boolValue = ($value === 'true' || $value === '1' || $value === 'On');
-                    } else {
-                        // Already boolean or treat as boolean
-                        $boolValue = (bool)$value;
-                    }
-                    // Convert boolean to On/Off (Default is handled above)
-                    $updateObject[$field] = $boolValue ? 'On' : 'Off';
-                }
-            }
 
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,

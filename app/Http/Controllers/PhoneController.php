@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Log;
 use Exception;
 use SoapFault;
 use Inertia\Inertia;
@@ -101,16 +102,28 @@ class PhoneController extends Controller
             // Step 1: Transform boolean values back to UCM-compatible string format
             $updateData = $request->all();
 
+            // Debug: Log what we received for digestUser
+            Log::info('Phone update - digestUser field:', [
+                'digestUser' => $updateData['digestUser'] ?? 'NOT_SET',
+                'has_digestUser' => isset($updateData['digestUser']),
+            ]);
+
             // Step 2: Update the phone in UCM via AXL API
             $axlApi = new AxlSoap($phone->ucm);
 
             // Send the transformed data to UCM
             $axlApi->updatePhone($updateData);
 
-            // Step 3: If UCM update succeeds, update our local database
-            $phone->update($axlApi->getPhoneByName($phone->name));
+            // Step 3: If UCM update succeeds, update our local database with fresh UCM data
+            $freshUcmData = $axlApi->getPhoneByName($phone->name);
+            $phone->update($freshUcmData);
 
-            return back()->with('toast', [
+            // Step 4: Refresh the phone model to ensure we have the latest data
+            $phone->refresh();
+
+            // Step 5: Redirect to edit page with fresh data to ensure UI reflects current UCM state
+            // Use the phone ID to force a fresh database query instead of using the cached model instance
+            return redirect()->route('phones.edit', $phone)->with('toast', [
                 'type' => 'success',
                 'title' => 'Phone updated',
                 'message' => 'The phone was updated successfully in UCM and local database.',
