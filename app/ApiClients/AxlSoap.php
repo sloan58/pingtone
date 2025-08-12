@@ -647,9 +647,7 @@ class AxlSoap extends SoapClient
 
             // Normalize the update payload
             $updateObject = $this->normalizePhoneUpdatePayload($updateObject);
-
-
-
+            
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,
             ]);

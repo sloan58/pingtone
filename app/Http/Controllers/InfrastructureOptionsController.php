@@ -23,6 +23,7 @@ use App\Models\PresenceGroup;
 use App\Models\SipDialRules;
 use App\Models\PhoneSecurityProfile;
 use App\Models\SipProfile;
+use App\Models\DeviceProfile;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -340,6 +341,29 @@ class InfrastructureOptionsController extends Controller
                 'id' => (string) $row->_id,
                 'uuid' => $row->uuid ?? null,
                 'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function deviceProfiles(Ucm $ucm, Request $request): JsonResponse
+    {
+        $query = DeviceProfile::query()
+            ->where('ucm_id', $ucm->getKey());
+
+        // Filter by phone model if provided
+        if ($request->has('model') && $request->model) {
+            $query->where('model', $request->model);
+        }
+
+        $options = $query->orderBy('name')
+            ->get(['_id', 'uuid', 'name', 'model'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+                'model' => $row->model ?? null,
             ])
             ->values();
 

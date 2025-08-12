@@ -55,6 +55,9 @@ type PhoneForm = {
     lines?: any;
     speedDials?: any[];
     blfs?: any[];
+    // Extension Mobility fields
+    enableExtensionMobility?: boolean | string;
+    defaultProfileName?: any;
     // Protocol Specific Information fields
     packetCaptureMode?: string;
     packetCaptureDuration?: number;
@@ -139,6 +142,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [sipDialRules, setSipDialRules] = useState<Option[]>([]);
     const [phoneSecurityProfiles, setPhoneSecurityProfiles] = useState<Option[]>([]);
     const [sipProfiles, setSipProfiles] = useState<Option[]>([]);
+    const [deviceProfiles, setDeviceProfiles] = useState<Option[]>([]);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -626,6 +630,24 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setSipProfiles(responseData);
             } catch (error) {
                 console.error('Failed to load SIP profiles:', error);
+            }
+        }
+    };
+
+    const loadDeviceProfiles = async () => {
+        if (deviceProfiles.length === 0) {
+            try {
+                const model = data.model || '';
+                const params = new URLSearchParams();
+                if (model) params.append('model', model);
+
+                const url = `/api/ucm/${data.ucm_id}/options/device-profiles${params.toString() ? '?' + params.toString() : ''}`;
+
+                const response = await fetch(url);
+                const responseData = await response.json();
+                setDeviceProfiles(responseData);
+            } catch (error) {
+                console.error('Failed to load device profiles:', error);
             }
         }
     };
@@ -1921,6 +1943,65 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                         checked={toBoolean(data.requireDtmfReception)}
                                                         onCheckedChange={(checked: boolean) => setData('requireDtmfReception', checked)}
                                                     />
+                                                </div>
+                                            </div>
+                                        </FormSection>
+
+                                        {/* Extension Information Section */}
+                                        <FormSection title="Extension Information">
+                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                <div>
+                                                    <Toggle
+                                                        label="Enable Extension Mobility"
+                                                        checked={toBoolean(data.enableExtensionMobility)}
+                                                        onCheckedChange={(checked: boolean) => setData('enableExtensionMobility', checked)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Log Out Profile</label>
+                                                    <Combobox
+                                                        options={[
+                                                            { value: 'current', label: '-- Use Current Device Settings --' },
+                                                            ...deviceProfiles.map((o) => ({
+                                                                value: o.name,
+                                                                label: o.name,
+                                                            })),
+                                                        ]}
+                                                        value={
+                                                            typeof data.defaultProfileName === 'string'
+                                                                ? data.defaultProfileName
+                                                                : data.defaultProfileName?._ || data.defaultProfileName?.name || 'current'
+                                                        }
+                                                        onValueChange={(value) => {
+                                                            if (value === 'current') {
+                                                                setData('defaultProfileName', null);
+                                                            } else {
+                                                                const selectedProfile = deviceProfiles.find((profile) => profile.name === value);
+                                                                if (selectedProfile) {
+                                                                    setData('defaultProfileName', {
+                                                                        _: selectedProfile.name,
+                                                                        uuid: selectedProfile.uuid || '',
+                                                                    });
+                                                                } else {
+                                                                    setData('defaultProfileName', null);
+                                                                }
+                                                            }
+                                                        }}
+                                                        placeholder="Select a log out profile..."
+                                                        searchPlaceholder="Search device profiles..."
+                                                        emptyMessage="No device profiles found."
+                                                        onMouseEnter={loadDeviceProfiles}
+                                                        displayValue={
+                                                            typeof data.defaultProfileName === 'string'
+                                                                ? data.defaultProfileName
+                                                                : data.defaultProfileName?._ ||
+                                                                  data.defaultProfileName?.name ||
+                                                                  '-- Use Current Device Settings --'
+                                                        }
+                                                    />
+                                                    {errors.defaultProfileName && (
+                                                        <p className="mt-1 text-sm text-destructive">{errors.defaultProfileName}</p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </FormSection>
