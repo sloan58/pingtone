@@ -65,18 +65,31 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
     const isSaving = useRef(false);
 
-    // Helper function to convert string/boolean values to proper booleans
+    // Helper function to convert string/boolean values to proper booleans for UI display
     const toBoolean = (value: boolean | string | undefined): boolean => {
         if (typeof value === 'boolean') return value;
         if (typeof value === 'string') {
             // Handle "true"/"false" strings
-            if (value === 'true') return true;
-            if (value === 'false') return false;
-            // Handle "On"/"Off" strings (for hlogStatus)
+            if (value.toLowerCase() === 'true') return true;
+            if (value.toLowerCase() === 'false') return false;
+            // Handle "On"/"Off" strings
             if (value === 'On') return true;
             if (value === 'Off') return false;
+            // Handle "Default" as false for display purposes
+            if (value === 'Default') return false;
         }
         return false;
+    };
+
+    // Helper to convert boolean back to the appropriate string format for each field
+    const fromBoolean = (fieldName: string, value: boolean): boolean | string => {
+        // hlogStatus uses "On"/"Off" format
+        if (fieldName === 'hlogStatus') {
+            return value ? 'On' : 'Off';
+        }
+        // All other boolean toggle fields just use boolean
+        // The AxlSoap.php will convert them to the right format
+        return value;
     };
 
     // Handle toast messages from backend
@@ -1308,27 +1321,40 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <Toggle
                                                         label="Ignore Presentation Indicators (internal calls only)"
                                                         checked={toBoolean(data.ignorePresentationIndicators)}
-                                                        onCheckedChange={(checked: boolean) => setData('ignorePresentationIndicators', checked)}
+                                                        onCheckedChange={(checked: boolean) =>
+                                                            setData(
+                                                                'ignorePresentationIndicators',
+                                                                fromBoolean('ignorePresentationIndicators', checked),
+                                                            )
+                                                        }
                                                     />
                                                     <Toggle
                                                         label="Allow Control of Device from CTI"
                                                         checked={toBoolean(data.allowCtiControlFlag)}
-                                                        onCheckedChange={(checked: boolean) => setData('allowCtiControlFlag', checked)}
+                                                        onCheckedChange={(checked: boolean) =>
+                                                            setData('allowCtiControlFlag', fromBoolean('allowCtiControlFlag', checked))
+                                                        }
                                                     />
                                                     <Toggle
                                                         label="Logged Into Hunt Group"
                                                         checked={toBoolean(data.hlogStatus)}
-                                                        onCheckedChange={(checked: boolean) => setData('hlogStatus', checked)}
+                                                        onCheckedChange={(checked: boolean) =>
+                                                            setData('hlogStatus', fromBoolean('hlogStatus', checked))
+                                                        }
                                                     />
                                                     <Toggle
                                                         label="Remote Device"
                                                         checked={toBoolean(data.remoteDevice)}
-                                                        onCheckedChange={(checked: boolean) => setData('remoteDevice', checked)}
+                                                        onCheckedChange={(checked: boolean) =>
+                                                            setData('remoteDevice', fromBoolean('remoteDevice', checked))
+                                                        }
                                                     />
                                                     <Toggle
                                                         label="Require off-premise location"
                                                         checked={toBoolean(data.requireOffPremiseLocation)}
-                                                        onCheckedChange={(checked: boolean) => setData('requireOffPremiseLocation', checked)}
+                                                        onCheckedChange={(checked: boolean) =>
+                                                            setData('requireOffPremiseLocation', fromBoolean('requireOffPremiseLocation', checked))
+                                                        }
                                                     />
                                                 </div>
                                             </div>
