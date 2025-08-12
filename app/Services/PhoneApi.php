@@ -104,17 +104,18 @@ class PhoneApi
                 'request_count' => count($requests),
             ]);
 
-            // Use Laravel's concurrent HTTP requests
-            $responses = Http::timeout($this->timeout)
-                ->concurrent()
-                ->map($requests, function ($request) {
-                    return Http::timeout($this->timeout)->get($request['url']);
-                });
+            // Use Laravel's pool method for concurrent HTTP requests
+            $responses = Http::pool(function ($pool) use ($requests) {
+                $poolRequests = [];
+                foreach ($requests as $index => $request) {
+                    $poolRequests[] = $pool->as($index)->timeout($this->timeout)->get($request['url']);
+                }
+                return $poolRequests;
+            });
 
             $results = [];
-            $index = 0;
 
-            foreach ($requests as $request) {
+            foreach ($requests as $index => $request) {
                 $response = $responses[$index];
                 $phone = $request['phone'];
                 $type = $request['type'];
@@ -183,8 +184,6 @@ class PhoneApi
                         'success' => false,
                     ];
                 }
-
-                $index++;
             }
 
             return $results;
