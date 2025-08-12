@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 type PhoneForm = {
     id: string;
+    uuid?: string;
     ucm_id: string;
     name: string;
     description?: string;
@@ -143,6 +144,8 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [phoneSecurityProfiles, setPhoneSecurityProfiles] = useState<Option[]>([]);
     const [sipProfiles, setSipProfiles] = useState<Option[]>([]);
     const [deviceProfiles, setDeviceProfiles] = useState<Option[]>([]);
+    const [extensionMobilityData, setExtensionMobilityData] = useState<any>(null);
+    const [extensionMobilityLoading, setExtensionMobilityLoading] = useState(false);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -380,6 +383,13 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
             setData('useDevicePoolCgpnTransformCss', true);
         }
     }, []);
+
+    // Load extension mobility data when component mounts
+    useEffect(() => {
+        if (data.ucm_id && (phone as any).uuid) {
+            loadExtensionMobilityData();
+        }
+    }, [data.ucm_id, (phone as any).uuid]);
 
     // Function to handle phone button template changes
     const handlePhoneButtonTemplateChange = (value: string) => {
@@ -648,6 +658,29 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                 setDeviceProfiles(responseData);
             } catch (error) {
                 console.error('Failed to load device profiles:', error);
+            }
+        }
+    };
+
+    const loadExtensionMobilityData = async () => {
+        if (!extensionMobilityLoading) {
+            setExtensionMobilityLoading(true);
+            try {
+                const phoneUuid = (phone as any).uuid || data.uuid;
+                if (phoneUuid) {
+                    const params = new URLSearchParams();
+                    params.append('phoneUuid', phoneUuid);
+
+                    const url = `/api/ucm/${data.ucm_id}/options/extension-mobility-dynamic?${params.toString()}`;
+
+                    const response = await fetch(url);
+                    const responseData = await response.json();
+                    setExtensionMobilityData(responseData);
+                }
+            } catch (error) {
+                console.error('Failed to load extension mobility data:', error);
+            } finally {
+                setExtensionMobilityLoading(false);
             }
         }
     };
@@ -1950,58 +1983,149 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                         {/* Extension Information Section */}
                                         <FormSection title="Extension Information">
                                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                                <div>
-                                                    <Toggle
-                                                        label="Enable Extension Mobility"
-                                                        checked={toBoolean(data.enableExtensionMobility)}
-                                                        onCheckedChange={(checked: boolean) => setData('enableExtensionMobility', checked)}
-                                                    />
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <Toggle
+                                                            label="Enable Extension Mobility"
+                                                            checked={toBoolean(data.enableExtensionMobility)}
+                                                            onCheckedChange={(checked: boolean) => setData('enableExtensionMobility', checked)}
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">Log Out Profile</label>
-                                                    <Combobox
-                                                        options={[
-                                                            { value: 'current', label: '-- Use Current Device Settings --' },
-                                                            ...deviceProfiles.map((o) => ({
-                                                                value: o.name,
-                                                                label: o.name,
-                                                            })),
-                                                        ]}
-                                                        value={
-                                                            typeof data.defaultProfileName === 'string'
-                                                                ? data.defaultProfileName
-                                                                : data.defaultProfileName?._ || data.defaultProfileName?.name || 'current'
-                                                        }
-                                                        onValueChange={(value) => {
-                                                            if (value === 'current') {
-                                                                setData('defaultProfileName', null);
-                                                            } else {
-                                                                const selectedProfile = deviceProfiles.find((profile) => profile.name === value);
-                                                                if (selectedProfile) {
-                                                                    setData('defaultProfileName', {
-                                                                        _: selectedProfile.name,
-                                                                        uuid: selectedProfile.uuid || '',
-                                                                    });
-                                                                } else {
-                                                                    setData('defaultProfileName', null);
-                                                                }
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <label className="mb-1 block text-sm font-medium">Default Profile</label>
+                                                        <Combobox
+                                                            options={[
+                                                                { value: 'current', label: '-- Use Current Device Settings --' },
+                                                                ...deviceProfiles.map((o) => ({
+                                                                    value: o.name,
+                                                                    label: o.name,
+                                                                })),
+                                                            ]}
+                                                            value={
+                                                                typeof data.defaultProfileName === 'string'
+                                                                    ? data.defaultProfileName
+                                                                    : data.defaultProfileName?._ || data.defaultProfileName?.name || 'current'
                                                             }
-                                                        }}
-                                                        placeholder="Select a log out profile..."
-                                                        searchPlaceholder="Search device profiles..."
-                                                        emptyMessage="No device profiles found."
-                                                        onMouseEnter={loadDeviceProfiles}
-                                                        displayValue={
-                                                            typeof data.defaultProfileName === 'string'
-                                                                ? data.defaultProfileName
-                                                                : data.defaultProfileName?._ ||
-                                                                  data.defaultProfileName?.name ||
-                                                                  '-- Use Current Device Settings --'
-                                                        }
-                                                    />
-                                                    {errors.defaultProfileName && (
-                                                        <p className="mt-1 text-sm text-destructive">{errors.defaultProfileName}</p>
-                                                    )}
+                                                            onValueChange={(value) => {
+                                                                if (value === 'current') {
+                                                                    setData('defaultProfileName', null);
+                                                                } else {
+                                                                    const selectedProfile = deviceProfiles.find((profile) => profile.name === value);
+                                                                    if (selectedProfile) {
+                                                                        setData('defaultProfileName', {
+                                                                            _: selectedProfile.name,
+                                                                            uuid: selectedProfile.uuid || '',
+                                                                        });
+                                                                    } else {
+                                                                        setData('defaultProfileName', null);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            placeholder="Select a default profile..."
+                                                            searchPlaceholder="Search device profiles..."
+                                                            emptyMessage="No device profiles found."
+                                                            onMouseEnter={loadDeviceProfiles}
+                                                            displayValue={
+                                                                typeof data.defaultProfileName === 'string'
+                                                                    ? data.defaultProfileName
+                                                                    : data.defaultProfileName?._ ||
+                                                                      data.defaultProfileName?.name ||
+                                                                      '-- Use Current Device Settings --'
+                                                            }
+                                                        />
+                                                        {errors.defaultProfileName && (
+                                                            <p className="mt-1 text-sm text-destructive">{errors.defaultProfileName}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="mb-6"></div>
+
+                                            {/* Extension Mobility Status */}
+                                            <div className="border-t pt-6">
+                                                <div className="mb-4 flex items-center justify-between">
+                                                    <h4 className="text-sm font-medium text-muted-foreground">Current Extension Mobility Status</h4>
+                                                    <button
+                                                        type="button"
+                                                        onClick={loadExtensionMobilityData}
+                                                        disabled={extensionMobilityLoading}
+                                                        className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90 focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        {extensionMobilityLoading ? (
+                                                            <>
+                                                                <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></div>
+                                                                Loading...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth={2}
+                                                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                                                    />
+                                                                </svg>
+                                                                Refresh Status
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                    <div className="rounded-lg border bg-muted/50 p-3">
+                                                        <label className="mb-1 block text-sm font-medium">Logged In User</label>
+                                                        <div className="flex items-center gap-2">
+                                                            {extensionMobilityLoading ? (
+                                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                                            ) : extensionMobilityData?.userid ? (
+                                                                <span className="text-sm font-medium">{extensionMobilityData.userid}</span>
+                                                            ) : (
+                                                                <span className="text-sm text-muted-foreground">&lt; None &gt;</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="rounded-lg border bg-muted/50 p-3">
+                                                        <label className="mb-1 block text-sm font-medium">Current Device Profile</label>
+                                                        <div className="flex items-center gap-2">
+                                                            {extensionMobilityLoading ? (
+                                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                                            ) : extensionMobilityData?.deviceprofilename ? (
+                                                                <span className="text-sm font-medium">{extensionMobilityData.deviceprofilename}</span>
+                                                            ) : (
+                                                                <span className="text-sm text-muted-foreground">&lt; None &gt;</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="rounded-lg border bg-muted/50 p-3">
+                                                        <label className="mb-1 block text-sm font-medium">Login Time</label>
+                                                        <div className="flex items-center gap-2">
+                                                            {extensionMobilityLoading ? (
+                                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                                            ) : extensionMobilityData?.logintime ? (
+                                                                <span className="text-sm font-medium">
+                                                                    {new Date(parseInt(extensionMobilityData.logintime) * 1000).toLocaleString()}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-sm text-muted-foreground">&lt; None &gt;</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="rounded-lg border bg-muted/50 p-3">
+                                                        <label className="mb-1 block text-sm font-medium">Login Duration</label>
+                                                        <div className="flex items-center gap-2">
+                                                            {extensionMobilityLoading ? (
+                                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                                                            ) : extensionMobilityData?.loginduration ? (
+                                                                <span className="text-sm font-medium">
+                                                                    {extensionMobilityData.loginduration} seconds
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-sm text-muted-foreground">&lt; None &gt;</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </FormSection>

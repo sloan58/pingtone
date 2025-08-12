@@ -339,7 +339,7 @@ class AxlSoap extends SoapClient
         try {
             return json_decode(json_encode($this->executeSQLQuery( [
                 'sql' => $this->formatSqlQuery($sql),
-            ])->return->row), true);
+            ])->return->row ?? []), true);
         } catch (SoapFault $e) {
             return $this->handleAxlApiError($e, [$sql]);
         }
@@ -647,7 +647,7 @@ class AxlSoap extends SoapClient
 
             // Normalize the update payload
             $updateObject = $this->normalizePhoneUpdatePayload($updateObject);
-            
+
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,
             ]);
@@ -683,5 +683,41 @@ class AxlSoap extends SoapClient
             'last_request_headers' => $this->__getLastRequestHeaders(),
             'last_response_headers' => $this->__getLastResponseHeaders(),
         ];
+    }
+
+    /**
+     * Get extension mobility dynamic data for a phone
+     *
+     * @param string $phoneUuid The phone UUID (without curly braces)
+     * @return array|null The extension mobility data or null if not found
+     * @throws SoapFault
+     */
+    public function getExtensionMobilityDynamicForPhone(string $phoneUuid): ?array
+    {
+        try {
+            Log::info("Getting extension mobility dynamic data for phone", [
+                'ucm' => $this->ucm->name,
+                'phone_uuid' => $phoneUuid,
+            ]);
+
+            // Remove curly braces from phone UUID if present
+            $cleanPhoneUuid = strtolower(str_replace(['{', '}'], '', $phoneUuid));
+
+            // Execute the SQL query to get extension mobility data
+            $sqlQuery = "SELECT u.userid, dp.name deviceprofilename, d.loginduration, d.logintime FROM extensionmobilitydynamic d JOIN enduser u ON u.pkid = d.fkenduser JOIN device dp ON dp.pkid = d.fkdevice_currentloginprofile WHERE d.fkdevice = '$cleanPhoneUuid'";
+
+            return $this->performSqlQuery($sqlQuery);
+
+        } catch (SoapFault|Exception $e) {
+            Log::error("Failed to get extension mobility dynamic data", [
+                'ucm' => $this->ucm->name,
+                'phone_uuid' => $phoneUuid,
+                'faultcode' => $e->faultcode ?? '',
+                'faultstring' => $e->faultstring ?? '',
+                'debug_info' => $this->getDebugInfo(),
+            ]);
+
+            throw $e;
+        }
     }
 }
