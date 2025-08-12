@@ -133,7 +133,7 @@ class PhoneApi
                             'ip_address' => $ip,
                             'api_type' => $type,
                             'data' => $xmlData,
-                            'timestamp' => now(),
+                            'timestamp' => new \MongoDB\BSON\UTCDateTime(),
                             'success' => true,
                         ];
 
@@ -159,7 +159,7 @@ class PhoneApi
                             'api_type' => $type,
                             'data' => null,
                             'error' => $e->getMessage(),
-                            'timestamp' => now(),
+                            'timestamp' => new \MongoDB\BSON\UTCDateTime(),
                             'success' => false,
                         ];
                     }
@@ -180,7 +180,7 @@ class PhoneApi
                         'api_type' => $type,
                         'data' => null,
                         'error' => "HTTP {$response->status()}: {$response->body()}",
-                        'timestamp' => now(),
+                        'timestamp' => new \MongoDB\BSON\UTCDateTime(),
                         'success' => false,
                     ];
                 }
@@ -209,7 +209,7 @@ class PhoneApi
                         'api_type' => $type,
                         'data' => null,
                         'error' => $e->getMessage(),
-                        'timestamp' => now(),
+                        'timestamp' => new \MongoDB\BSON\UTCDateTime(),
                         'success' => false,
                     ];
                 }
