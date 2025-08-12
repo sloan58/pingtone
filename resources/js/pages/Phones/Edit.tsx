@@ -42,11 +42,11 @@ type PhoneForm = {
     ringSettingBusyBlfAudibleAlert?: string;
     alwaysUsePrimeLine?: string;
     alwaysUsePrimeLineForVoiceMessage?: string;
-    ignorePresentationIndicators?: boolean;
-    allowCtiControlFlag?: boolean;
-    hlogStatus?: boolean;
-    remoteDevice?: boolean;
-    requireOffPremiseLocation?: boolean;
+    ignorePresentationIndicators?: boolean | string;
+    allowCtiControlFlag?: boolean | string;
+    hlogStatus?: boolean | string;
+    remoteDevice?: boolean | string;
+    requireOffPremiseLocation?: boolean | string;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -64,6 +64,20 @@ interface Props {
 export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Props) {
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
     const isSaving = useRef(false);
+
+    // Helper function to convert string/boolean values to proper booleans
+    const toBoolean = (value: boolean | string | undefined): boolean => {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+            // Handle "true"/"false" strings
+            if (value === 'true') return true;
+            if (value === 'false') return false;
+            // Handle "On"/"Off" strings (for hlogStatus)
+            if (value === 'On') return true;
+            if (value === 'Off') return false;
+        }
+        return false;
+    };
 
     // Handle toast messages from backend
     const page = usePage<any>();
@@ -1293,27 +1307,27 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 <div className="space-y-4">
                                                     <Toggle
                                                         label="Ignore Presentation Indicators (internal calls only)"
-                                                        checked={data.ignorePresentationIndicators || false}
+                                                        checked={toBoolean(data.ignorePresentationIndicators)}
                                                         onCheckedChange={(checked: boolean) => setData('ignorePresentationIndicators', checked)}
                                                     />
                                                     <Toggle
                                                         label="Allow Control of Device from CTI"
-                                                        checked={data.allowCtiControlFlag || false}
+                                                        checked={toBoolean(data.allowCtiControlFlag)}
                                                         onCheckedChange={(checked: boolean) => setData('allowCtiControlFlag', checked)}
                                                     />
                                                     <Toggle
                                                         label="Logged Into Hunt Group"
-                                                        checked={data.hlogStatus || false}
+                                                        checked={toBoolean(data.hlogStatus)}
                                                         onCheckedChange={(checked: boolean) => setData('hlogStatus', checked)}
                                                     />
                                                     <Toggle
                                                         label="Remote Device"
-                                                        checked={data.remoteDevice || false}
+                                                        checked={toBoolean(data.remoteDevice)}
                                                         onCheckedChange={(checked: boolean) => setData('remoteDevice', checked)}
                                                     />
                                                     <Toggle
                                                         label="Require off-premise location"
-                                                        checked={data.requireOffPremiseLocation || false}
+                                                        checked={toBoolean(data.requireOffPremiseLocation)}
                                                         onCheckedChange={(checked: boolean) => setData('requireOffPremiseLocation', checked)}
                                                     />
                                                 </div>

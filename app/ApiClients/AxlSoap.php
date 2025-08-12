@@ -556,6 +556,48 @@ class AxlSoap extends SoapClient
                 $updateObject['ownerUserName']['uuid'] = strtolower($updateObject['ownerUserName']['uuid']);
             }
 
+            // Convert boolean toggle values back to UCM string format
+            // hlogStatus uses "On"/"Off" format
+            if (isset($updateObject['hlogStatus'])) {
+                $updateObject['hlogStatus'] = $updateObject['hlogStatus'] ? 'On' : 'Off';
+            }
+
+            // Fields that use axlapi:boolean type accept: (t)|(f)|(true)|(false)|(0)|(1)
+            // We'll use "true"/"false" format for consistency
+            $booleanFields = [
+                'remoteDevice',                     // axlapi:boolean
+                'requireOffPremiseLocation',         // axlapi:boolean
+                'ignorePresentationIndicators',      // axlapi:boolean
+                'allowCtiControlFlag',               // axlapi:boolean
+                'dndStatus',                         // axlapi:boolean
+                'enableExtensionMobility',           // axlapi:boolean
+            ];
+            
+            // Fields that use axlapi:XStatus type accept: Off|On|Default
+            $statusFields = [
+                'useTrustedRelayPoint',              // axlapi:XStatus
+                'alwaysUsePrimeLine',                // axlapi:XStatus
+                'alwaysUsePrimeLineForVoiceMessage', // axlapi:XStatus
+            ];
+
+            foreach ($booleanFields as $field) {
+                if (isset($updateObject[$field])) {
+                    $updateObject[$field] = $updateObject[$field] ? 'true' : 'false';
+                }
+            }
+            
+            // Convert XStatus fields to proper format
+            foreach ($statusFields as $field) {
+                if (isset($updateObject[$field])) {
+                    // If it's already a valid XStatus value, leave it
+                    if (in_array($updateObject[$field], ['On', 'Off', 'Default'])) {
+                        continue;
+                    }
+                    // Otherwise convert boolean to On/Off
+                    $updateObject[$field] = $updateObject[$field] ? 'On' : 'Off';
+                }
+            }
+
             $res = $this->__soapCall('updatePhone', [
                 'updatePhone' => $updateObject,
             ]);

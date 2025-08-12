@@ -92,13 +92,16 @@ class PhoneController extends Controller
     public function update(Request $request, Phone $phone)
     {
         try {
-            // Step 1: Update the phone in UCM via AXL API
+            // Step 1: Transform boolean values back to UCM-compatible string format
+            $updateData = $request->all();
+
+            // Step 2: Update the phone in UCM via AXL API
             $axlApi = new AxlSoap($phone->ucm);
 
-            // Send the data as-is to UCM (same format we received)
-            $axlApi->updatePhone($request->all());
+            // Send the transformed data to UCM
+            $axlApi->updatePhone($updateData);
 
-            // Step 2: If UCM update succeeds, update our local database
+            // Step 3: If UCM update succeeds, update our local database
             $phone->update($axlApi->getPhoneByName($phone->name));
 
             return back()->with('toast', [
