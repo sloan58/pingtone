@@ -4,6 +4,7 @@ import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
+import { PhoneStats } from '@/components/phone-edit/phone-stats';
 import { Combobox } from '@/components/ui/combobox';
 import { FormSection } from '@/components/ui/form-section';
 import { Toggle } from '@/components/ui/toggle';
@@ -719,6 +720,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                             canSave={true}
                             saving={processing}
                         />
+
                         {/* Two Column Layout */}
                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                             {/* Left Column - Phone Button Configuration */}
@@ -745,8 +747,13 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                             <div className="lg:col-span-2">
                                 <div className="overflow-hidden rounded-lg border bg-card shadow">
                                     <div className="border-b p-6">
-                                        <h2 className="text-lg font-semibold">Device Settings</h2>
-                                        <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <h2 className="text-lg font-semibold">Device Settings</h2>
+                                                <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
+                                            </div>
+                                            <PhoneStats lastx={(phone as any).lastx} />
+                                        </div>
                                     </div>
                                     <form className="space-y-8 p-6">
                                         {/* Device Information Section */}

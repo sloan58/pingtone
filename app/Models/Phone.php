@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
+use Log;
 use MongoDB\Laravel\Eloquent\Model;
-use MongoDB\Laravel\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Phone extends Model
 {
@@ -21,5 +20,35 @@ class Phone extends Model
         $phone['ucm_id'] = $ucm->id;
         $model = self::updateOrCreate(['uuid' => $phone['uuid']], $phone);
         $model->touch();
+    }
+
+    /**
+     * Update phone lastx statistics using bulk operations
+     */
+    public static function updateLastXStats(array $stats, Ucm $ucm): void
+    {
+        $operations = [];
+        foreach ($stats as $stat) {
+            $operations[] = [
+                'updateOne' => [
+                    [
+                        'uuid' => "{{$stat['uuid']}}",
+                        'ucm_id' => $ucm->id
+                    ],
+                    [
+                        '$set' => ['lastx' => $stat]
+                    ]
+                ]
+            ];
+        }
+
+        $result = self::raw()->bulkWrite($operations);
+
+        Log::info("Bulk updated phone stats", [
+            'ucm_id' => $ucm->id,
+            'matched_count' => $result->getMatchedCount(),
+            'modified_count' => $result->getModifiedCount(),
+            'stats_count' => count($stats)
+        ]);
     }
 }
