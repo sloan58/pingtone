@@ -5,6 +5,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
 import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { PhoneStats } from '@/components/phone-edit/phone-stats';
+import { PhoneApiData } from '@/components/phone-edit/phone-api-data';
 import { Combobox } from '@/components/ui/combobox';
 import { FormSection } from '@/components/ui/form-section';
 import { Toggle } from '@/components/ui/toggle';
@@ -2197,6 +2198,16 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                         </FormSection>
                                     </form>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Phone API Data Section */}
+                        <div className="overflow-hidden rounded-lg border bg-card shadow">
+                            <div className="p-6">
+                                <PhoneApiData 
+                                    phoneId={data.id} 
+                                    apiData={(phone as any).api_data}
+                                />
                             </div>
                         </div>
                     </div>
