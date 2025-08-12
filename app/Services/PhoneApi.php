@@ -5,245 +5,166 @@ namespace App\Services;
 use Exception;
 use App\Models\Phone;
 use App\Models\PhoneStatus;
-use Illuminate\Support\Facades\Http;
+use MongoDB\BSON\UTCDateTime;
 use Illuminate\Support\Facades\Log;
-use SimpleXMLElement;
+use Illuminate\Support\Facades\Http;
 
 /**
  * Phone API Client for Cisco IP Phones
  *
  * Clean, focused client for phone API operations with comprehensive error handling
- * and logging. Stores complete API responses for maximum data retention.
+ * and logging. Stores API data directly on phone collection.
  */
 class PhoneApi
 {
-    private int $timeout = 5; // Low timeout as requested
-    private int $maxConcurrent = 50; // Limit concurrent requests
+    private int $timeout = 5;
 
     /**
-     * Gather device information and network configuration from phones
+     * Gather device information and network configuration for a single phone
      *
-     * @param array $phones Array of phones with IP addresses
+     * @param Phone $phone The phone to gather data for
      * @return array Complete API response data
      */
-    public function gatherPhoneData(array $phones): array
+    public function gatherPhoneData(Phone $phone): array
     {
-        $phonesWithIp = $this->filterPhonesWithIp($phones);
+        $ipAddress = $this->getPhoneIpAddress($phone);
         
-        Log::info("Gathering phone API data", [
-            'total_phones' => count($phones),
-            'phones_with_ip' => count($phonesWithIp),
-        ]);
-
-        if (empty($phonesWithIp)) {
-            Log::info("No phones with IP addresses found");
-            return [];
-        }
-
-        // Process phones in chunks to avoid overwhelming the system
-        $chunkSize = $this->maxConcurrent;
-        $allResults = [];
-        
-        foreach (array_chunk($phonesWithIp, $chunkSize) as $chunkIndex => $chunk) {
-            Log::info("Processing phone chunk", [
-                'chunk' => $chunkIndex + 1,
-                'chunk_size' => count($chunk),
+        if (!$ipAddress) {
+            Log::warning("No IP address found for phone", [
+                'phone' => $phone->name,
+                'ucm' => $phone->ucm->name,
             ]);
-
-            $chunkResults = $this->gatherPhoneChunkData($chunk);
-            $allResults = array_merge($allResults, $chunkResults);
+            
+            return [
+                'success' => false,
+                'error' => 'No IP address available for this phone',
+                'api_data' => [
+                    'network' => null,
+                    'config' => null,
+                    'timestamp' => new UTCDateTime(),
+                    'ip_address' => null,
+                ],
+            ];
         }
 
-        Log::info("Completed phone API data gathering", [
-            'total_results' => count($allResults),
+        Log::info("Gathering phone API data", [
+            'phone' => $phone->name,
+            'ip' => $ipAddress,
+            'ucm' => $phone->ucm->name,
         ]);
-
-        return $allResults;
-    }
-
-    /**
-     * Gather data from a chunk of phones using concurrent requests
-     *
-     * @param array $phones Array of phones with IP addresses
-     * @return array Complete API response data
-     */
-    private function gatherPhoneChunkData(array $phones): array
-    {
-        $requests = [];
-        $phoneMap = [];
-
-        // Prepare concurrent requests for each phone
-        foreach ($phones as $phone) {
-            $ip = $phone['ip_address'] ?? null;
-            if (!$ip) {
-                continue;
-            }
-
-            $phoneMap[$ip] = $phone;
-
-            // Create concurrent requests for both endpoints
-            $requests[] = [
-                'url' => "http://{$ip}/DeviceInformationX",
-                'phone' => $phone,
-                'type' => 'device_info'
-            ];
-
-            $requests[] = [
-                'url' => "http://{$ip}/NetworkConfigurationX",
-                'phone' => $phone,
-                'type' => 'network_config'
-            ];
-        }
-
-        if (empty($requests)) {
-            return [];
-        }
 
         try {
-            Log::info("Sending concurrent requests to phone APIs", [
-                'request_count' => count($requests),
-            ]);
-
-            // Use Laravel's pool method for concurrent HTTP requests
-            $responses = Http::pool(function ($pool) use ($requests) {
-                $poolRequests = [];
-                foreach ($requests as $index => $request) {
-                    $poolRequests[] = $pool->as($index)->timeout($this->timeout)->get($request['url']);
-                }
-                return $poolRequests;
+            // Make concurrent requests to both endpoints
+            $responses = Http::pool(function ($pool) use ($ipAddress) {
+                return [
+                    $pool->as('network')->timeout($this->timeout)->get("http://{$ipAddress}/NetworkConfigurationX"),
+                    $pool->as('config')->timeout($this->timeout)->get("http://{$ipAddress}/DeviceInformationX"),
+                ];
             });
 
-            $results = [];
+            $networkData = null;
+            $configData = null;
+            $errors = [];
 
-            foreach ($requests as $index => $request) {
-                $response = $responses[$index];
-                $phone = $request['phone'];
-                $type = $request['type'];
-                $ip = $phone['ip_address'];
-
-                if ($response->successful()) {
-                    try {
-                        // Convert XML to array
-                        $xmlData = $this->xmlToArray($response->body());
-                        
-                        $results[] = [
-                            'phone_name' => $phone['name'],
-                            'phone_id' => $phone['id'],
-                            'ucm_id' => $phone['ucm_id'],
-                            'ip_address' => $ip,
-                            'api_type' => $type,
-                            'data' => $xmlData,
-                            'timestamp' => new \MongoDB\BSON\UTCDateTime(),
-                            'success' => true,
-                        ];
-
-                        Log::debug("Successfully gathered {$type} data from phone", [
-                            'phone' => $phone['name'],
-                            'ip' => $ip,
-                            'type' => $type,
-                        ]);
-
-                    } catch (Exception $e) {
-                        Log::warning("Failed to parse XML response from phone", [
-                            'phone' => $phone['name'],
-                            'ip' => $ip,
-                            'type' => $type,
-                            'error' => $e->getMessage(),
-                        ]);
-
-                        $results[] = [
-                            'phone_name' => $phone['name'],
-                            'phone_id' => $phone['id'],
-                            'ucm_id' => $phone['ucm_id'],
-                            'ip_address' => $ip,
-                            'api_type' => $type,
-                            'data' => null,
-                            'error' => $e->getMessage(),
-                            'timestamp' => new \MongoDB\BSON\UTCDateTime(),
-                            'success' => false,
-                        ];
-                    }
-                } else {
-                    Log::debug("Failed to get {$type} data from phone", [
-                        'phone' => $phone['name'],
-                        'ip' => $ip,
-                        'type' => $type,
-                        'status' => $response->status(),
-                        'error' => $response->body(),
+            // Process network configuration response
+            if ($responses['network']->successful()) {
+                try {
+                    $networkData = $this->xmlToArray($responses['network']->body());
+                    Log::debug("Successfully gathered network data from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
                     ]);
-
-                    $results[] = [
-                        'phone_name' => $phone['name'],
-                        'phone_id' => $phone['id'],
-                        'ucm_id' => $phone['ucm_id'],
-                        'ip_address' => $ip,
-                        'api_type' => $type,
-                        'data' => null,
-                        'error' => "HTTP {$response->status()}: {$response->body()}",
-                        'timestamp' => new \MongoDB\BSON\UTCDateTime(),
-                        'success' => false,
-                    ];
+                } catch (Exception $e) {
+                    $errors[] = "Network config parsing failed: " . $e->getMessage();
+                    Log::warning("Failed to parse network config XML from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
+            } else {
+                $errors[] = "Network config request failed: HTTP {$responses['network']->status()}";
+                Log::debug("Failed to get network config from phone", [
+                    'phone' => $phone->name,
+                    'ip' => $ipAddress,
+                    'status' => $responses['network']->status(),
+                    'error' => $responses['network']->body(),
+                ]);
             }
 
-            return $results;
+            // Process device information response
+            if ($responses['config']->successful()) {
+                try {
+                    $configData = $this->xmlToArray($responses['config']->body());
+                    Log::debug("Successfully gathered device info from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
+                    ]);
+                } catch (Exception $e) {
+                    $errors[] = "Device info parsing failed: " . $e->getMessage();
+                    Log::warning("Failed to parse device info XML from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                $errors[] = "Device info request failed: HTTP {$responses['config']->status()}";
+                Log::debug("Failed to get device info from phone", [
+                    'phone' => $phone->name,
+                    'ip' => $ipAddress,
+                    'status' => $responses['config']->status(),
+                    'error' => $responses['config']->body(),
+                ]);
+            }
+
+            $success = !empty($networkData) || !empty($configData);
+            $errorMessage = !empty($errors) ? implode('; ', $errors) : null;
+
+            return [
+                'success' => $success,
+                'error' => $errorMessage,
+                'api_data' => [
+                    'network' => $networkData,
+                    'config' => $configData,
+                    'timestamp' => new UTCDateTime(),
+                    'ip_address' => $ipAddress,
+                ],
+            ];
 
         } catch (Exception $e) {
-            Log::error("Error gathering phone chunk data", [
+            Log::error("Error gathering phone API data", [
+                'phone' => $phone->name,
+                'ip' => $ipAddress,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // Return error results for all phones in this chunk
-            $errorResults = [];
-            foreach ($phones as $phone) {
-                $ip = $phone['ip_address'] ?? null;
-                if (!$ip) continue;
-
-                foreach (['device_info', 'network_config'] as $type) {
-                    $errorResults[] = [
-                        'phone_name' => $phone['name'],
-                        'phone_id' => $phone['id'],
-                        'ucm_id' => $phone['ucm_id'],
-                        'ip_address' => $ip,
-                        'api_type' => $type,
-                        'data' => null,
-                        'error' => $e->getMessage(),
-                        'timestamp' => new \MongoDB\BSON\UTCDateTime(),
-                        'success' => false,
-                    ];
-                }
-            }
-
-            return $errorResults;
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'api_data' => [
+                    'network' => null,
+                    'config' => null,
+                    'timestamp' => new UTCDateTime(),
+                    'ip_address' => $ipAddress,
+                ],
+            ];
         }
     }
 
     /**
-     * Filter phones that have IP addresses from PhoneStatus
+     * Get the IP address for a phone from its latest status
      *
-     * @param array $phones Array of phones
-     * @return array Phones with IP addresses
+     * @param Phone $phone
+     * @return string|null
      */
-    private function filterPhonesWithIp(array $phones): array
+    private function getPhoneIpAddress(Phone $phone): ?string
     {
-        $phonesWithIp = [];
-
-        foreach ($phones as $phone) {
-            // Get the latest phone status to check for IP address
-            $latestStatus = PhoneStatus::getLatestForPhone($phone['name'], $phone['ucm_id']);
-            
-            if ($latestStatus && !empty($latestStatus->device_data['IpAddress'] ?? null)) {
-                $phonesWithIp[] = [
-                    'id' => $phone['id'],
-                    'name' => $phone['name'],
-                    'ucm_id' => $phone['ucm_id'],
-                    'ip_address' => $latestStatus->device_data['IpAddress'],
-                ];
-            }
-        }
-
-        return $phonesWithIp;
+        // Get the latest phone status to check for IP address
+        $latestStatus = PhoneStatus::getLatestForPhone($phone->name, $phone->ucm);
+        
+        return $latestStatus?->device_data['IpAddress'] ?? null;
     }
 
     /**
@@ -283,18 +204,6 @@ class PhoneApi
     public function setTimeout(int $timeout): self
     {
         $this->timeout = $timeout;
-        return $this;
-    }
-
-    /**
-     * Set the maximum number of concurrent requests
-     *
-     * @param int $maxConcurrent Maximum concurrent requests
-     * @return self
-     */
-    public function setMaxConcurrent(int $maxConcurrent): self
-    {
-        $this->maxConcurrent = $maxConcurrent;
         return $this;
     }
 }

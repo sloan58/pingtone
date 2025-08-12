@@ -201,13 +201,7 @@ class Ucm extends Model
         return $this->hasMany(PhoneStatus::class);
     }
 
-    /**
-     * Get the phone API records associated with this UCM.
-     */
-    public function phoneApis(): HasMany
-    {
-        return $this->hasMany(PhoneApi::class);
-    }
+
 
     // Phone vendor configs are embedded on Phone documents in this project
 
