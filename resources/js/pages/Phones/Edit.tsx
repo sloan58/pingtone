@@ -56,6 +56,10 @@ type PhoneForm = {
     lines?: any;
     speedDials?: any[];
     blfs?: any[];
+    // Do Not Disturb fields
+    dndStatus?: boolean | string;
+    dndOption?: string;
+    dndRingSetting?: string;
     // Extension Mobility fields
     enableExtensionMobility?: boolean | string;
     defaultProfileName?: any;
@@ -2125,6 +2129,61 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                                 <span className="text-sm text-muted-foreground">&lt; None &gt;</span>
                                                             )}
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </FormSection>
+
+                                        {/* Do Not Disturb Section */}
+                                        <FormSection title="Do Not Disturb">
+                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                <div>
+                                                    <Toggle
+                                                        label="Do Not Disturb"
+                                                        checked={toBoolean(data.dndStatus)}
+                                                        onCheckedChange={(checked: boolean) => setData('dndStatus', checked)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <label className="mb-1 block text-sm font-medium">DND Option*</label>
+                                                        <Combobox
+                                                            options={[
+                                                                { value: 'Ringer Off', label: 'Ringer Off' },
+                                                                { value: 'Call Reject', label: 'Call Reject' },
+                                                                {
+                                                                    value: 'Use Common Phone Profile Setting',
+                                                                    label: 'Use Common Phone Profile Setting',
+                                                                },
+                                                            ]}
+                                                            value={data.dndOption || ''}
+                                                            onValueChange={(value) => setData('dndOption', value)}
+                                                            placeholder="Select DND option..."
+                                                            searchPlaceholder="Search options..."
+                                                            emptyMessage="No options found."
+                                                            displayValue={data.dndOption || ''}
+                                                        />
+                                                        {errors.dndOption && <p className="mt-1 text-sm text-destructive">{errors.dndOption}</p>}
+                                                    </div>
+                                                    <div>
+                                                        <label className="mb-1 block text-sm font-medium">DND Incoming Call Alert</label>
+                                                        <Combobox
+                                                            options={[
+                                                                { value: '< None >', label: '< None >' },
+                                                                { value: 'Disable', label: 'Disable' },
+                                                                { value: 'Flash Only', label: 'Flash Only' },
+                                                                { value: 'Beep Only', label: 'Beep Only' },
+                                                            ]}
+                                                            value={data.dndRingSetting || '< None >'}
+                                                            onValueChange={(value) => setData('dndRingSetting', value)}
+                                                            placeholder="Select DND incoming call alert..."
+                                                            searchPlaceholder="Search options..."
+                                                            emptyMessage="No options found."
+                                                            displayValue={data.dndRingSetting || '< None >'}
+                                                        />
+                                                        {errors.dndRingSetting && (
+                                                            <p className="mt-1 text-sm text-destructive">{errors.dndRingSetting}</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
