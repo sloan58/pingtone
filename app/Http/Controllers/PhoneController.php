@@ -7,7 +7,8 @@ use Exception;
 use SoapFault;
 use Inertia\Inertia;
 use App\Models\Phone;
-use App\ApiClients\AxlSoap;
+use App\Services\Axl;
+use App\Models\PhoneStatus;
 use Illuminate\Http\Request;
 use App\Models\MohAudioSource;
 use App\Models\PhoneButtonTemplate;
@@ -74,6 +75,12 @@ class PhoneController extends Controller
     {
         $phone->load('ucm');
 
+        // Get the latest RisPort status for this phone
+        $latestStatus = PhoneStatus::where('phone_name', $phone->name)
+            ->where('ucm_id', $phone->ucm_id)
+            ->orderBy('timestamp', 'desc')
+            ->first() ?? [];
+
         // Ensure we get the template from the same UCM as the phone
         $phoneButtonTemplate = null;
         if (isset($phone->phoneTemplateName['_'])) {
@@ -87,7 +94,7 @@ class PhoneController extends Controller
             ->get(['_id', 'uuid', 'name', 'sourceId']);
 
         return Inertia::render('Phones/Edit', [
-            'phone' => $phone,
+            'phone' => $phone->toArray() + ['latestStatus' => $latestStatus],
             'phoneButtonTemplate' => $phoneButtonTemplate,
             'mohAudioSources' => $mohAudioSources,
         ]);
@@ -109,7 +116,7 @@ class PhoneController extends Controller
             ]);
 
             // Step 2: Update the phone in UCM via AXL API
-            $axlApi = new AxlSoap($phone->ucm);
+            $axlApi = new Axl($phone->ucm);
 
             // Send the transformed data to UCM
             $axlApi->updatePhone($updateData);

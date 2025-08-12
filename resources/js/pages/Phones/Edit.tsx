@@ -752,7 +752,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 <h2 className="text-lg font-semibold">Device Settings</h2>
                                                 <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
                                             </div>
-                                            <PhoneStats lastx={(phone as any).lastx} />
+                                            <PhoneStats lastx={(phone as any).lastx} latestStatus={(phone as any).latestStatus} />
                                         </div>
                                     </div>
                                     <form className="space-y-8 p-6">

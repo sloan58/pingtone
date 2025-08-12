@@ -1,6 +1,6 @@
 <?php
 
-namespace App\ApiClients;
+namespace App\Services;
 
 use Exception;
 use SoapFault;
@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
  * Simple, focused client for AXL API operations with clean error handling
  * and logging. Built for reliability and maintainability.
  */
-class AxlSoap extends SoapClient
+class Axl extends SoapClient
 {
     protected Ucm $ucm;
 
@@ -342,7 +342,7 @@ class AxlSoap extends SoapClient
                     'sql' => $this->formatSqlQuery($sql),
                 ]
             ]);
-            
+
             return json_decode(json_encode($res->return->row ?? []), true);
         } catch (SoapFault $e) {
             return $this->handleAxlApiError($e, [$sql]);
@@ -711,7 +711,7 @@ class AxlSoap extends SoapClient
             $sqlQuery = "SELECT u.userid, dp.name deviceprofilename, d.loginduration, d.logintime FROM extensionmobilitydynamic d JOIN enduser u ON u.pkid = d.fkenduser JOIN device dp ON dp.pkid = d.fkdevice_currentloginprofile WHERE d.fkdevice = '$cleanPhoneUuid'";
 
             $results = $this->performSqlQuery($sqlQuery);
-            
+
             // Return the first result or null if no results
             return !empty($results) ? $results[0] : null;
 

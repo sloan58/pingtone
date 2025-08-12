@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Exception;
-use App\ApiClients\AxlSoap;
+use App\Services\Axl;
 use App\Observers\UcmObserver;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -193,6 +193,14 @@ class Ucm extends Model
         return $this->hasMany(Intercom::class);
     }
 
+    /**
+     * Get the phone status records associated with this UCM.
+     */
+    public function phoneStatuses(): HasMany
+    {
+        return $this->hasMany(PhoneStatus::class);
+    }
+
     // Phone vendor configs are embedded on Phone documents in this project
 
     public function deviceProfiles(): HasMany
@@ -307,9 +315,9 @@ class Ucm extends Model
      * Get the AXL API client for this UCM.
      * @throws Exception
      */
-    public function axlApi(): AxlSoap
+    public function axlApi(): Axl
     {
-        return new AxlSoap($this);
+        return new Axl($this);
     }
 
     /**

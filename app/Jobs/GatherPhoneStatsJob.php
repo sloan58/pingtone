@@ -6,7 +6,7 @@ use SoapFault;
 use Exception;
 use App\Models\Ucm;
 use App\Models\Phone;
-use App\ApiClients\AxlSoap;
+use App\Services\Axl;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
@@ -32,7 +32,7 @@ class GatherPhoneStatsJob implements ShouldQueue
         Log::info("Starting phone stats gathering for UCM {$this->ucm->name}");
 
         try {
-            $axlClient = new AxlSoap($this->ucm);
+            $axlClient = new Axl($this->ucm);
 
             // Execute the registrationdynamic query
             $sql = "SELECT UPPER(fkdevice) as uuid, lastactive, lastseen, lastknownucm FROM registrationdynamic";

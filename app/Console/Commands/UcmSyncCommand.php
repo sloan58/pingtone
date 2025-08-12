@@ -2,14 +2,13 @@
 
 namespace App\Console\Commands;
 
-use App\Jobs\StartUcmBatchSyncJob;
 use App\Models\Ucm;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Bus;
+use App\Jobs\StartUcmBatchSyncJob;
 
-class UcmBatchSyncCommand extends Command
+class UcmSyncCommand extends Command
 {
-    protected $signature = 'ucm:sync-batch {ucm_id? : Sync a single UCM by ID; omit to sync all}';
+    protected $signature = 'ucm:sync {ucm_id? : Sync a single UCM by ID; omit to sync all}';
 
     protected $description = 'Run UCM sync in two phases: infra (parallel) then services (list+get fan-out).';
 
@@ -38,4 +37,3 @@ class UcmBatchSyncCommand extends Command
 }
 
 
- 

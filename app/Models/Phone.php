@@ -5,6 +5,7 @@ namespace App\Models;
 use Log;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Phone extends Model
 {
@@ -13,6 +14,14 @@ class Phone extends Model
     public function ucm(): BelongsTo
     {
         return $this->belongsTo(Ucm::class);
+    }
+
+    /**
+     * Get the phone status records for this phone.
+     */
+    public function statuses(): HasMany
+    {
+        return $this->hasMany(PhoneStatus::class, 'phone_name', 'name');
     }
 
     public static function storeUcmDetails(array $phone, Ucm $ucm): void
