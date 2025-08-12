@@ -197,11 +197,60 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
 
     // Function to rebuild button arrays when template changes
     const rebuildButtonArrays = useCallback(() => {
-        if (!phoneButtonTemplate?.buttons) return;
+        // If no template buttons, build from phone's actual data
+        if (!phoneButtonTemplate?.buttons || phoneButtonTemplate.buttons.length === 0) {
+            // Build buttons directly from phone's lines, speedDials, and blfs
+            const buttonsFromPhone: any[] = [];
+
+            // Add lines
+            if (phone.lines?.line) {
+                const lines = Array.isArray(phone.lines.line) ? phone.lines.line : [phone.lines.line];
+                lines.forEach((line: any) => {
+                    buttonsFromPhone.push({
+                        index: parseInt(line.index) || buttonsFromPhone.length + 1,
+                        type: 'line',
+                        label: line.dirn?.pattern || line.label || 'Line',
+                        target: line.dirn?.pattern || '',
+                        feature: 'Line',
+                    });
+                });
+            }
+
+            // Add speed dials
+            if (phone.speedDials && phone.speedDials.length > 0) {
+                phone.speedDials.forEach((sd: any) => {
+                    buttonsFromPhone.push({
+                        index: parseInt(sd.index) || buttonsFromPhone.length + 1,
+                        type: 'speed_dial',
+                        label: sd.label || sd.dirn?.pattern || 'Speed Dial',
+                        target: sd.dirn?.pattern || '',
+                        feature: 'Speed Dial',
+                    });
+                });
+            }
+
+            // Add BLFs
+            if (phone.blfs && phone.blfs.length > 0) {
+                phone.blfs.forEach((blf: any) => {
+                    buttonsFromPhone.push({
+                        index: parseInt(blf.index) || buttonsFromPhone.length + 1,
+                        type: 'blf',
+                        label: blf.label || blf.dirn?.pattern || 'BLF',
+                        target: blf.dirn?.pattern || '',
+                        feature: 'BLF',
+                    });
+                });
+            }
+
+            // Sort by index
+            buttonsFromPhone.sort((a, b) => a.index - b.index);
+            setData('buttons', buttonsFromPhone);
+            return;
+        }
 
         const mappedButtons = mapTemplateToPhoneButtons();
         setData('buttons', mappedButtons);
-    }, [phoneButtonTemplate, mapTemplateToPhoneButtons, setData]);
+    }, [phoneButtonTemplate, mapTemplateToPhoneButtons, setData, phone]);
 
     // Function to handle button reordering and update underlying phone data
     const handleButtonReorder = useCallback(

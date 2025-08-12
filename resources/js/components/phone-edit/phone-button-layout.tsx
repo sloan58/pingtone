@@ -76,68 +76,8 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
     const [draggedButton, setDraggedButton] = useState<PhoneButton | null>(null);
     const [dragOverButton, setDragOverButton] = useState<PhoneButton | null>(null);
 
-    // Use the buttons prop, fallback to mock data if empty
-    const displayButtons =
-        buttons.length > 0
-            ? buttons.sort((a, b) => (a.index || 0) - (b.index || 0))
-            : [
-                  {
-                      index: 1,
-                      type: 'line',
-                      label: '1001',
-                      target: '1001/hq-internal-dn',
-                      feature: 'shared_line',
-                  },
-                  {
-                      index: 2,
-                      type: 'line',
-                      label: '1002',
-                      target: '1002/hq-internal-dn',
-                      feature: 'shared_line',
-                  },
-                  {
-                      index: 3,
-                      type: 'speed_dial',
-                      label: '445',
-                      target: '445 (Test)',
-                      feature: 'speed_dial',
-                  },
-                  {
-                      index: 4,
-                      type: 'speed_dial',
-                      label: 'Marty',
-                      target: '2028055054 (Marty)',
-                      feature: 'speed_dial',
-                  },
-                  {
-                      index: 5,
-                      type: 'speed_dial',
-                      label: 'Add Speed Dial',
-                      target: '',
-                      feature: 'speed_dial',
-                  },
-                  {
-                      index: 6,
-                      type: 'blf',
-                      label: 'Add BLF',
-                      target: '',
-                      feature: 'blf',
-                  },
-                  {
-                      index: 7,
-                      type: 'service',
-                      label: 'Add Service',
-                      target: '',
-                      feature: 'service',
-                  },
-                  {
-                      index: 8,
-                      type: 'line',
-                      label: '1003',
-                      target: '1003/hq-internal-dn',
-                      feature: 'shared_line',
-                  },
-              ];
+    // Use the buttons prop, sorted by index
+    const displayButtons = buttons.sort((a, b) => (a.index || 0) - (b.index || 0));
 
     const handleDragStart = (e: React.DragEvent, button: PhoneButton) => {
         setDraggedButton(button);
@@ -259,102 +199,109 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
             </div>
 
             {/* Button Grid */}
-            <div className="grid grid-cols-1 gap-3">
-                {displayButtons.map((button, idx) => (
-                    <div
-                        key={button.index || idx}
-                        draggable={true}
-                        onDragStart={(e) => handleDragStart(e, button)}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={(e) => handleDragOver(e, button)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, button)}
-                        onClick={() => onButtonClick?.(button)}
-                        className={`group relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${onButtonClick ? 'hover:ring-2 hover:ring-primary/20' : ''} ${dragOverButton?.index === button.index && canDropOn(button) ? 'ring-opacity-50 bg-primary/5 ring-2 ring-primary' : ''} ${draggedButton?.index === button.index ? 'opacity-50' : ''} `}
-                        style={{
-                            backgroundColor:
-                                button.type?.toLowerCase() === 'speed_dial' ||
-                                button.type?.toLowerCase() === 'speeddial' ||
-                                button.type?.toLowerCase() === 'speed dial'
-                                    ? 'rgba(34, 197, 94, 0.1)'
-                                    : button.type?.toLowerCase() === 'line'
-                                      ? 'rgba(59, 130, 246, 0.1)'
-                                      : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
-                                        ? 'rgba(168, 85, 247, 0.1)'
-                                        : button.type?.toLowerCase() === 'service'
-                                          ? 'rgba(249, 115, 22, 0.1)'
-                                          : 'rgba(107, 114, 128, 0.1)',
-                            color:
-                                button.type?.toLowerCase() === 'speed_dial' ||
-                                button.type?.toLowerCase() === 'speeddial' ||
-                                button.type?.toLowerCase() === 'speed dial'
-                                    ? 'rgb(22, 163, 74)'
-                                    : button.type?.toLowerCase() === 'line'
-                                      ? 'rgb(37, 99, 235)'
-                                      : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
-                                        ? 'rgb(147, 51, 234)'
-                                        : button.type?.toLowerCase() === 'service'
-                                          ? 'rgb(234, 88, 12)'
-                                          : 'rgb(75, 85, 99)',
-                            borderColor:
-                                button.type?.toLowerCase() === 'speed_dial' ||
-                                button.type?.toLowerCase() === 'speeddial' ||
-                                button.type?.toLowerCase() === 'speed dial'
-                                    ? 'rgb(187, 247, 208)'
-                                    : button.type?.toLowerCase() === 'line'
-                                      ? 'rgb(191, 219, 254)'
-                                      : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
-                                        ? 'rgb(233, 213, 255)'
-                                        : button.type?.toLowerCase() === 'service'
-                                          ? 'rgb(254, 215, 170)'
-                                          : 'rgb(229, 231, 235)',
-                        }}
-                    >
-                        {/* Button Number */}
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-sm font-semibold text-gray-700 shadow-sm">
-                            {button.index || idx + 1}
-                        </div>
+            {displayButtons.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-muted-foreground/25 bg-muted/10 p-8 text-center">
+                    <p className="text-sm text-muted-foreground">No button configuration data available</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Please sync phone button templates from UCM or check phone configuration</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-3">
+                    {displayButtons.map((button, idx) => (
+                        <div
+                            key={button.index || idx}
+                            draggable={true}
+                            onDragStart={(e) => handleDragStart(e, button)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={(e) => handleDragOver(e, button)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, button)}
+                            onClick={() => onButtonClick?.(button)}
+                            className={`group relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-md ${onButtonClick ? 'hover:ring-2 hover:ring-primary/20' : ''} ${dragOverButton?.index === button.index && canDropOn(button) ? 'ring-opacity-50 bg-primary/5 ring-2 ring-primary' : ''} ${draggedButton?.index === button.index ? 'opacity-50' : ''} `}
+                            style={{
+                                backgroundColor:
+                                    button.type?.toLowerCase() === 'speed_dial' ||
+                                    button.type?.toLowerCase() === 'speeddial' ||
+                                    button.type?.toLowerCase() === 'speed dial'
+                                        ? 'rgba(34, 197, 94, 0.1)'
+                                        : button.type?.toLowerCase() === 'line'
+                                          ? 'rgba(59, 130, 246, 0.1)'
+                                          : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
+                                            ? 'rgba(168, 85, 247, 0.1)'
+                                            : button.type?.toLowerCase() === 'service'
+                                              ? 'rgba(249, 115, 22, 0.1)'
+                                              : 'rgba(107, 114, 128, 0.1)',
+                                color:
+                                    button.type?.toLowerCase() === 'speed_dial' ||
+                                    button.type?.toLowerCase() === 'speeddial' ||
+                                    button.type?.toLowerCase() === 'speed dial'
+                                        ? 'rgb(22, 163, 74)'
+                                        : button.type?.toLowerCase() === 'line'
+                                          ? 'rgb(37, 99, 235)'
+                                          : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
+                                            ? 'rgb(147, 51, 234)'
+                                            : button.type?.toLowerCase() === 'service'
+                                              ? 'rgb(234, 88, 12)'
+                                              : 'rgb(75, 85, 99)',
+                                borderColor:
+                                    button.type?.toLowerCase() === 'speed_dial' ||
+                                    button.type?.toLowerCase() === 'speeddial' ||
+                                    button.type?.toLowerCase() === 'speed dial'
+                                        ? 'rgb(187, 247, 208)'
+                                        : button.type?.toLowerCase() === 'line'
+                                          ? 'rgb(191, 219, 254)'
+                                          : button.type?.toLowerCase() === 'blf' || button.type?.toLowerCase() === 'speed dial blf'
+                                            ? 'rgb(233, 213, 255)'
+                                            : button.type?.toLowerCase() === 'service'
+                                              ? 'rgb(254, 215, 170)'
+                                              : 'rgb(229, 231, 235)',
+                            }}
+                        >
+                            {/* Button Number */}
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-sm font-semibold text-gray-700 shadow-sm">
+                                {button.index || idx + 1}
+                            </div>
 
-                        {/* Icon */}
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/60">{getButtonIcon(button.type)}</div>
+                            {/* Icon */}
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/60">{getButtonIcon(button.type)}</div>
 
-                        {/* Content */}
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                                <span className="truncate font-medium text-foreground">{getButtonLabel(button)}</span>
-                                {button.type?.toLowerCase() === 'line' && button.target && (
-                                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
-                                        Shared
-                                    </span>
+                            {/* Content */}
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="truncate font-medium text-foreground">{getButtonLabel(button)}</span>
+                                    {button.type?.toLowerCase() === 'line' && button.target && (
+                                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                                            Shared
+                                        </span>
+                                    )}
+                                </div>
+                                {button.target && button.target !== getButtonLabel(button) && (
+                                    <p className="mt-1 truncate text-sm text-muted-foreground">{button.target}</p>
                                 )}
                             </div>
-                            {button.target && button.target !== getButtonLabel(button) && (
-                                <p className="mt-1 truncate text-sm text-muted-foreground">{button.target}</p>
+
+                            {/* Action Icon */}
+                            {onButtonClick && (
+                                <div className="opacity-0 transition-opacity group-hover:opacity-100">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 hover:bg-white">
+                                        <Settings className="h-4 w-4 text-gray-600" />
+                                    </div>
+                                </div>
                             )}
-                        </div>
 
-                        {/* Action Icon */}
-                        {onButtonClick && (
+                            {/* Drag Handle */}
                             <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 hover:bg-white">
-                                    <Settings className="h-4 w-4 text-gray-600" />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Drag Handle */}
-                        <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                            <div className="flex h-8 w-8 cursor-grab items-center justify-center rounded-lg bg-white/80 hover:bg-white active:cursor-grabbing">
-                                <div className="flex flex-col gap-0.5">
-                                    <div className="h-0.5 w-3 rounded bg-gray-400"></div>
-                                    <div className="h-0.5 w-3 rounded bg-gray-400"></div>
-                                    <div className="h-0.5 w-3 rounded bg-gray-400"></div>
+                                <div className="flex h-8 w-8 cursor-grab items-center justify-center rounded-lg bg-white/80 hover:bg-white active:cursor-grabbing">
+                                    <div className="flex flex-col gap-0.5">
+                                        <div className="h-0.5 w-3 rounded bg-gray-400"></div>
+                                        <div className="h-0.5 w-3 rounded bg-gray-400"></div>
+                                        <div className="h-0.5 w-3 rounded bg-gray-400"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
             {/* Legend */}
             <div className="mt-6 rounded-lg border bg-muted/50 p-4">

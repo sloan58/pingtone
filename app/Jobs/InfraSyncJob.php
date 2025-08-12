@@ -269,6 +269,17 @@ class InfraSyncJob implements ShouldQueue
                 PhoneButtonTemplate::storeTemplateProtocolModelInfo($templateProtocolModelInfo, $this->ucm);
                 Log::info("{$this->ucm->name}: syncPhoneButtonTemplateProtocolModelInfo completed");
 
+                // Sync Phone Button Template Button Details via SQL
+                $buttonDetails = $axlApi->performSqlQuery(
+                    'SELECT pb.buttonnum, pb.label, f.name feature, t.name templatename
+                         FROM phonebutton pb
+                         JOIN typefeature f ON f.enum = pb.tkfeature
+                         JOIN phonetemplate t ON pb.fkphonetemplate = t.pkid
+                         ORDER BY pb.fkphonetemplate, pb.buttonnum'
+                );
+                PhoneButtonTemplate::storeButtonTemplateDetails($buttonDetails, $this->ucm);
+                Log::info("{$this->ucm->name}: syncPhoneButtonTemplateDetails completed");
+
                 $this->ucm->phoneButtonTemplates()->where('updated_at', '<', $start)->delete();
                 break;
 

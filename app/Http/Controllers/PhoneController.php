@@ -73,7 +73,13 @@ class PhoneController extends Controller
     {
         $phone->load('ucm');
 
-        $phoneButtonTemplate = PhoneButtonTemplate::where('name', $phone->phoneTemplateName['_'])->first();
+        // Ensure we get the template from the same UCM as the phone
+        $phoneButtonTemplate = null;
+        if (isset($phone->phoneTemplateName['_'])) {
+            $phoneButtonTemplate = PhoneButtonTemplate::where('ucm_id', $phone->ucm_id)
+                ->where('name', $phone->phoneTemplateName['_'])
+                ->first();
+        }
 
         $mohAudioSources = MohAudioSource::where('ucm_id', $phone->ucm_id)
             ->orderBy('name')
