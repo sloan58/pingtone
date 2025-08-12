@@ -337,9 +337,13 @@ class AxlSoap extends SoapClient
         Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
 
         try {
-            return json_decode(json_encode($this->executeSQLQuery( [
-                'sql' => $this->formatSqlQuery($sql),
-            ])->return->row ?? []), true);
+            $res = $this->__soapCall('executeSQLQuery', [
+                'executeSQLQuery' => [
+                    'sql' => $this->formatSqlQuery($sql),
+                ]
+            ]);
+            
+            return json_decode(json_encode($res->return->row ?? []), true);
         } catch (SoapFault $e) {
             return $this->handleAxlApiError($e, [$sql]);
         }
@@ -706,7 +710,10 @@ class AxlSoap extends SoapClient
             // Execute the SQL query to get extension mobility data
             $sqlQuery = "SELECT u.userid, dp.name deviceprofilename, d.loginduration, d.logintime FROM extensionmobilitydynamic d JOIN enduser u ON u.pkid = d.fkenduser JOIN device dp ON dp.pkid = d.fkdevice_currentloginprofile WHERE d.fkdevice = '$cleanPhoneUuid'";
 
-            return $this->performSqlQuery($sqlQuery);
+            $results = $this->performSqlQuery($sqlQuery);
+            
+            // Return the first result or null if no results
+            return !empty($results) ? $results[0] : null;
 
         } catch (SoapFault|Exception $e) {
             Log::error("Failed to get extension mobility dynamic data", [
