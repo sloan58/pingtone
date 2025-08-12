@@ -557,9 +557,18 @@ class AxlSoap extends SoapClient
             }
 
             // Convert boolean toggle values back to UCM string format
-            // hlogStatus uses "On"/"Off" format
+            // hlogStatus uses "On"/"Off" format  
             if (isset($updateObject['hlogStatus'])) {
-                $updateObject['hlogStatus'] = $updateObject['hlogStatus'] ? 'On' : 'Off';
+                // Convert to boolean first to handle various input formats
+                $value = $updateObject['hlogStatus'];
+                if (is_string($value)) {
+                    // Convert string values to boolean
+                    $boolValue = ($value === 'On' || $value === 'true' || $value === '1');
+                } else {
+                    // Already boolean or treat as boolean
+                    $boolValue = (bool)$value;
+                }
+                $updateObject['hlogStatus'] = $boolValue ? 'On' : 'Off';
             }
 
             // Fields that use axlapi:boolean type accept: (t)|(f)|(true)|(false)|(0)|(1)
@@ -582,7 +591,16 @@ class AxlSoap extends SoapClient
 
             foreach ($booleanFields as $field) {
                 if (isset($updateObject[$field])) {
-                    $updateObject[$field] = $updateObject[$field] ? 'true' : 'false';
+                    // Convert to boolean first to handle various input formats
+                    $value = $updateObject[$field];
+                    if (is_string($value)) {
+                        // Convert string values to boolean
+                        $boolValue = ($value === 'true' || $value === '1' || $value === 'On');
+                    } else {
+                        // Already boolean or treat as boolean
+                        $boolValue = (bool)$value;
+                    }
+                    $updateObject[$field] = $boolValue ? 'true' : 'false';
                 }
             }
             
@@ -593,8 +611,17 @@ class AxlSoap extends SoapClient
                     if (in_array($updateObject[$field], ['On', 'Off', 'Default'])) {
                         continue;
                     }
-                    // Otherwise convert boolean to On/Off
-                    $updateObject[$field] = $updateObject[$field] ? 'On' : 'Off';
+                    // Convert to boolean first to handle various input formats
+                    $value = $updateObject[$field];
+                    if (is_string($value)) {
+                        // Convert string values to boolean (anything not 'false' or empty is true)
+                        $boolValue = ($value === 'true' || $value === '1' || $value === 'On');
+                    } else {
+                        // Already boolean or treat as boolean
+                        $boolValue = (bool)$value;
+                    }
+                    // Convert boolean to On/Off (Default is handled above)
+                    $updateObject[$field] = $boolValue ? 'On' : 'Off';
                 }
             }
 

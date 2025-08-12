@@ -81,16 +81,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
         return false;
     };
 
-    // Helper to convert boolean back to the appropriate string format for each field
-    const fromBoolean = (fieldName: string, value: boolean): boolean | string => {
-        // hlogStatus uses "On"/"Off" format
-        if (fieldName === 'hlogStatus') {
-            return value ? 'On' : 'Off';
-        }
-        // All other boolean toggle fields just use boolean
-        // The AxlSoap.php will convert them to the right format
-        return value;
-    };
+
 
     // Handle toast messages from backend
     const page = usePage<any>();
@@ -1321,40 +1312,27 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <Toggle
                                                         label="Ignore Presentation Indicators (internal calls only)"
                                                         checked={toBoolean(data.ignorePresentationIndicators)}
-                                                        onCheckedChange={(checked: boolean) =>
-                                                            setData(
-                                                                'ignorePresentationIndicators',
-                                                                fromBoolean('ignorePresentationIndicators', checked),
-                                                            )
-                                                        }
+                                                        onCheckedChange={(checked: boolean) => setData('ignorePresentationIndicators', checked)}
                                                     />
                                                     <Toggle
                                                         label="Allow Control of Device from CTI"
                                                         checked={toBoolean(data.allowCtiControlFlag)}
-                                                        onCheckedChange={(checked: boolean) =>
-                                                            setData('allowCtiControlFlag', fromBoolean('allowCtiControlFlag', checked))
-                                                        }
+                                                        onCheckedChange={(checked: boolean) => setData('allowCtiControlFlag', checked)}
                                                     />
                                                     <Toggle
                                                         label="Logged Into Hunt Group"
                                                         checked={toBoolean(data.hlogStatus)}
-                                                        onCheckedChange={(checked: boolean) =>
-                                                            setData('hlogStatus', fromBoolean('hlogStatus', checked))
-                                                        }
+                                                        onCheckedChange={(checked: boolean) => setData('hlogStatus', checked)}
                                                     />
                                                     <Toggle
                                                         label="Remote Device"
                                                         checked={toBoolean(data.remoteDevice)}
-                                                        onCheckedChange={(checked: boolean) =>
-                                                            setData('remoteDevice', fromBoolean('remoteDevice', checked))
-                                                        }
+                                                        onCheckedChange={(checked: boolean) => setData('remoteDevice', checked)}
                                                     />
                                                     <Toggle
                                                         label="Require off-premise location"
                                                         checked={toBoolean(data.requireOffPremiseLocation)}
-                                                        onCheckedChange={(checked: boolean) =>
-                                                            setData('requireOffPremiseLocation', fromBoolean('requireOffPremiseLocation', checked))
-                                                        }
+                                                        onCheckedChange={(checked: boolean) => setData('requireOffPremiseLocation', checked)}
                                                     />
                                                 </div>
                                             </div>
