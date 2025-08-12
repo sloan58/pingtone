@@ -557,7 +557,7 @@ class AxlSoap extends SoapClient
             }
 
             // Convert boolean toggle values back to UCM string format
-            // hlogStatus uses "On"/"Off" format  
+            // hlogStatus uses "On"/"Off" format
             if (isset($updateObject['hlogStatus'])) {
                 // Convert to boolean first to handle various input formats
                 $value = $updateObject['hlogStatus'];
@@ -580,8 +580,10 @@ class AxlSoap extends SoapClient
                 'allowCtiControlFlag',               // axlapi:boolean
                 'dndStatus',                         // axlapi:boolean
                 'enableExtensionMobility',           // axlapi:boolean
+                'useDevicePoolCgpnIngressDN',           // axlapi:boolean
+                'useDevicePoolCgpnTransformCss',           // axlapi:boolean
             ];
-            
+
             // Fields that use axlapi:XStatus type accept: Off|On|Default
             $statusFields = [
                 'useTrustedRelayPoint',              // axlapi:XStatus
@@ -603,7 +605,7 @@ class AxlSoap extends SoapClient
                     $updateObject[$field] = $boolValue ? 'true' : 'false';
                 }
             }
-            
+
             // Convert XStatus fields to proper format
             foreach ($statusFields as $field) {
                 if (isset($updateObject[$field])) {

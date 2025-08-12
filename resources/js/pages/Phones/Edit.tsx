@@ -47,6 +47,10 @@ type PhoneForm = {
     hlogStatus?: boolean | string;
     remoteDevice?: boolean | string;
     requireOffPremiseLocation?: boolean | string;
+    cgpnIngressDN?: any;
+    useDevicePoolCgpnIngressDN?: boolean | string;
+    cgpnTransformationCssName?: any;
+    useDevicePoolCgpnTransformCss?: boolean | string;
     buttons?: any[];
     lines?: any;
     speedDials?: any[];
@@ -72,6 +76,9 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
             // Handle "true"/"false" strings
             if (value.toLowerCase() === 'true') return true;
             if (value.toLowerCase() === 'false') return false;
+            // Handle "t"/"f" strings (Cisco UCM format)
+            if (value.toLowerCase() === 't') return true;
+            if (value.toLowerCase() === 'f') return false;
             // Handle "On"/"Off" strings
             if (value === 'On') return true;
             if (value === 'Off') return false;
@@ -278,6 +285,16 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     useEffect(() => {
         rebuildButtonArrays();
     }, [rebuildButtonArrays]);
+
+    // Set default values for Number Presentation Transformation fields if not present
+    useEffect(() => {
+        if (data.useDevicePoolCgpnIngressDN === undefined) {
+            setData('useDevicePoolCgpnIngressDN', true);
+        }
+        if (data.useDevicePoolCgpnTransformCss === undefined) {
+            setData('useDevicePoolCgpnTransformCss', true);
+        }
+    }, []);
 
     // Function to handle phone button template changes
     const handlePhoneButtonTemplateChange = (value: string) => {
@@ -751,10 +768,10 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                                     uuid: selectedCss.uuid || '',
                                                                 });
                                                             } else {
-                                                                setData('callingSearchSpaceName', { _: '', uuid: '' });
+                                                                setData('callingSearchSpaceName', null);
                                                             }
                                                         }}
-                                                        placeholder="Select a calling search space..."
+                                                        placeholder="Select Calling Search Space"
                                                         searchPlaceholder="Search calling search spaces..."
                                                         emptyMessage="No calling search spaces found."
                                                         onMouseEnter={loadCallingSearchSpaces}
@@ -790,10 +807,10 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                                     uuid: selectedCss.uuid || '',
                                                                 });
                                                             } else {
-                                                                setData('automatedAlternateRoutingCssName', { _: '', uuid: '' });
+                                                                setData('automatedAlternateRoutingCssName', null);
                                                             }
                                                         }}
-                                                        placeholder="Select an AAR calling search space..."
+                                                        placeholder="Select AAR Calling Search Space"
                                                         searchPlaceholder="Search AAR calling search spaces..."
                                                         emptyMessage="No AAR calling search spaces found."
                                                         onMouseEnter={loadAarCallingSearchSpaces}
@@ -1022,14 +1039,13 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <label className="mb-1 block text-sm font-medium">Built In Bridge</label>
                                                     <Combobox
                                                         options={[
-                                                            { value: '', label: '< None >' },
                                                             { value: 'Off', label: 'Off' },
                                                             { value: 'On', label: 'On' },
                                                             { value: 'Default', label: 'Default' },
                                                         ]}
                                                         value={data.builtInBridgeStatus || ''}
-                                                        onValueChange={(value) => setData('builtInBridgeStatus', value)}
-                                                        placeholder="Select built in bridge status..."
+                                                        onValueChange={(value) => setData('builtInBridgeStatus', value || undefined)}
+                                                        placeholder="Select Built-in Bridge Status"
                                                         searchPlaceholder="Search options..."
                                                         emptyMessage="No options found."
                                                         displayValue={data.builtInBridgeStatus || ''}
@@ -1042,14 +1058,13 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                     <label className="mb-1 block text-sm font-medium">Privacy</label>
                                                     <Combobox
                                                         options={[
-                                                            { value: '', label: '< None >' },
                                                             { value: 'Off', label: 'Off' },
                                                             { value: 'On', label: 'On' },
                                                             { value: 'Default', label: 'Default' },
                                                         ]}
                                                         value={data.callInfoPrivacyStatus || ''}
-                                                        onValueChange={(value) => setData('callInfoPrivacyStatus', value)}
-                                                        placeholder="Select privacy status..."
+                                                        onValueChange={(value) => setData('callInfoPrivacyStatus', value || undefined)}
+                                                        placeholder="Select Call Info Privacy Status"
                                                         searchPlaceholder="Search options..."
                                                         emptyMessage="No options found."
                                                         displayValue={data.callInfoPrivacyStatus || ''}
@@ -1347,36 +1362,50 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                         <div>
                                                             <label className="mb-1 block text-sm font-medium">Calling Party Transformation CSS</label>
                                                             <Combobox
-                                                                options={[
-                                                                    { value: '', label: '< None >' },
-                                                                    ...callingSearchSpaces.map((o) => ({
-                                                                        value: o.name,
-                                                                        label: o.name,
-                                                                    })),
-                                                                ]}
-                                                                value=""
+                                                                options={callingSearchSpaces.map((o) => ({
+                                                                    value: o.name,
+                                                                    label: o.name,
+                                                                }))}
+                                                                value={
+                                                                    typeof data.cgpnIngressDN === 'string'
+                                                                        ? data.cgpnIngressDN
+                                                                        : data.cgpnIngressDN?._ || data.cgpnIngressDN?.name || ''
+                                                                }
                                                                 onValueChange={(value) => {
-                                                                    // TODO: Implement calling party transformation CSS
+                                                                    const selectedCss = callingSearchSpaces.find((css) => css.name === value);
+                                                                    if (selectedCss) {
+                                                                        setData('cgpnIngressDN', {
+                                                                            _: selectedCss.name,
+                                                                            uuid: selectedCss.uuid || '',
+                                                                        });
+                                                                    } else {
+                                                                        setData('cgpnIngressDN', null);
+                                                                    }
                                                                 }}
-                                                                placeholder="Select a calling party transformation CSS..."
+                                                                placeholder="Select Calling Party Transformation CSS"
                                                                 searchPlaceholder="Search calling party transformation CSS..."
                                                                 emptyMessage="No calling party transformation CSS found."
-                                                                displayValue=""
+                                                                onMouseEnter={loadCallingSearchSpaces}
+                                                                displayValue={
+                                                                    typeof data.cgpnIngressDN === 'string'
+                                                                        ? data.cgpnIngressDN
+                                                                        : data.cgpnIngressDN?._ || data.cgpnIngressDN?.name || ''
+                                                                }
+                                                                disabled={toBoolean(data.useDevicePoolCgpnIngressDN)}
                                                             />
                                                         </div>
-                                                        <div className="flex items-center space-x-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="useDevicePoolCallingPartyTransformationCSS"
-                                                                className="h-4 w-4 rounded border-gray-300"
-                                                                defaultChecked={true}
+                                                        <div>
+                                                            <Toggle
+                                                                label="Use Device Pool Calling Party Transformation CSS (Caller ID For Calls From This Phone)"
+                                                                checked={toBoolean(data.useDevicePoolCgpnIngressDN)}
+                                                                onCheckedChange={(checked: boolean) => {
+                                                                    setData('useDevicePoolCgpnIngressDN', checked);
+                                                                    // Clear the CSS selection when using device pool
+                                                                    if (checked) {
+                                                                        setData('cgpnIngressDN', null);
+                                                                    }
+                                                                }}
                                                             />
-                                                            <label
-                                                                htmlFor="useDevicePoolCallingPartyTransformationCSS"
-                                                                className="text-sm font-medium"
-                                                            >
-                                                                Use Device Pool Calling Party Transformation CSS (Caller ID For Calls From This Phone)
-                                                            </label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1386,36 +1415,54 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                         <div>
                                                             <label className="mb-1 block text-sm font-medium">Calling Party Transformation CSS</label>
                                                             <Combobox
-                                                                options={[
-                                                                    { value: '', label: '< None >' },
-                                                                    ...callingSearchSpaces.map((o) => ({
-                                                                        value: o.name,
-                                                                        label: o.name,
-                                                                    })),
-                                                                ]}
-                                                                value=""
+                                                                options={callingSearchSpaces.map((o) => ({
+                                                                    value: o.name,
+                                                                    label: o.name,
+                                                                }))}
+                                                                value={
+                                                                    typeof data.cgpnTransformationCssName === 'string'
+                                                                        ? data.cgpnTransformationCssName
+                                                                        : data.cgpnTransformationCssName?._ ||
+                                                                          data.cgpnTransformationCssName?.name ||
+                                                                          ''
+                                                                }
                                                                 onValueChange={(value) => {
-                                                                    // TODO: Implement calling party transformation CSS
+                                                                    const selectedCss = callingSearchSpaces.find((css) => css.name === value);
+                                                                    if (selectedCss) {
+                                                                        setData('cgpnTransformationCssName', {
+                                                                            _: selectedCss.name,
+                                                                            uuid: selectedCss.uuid || '',
+                                                                        });
+                                                                    } else {
+                                                                        setData('cgpnTransformationCssName', null);
+                                                                    }
                                                                 }}
-                                                                placeholder="Select a calling party transformation CSS..."
+                                                                placeholder="Select Calling Party Transformation CSS"
                                                                 searchPlaceholder="Search calling party transformation CSS..."
                                                                 emptyMessage="No calling party transformation CSS found."
-                                                                displayValue=""
+                                                                onMouseEnter={loadCallingSearchSpaces}
+                                                                displayValue={
+                                                                    typeof data.cgpnTransformationCssName === 'string'
+                                                                        ? data.cgpnTransformationCssName
+                                                                        : data.cgpnTransformationCssName?._ ||
+                                                                          data.cgpnTransformationCssName?.name ||
+                                                                          ''
+                                                                }
+                                                                disabled={toBoolean(data.useDevicePoolCgpnTransformCss)}
                                                             />
                                                         </div>
-                                                        <div className="flex items-center space-x-3">
-                                                            <input
-                                                                type="checkbox"
-                                                                id="useDevicePoolCallingPartyTransformationCSSDeviceMobility"
-                                                                className="h-4 w-4 rounded border-gray-300"
-                                                                defaultChecked={true}
+                                                        <div>
+                                                            <Toggle
+                                                                label="Use Device Pool Calling Party Transformation CSS (Device Mobility Related Information)"
+                                                                checked={toBoolean(data.useDevicePoolCgpnTransformCss)}
+                                                                onCheckedChange={(checked: boolean) => {
+                                                                    setData('useDevicePoolCgpnTransformCss', checked);
+                                                                    // Clear the CSS selection when using device pool
+                                                                    if (checked) {
+                                                                        setData('cgpnTransformationCssName', null);
+                                                                    }
+                                                                }}
                                                             />
-                                                            <label
-                                                                htmlFor="useDevicePoolCallingPartyTransformationCSSDeviceMobility"
-                                                                className="text-sm font-medium"
-                                                            >
-                                                                Use Device Pool Calling Party Transformation CSS (Device Mobility Related Information)
-                                                            </label>
                                                         </div>
                                                     </div>
                                                 </div>
