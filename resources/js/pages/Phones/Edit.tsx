@@ -81,8 +81,6 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
         return false;
     };
 
-
-
     // Handle toast messages from backend
     const page = usePage<any>();
     useEffect(() => {
