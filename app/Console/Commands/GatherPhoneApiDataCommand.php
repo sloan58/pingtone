@@ -14,7 +14,7 @@ class GatherPhoneApiDataCommand extends Command
      * @var string
      */
     protected $signature = 'phones:gather-api-data 
-                            {--ucm= : Specific UCM ID to gather data for}
+                            {ucm? : The name of the UCM to gather data for}
                             {--phones= : Comma-separated list of phone names to gather data for}';
 
     /**
@@ -29,7 +29,7 @@ class GatherPhoneApiDataCommand extends Command
      */
     public function handle(): int
     {
-        $ucmId = $this->option('ucm');
+        $ucmName = $this->argument('ucm');
         $phoneNames = $this->option('phones');
 
         // Parse phone names if provided
@@ -38,11 +38,11 @@ class GatherPhoneApiDataCommand extends Command
             $phones = array_map('trim', explode(',', $phoneNames));
         }
 
-        if ($ucmId) {
+        if ($ucmName) {
             // Gather data for specific UCM
-            $ucm = Ucm::find($ucmId);
+            $ucm = Ucm::where('name', $ucmName)->first();
             if (!$ucm) {
-                $this->error("UCM with ID {$ucmId} not found.");
+                $this->error("UCM '{$ucmName}' not found.");
                 return 1;
             }
 
