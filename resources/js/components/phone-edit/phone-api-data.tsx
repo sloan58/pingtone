@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { router } from '@inertiajs/react';
 
 interface PhoneApiDataProps {
     phoneId: string;
