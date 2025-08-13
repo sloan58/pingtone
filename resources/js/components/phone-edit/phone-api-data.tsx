@@ -20,7 +20,7 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
     const gatherApiData = async () => {
         setIsLoading(true);
         try {
-            const response = await axios.post(`/phones/${phoneId}/gather-api-data`);
+            const response = await (window as any).axios.post(`/phones/${phoneId}/gather-api-data`);
 
             if (response.data.success) {
                 toast.success('Phone API data gathered successfully', {
@@ -33,14 +33,14 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
                     description: response.data.error,
                 });
             }
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
+        } catch (error: any) {
+            if (error.response?.data?.error) {
                 toast.error('Error gathering phone API data', {
-                    description: error.response?.data?.error || error.message,
+                    description: error.response.data.error,
                 });
             } else {
                 toast.error('Error gathering phone API data', {
-                    description: error instanceof Error ? error.message : 'Unknown error',
+                    description: error.message || 'Unknown error',
                 });
             }
         } finally {
