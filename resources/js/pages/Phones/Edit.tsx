@@ -705,7 +705,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                     <div className="space-y-4 p-6">
                         {/* Consolidated Header with Tabs */}
                         <Tabs defaultValue="configuration" className="w-full">
-                            <div className="flex items-center justify-between border-b pb-4">
+                            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                                 <div className="flex items-center gap-6">
                                     <div>
                                         <h1 className="text-2xl font-bold">{data.name}</h1>
