@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { router } from '@inertiajs/react';
 import { RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { router } from '@inertiajs/react';
 
 interface PhoneApiDataProps {
     phoneId: string;
@@ -17,38 +16,16 @@ interface PhoneApiDataProps {
 
 export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
     const [isLoading, setIsLoading] = useState(false);
+    useToast(); // Use the project's toast hook
 
     const gatherApiData = () => {
         setIsLoading(true);
 
-        router.post(
-            `/phones/${phoneId}/gather-api-data`,
-            {},
-            {
-                onSuccess: (page) => {
-                    const response = page.props.flash?.api_response;
-                    if (response?.success) {
-                        toast.success('Phone API data gathered successfully', {
-                            description: `Network: ${response.data.has_network_data ? '✓' : '✗'}, Config: ${response.data.has_config_data ? '✓' : '✗'}`,
-                        });
-                    } else {
-                        toast.error('Failed to gather phone API data', {
-                            description: response?.error || 'Unknown error',
-                        });
-                    }
-                    setIsLoading(false);
-                },
-                onError: (errors) => {
-                    toast.error('Error gathering phone API data', {
-                        description: errors.api_error || 'Network error occurred',
-                    });
-                    setIsLoading(false);
-                },
-                onFinish: () => {
-                    setIsLoading(false);
-                },
+        router.post(`/phones/${phoneId}/gather-api-data`, {}, {
+            onFinish: () => {
+                setIsLoading(false);
             },
-        );
+        });
     };
 
     const formatJson = (data: any) => {

@@ -28,13 +28,13 @@ class PhoneApi
     public function gatherPhoneData(Phone $phone): array
     {
         $ipAddress = $this->getPhoneIpAddress($phone);
-        
+
         if (!$ipAddress) {
             Log::warning("No IP address found for phone", [
                 'phone' => $phone->name,
                 'ucm' => $phone->ucm->name,
             ]);
-            
+
             return [
                 'success' => false,
                 'error' => 'No IP address available for this phone',
@@ -163,8 +163,8 @@ class PhoneApi
     {
         // Get the latest phone status to check for IP address
         $latestStatus = PhoneStatus::getLatestForPhone($phone->name, $phone->ucm);
-        
-        return $latestStatus?->device_data['IpAddress'] ?? null;
+
+        return $latestStatus?->device_data['IPAddress']['item'][0]['IP'] ?? null;
     }
 
     /**
@@ -178,7 +178,7 @@ class PhoneApi
     {
         // Remove any BOM or encoding issues
         $xmlString = trim($xmlString);
-        
+
         // Handle empty or invalid XML
         if (empty($xmlString)) {
             throw new Exception("Empty XML response");
@@ -186,7 +186,7 @@ class PhoneApi
 
         // Suppress warnings for malformed XML
         $xml = @simplexml_load_string($xmlString);
-        
+
         if ($xml === false) {
             throw new Exception("Failed to parse XML: " . libxml_get_last_error()?->message ?? "Unknown error");
         }
