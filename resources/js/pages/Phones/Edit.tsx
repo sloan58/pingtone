@@ -79,6 +79,8 @@ type PhoneForm = {
     mtpRequired?: boolean | string;
     unattendedPort?: boolean | string;
     requireDtmfReception?: boolean | string;
+    // API Data fields
+    api_data?: any;
 };
 
 type Option = { id: string; name: string; uuid?: string; sourceId?: string; userid?: string };
@@ -2204,7 +2206,14 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                         {/* Phone API Data Section */}
                         <div className="overflow-hidden rounded-lg border bg-card shadow">
                             <div className="p-6">
-                                <PhoneApiData phoneId={data.id} apiData={(phone as any).api_data} />
+                                <PhoneApiData
+                                    phoneId={data.id}
+                                    apiData={(phone as any).api_data}
+                                    onDataUpdate={(newData) => {
+                                        // Update the phone data with new API data
+                                        setData('api_data', newData);
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>

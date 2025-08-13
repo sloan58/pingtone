@@ -2,8 +2,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
-import axios from 'axios';
 
 interface PhoneApiDataProps {
     phoneId: string;
@@ -13,39 +11,39 @@ interface PhoneApiDataProps {
         timestamp?: string;
         ip_address?: string;
     };
+    onDataUpdate?: (newData: any) => void;
 }
 
-export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
+export function PhoneApiData({ phoneId, apiData, onDataUpdate }: PhoneApiDataProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     const gatherApiData = async () => {
-        setIsLoading(true);
-        try {
-            const response = await axios.post(`/phones/${phoneId}/gather-api-data`);
+        if (!isLoading) {
+            setIsLoading(true);
+            try {
+                const response = await fetch(`/phones/${phoneId}/gather-api-data`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    },
+                });
 
-            if (response.data.success) {
-                toast.success('Phone API data gathered successfully', {
-                    description: `Network: ${response.data.data.has_network_data ? '✓' : '✗'}, Config: ${response.data.data.has_config_data ? '✓' : '✗'}`,
-                });
-                // Reload the page to show updated data
-                window.location.reload();
-            } else {
-                toast.error('Failed to gather phone API data', {
-                    description: response.data.error,
-                });
+                const responseData = await response.json();
+                
+                if (responseData.success) {
+                    // Update the parent component with new data
+                    if (onDataUpdate) {
+                        onDataUpdate(responseData.data);
+                    }
+                } else {
+                    console.error('Failed to gather phone API data:', responseData.error);
+                }
+            } catch (error) {
+                console.error('Failed to gather phone API data:', error);
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error: any) {
-            if (error.response?.data?.error) {
-                toast.error('Error gathering phone API data', {
-                    description: error.response.data.error,
-                });
-            } else {
-                toast.error('Error gathering phone API data', {
-                    description: error.message || 'Unknown error',
-                });
-            }
-        } finally {
-            setIsLoading(false);
         }
     };
 
