@@ -17,35 +17,37 @@ interface PhoneApiDataProps {
 export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
     const [isLoading, setIsLoading] = useState(false);
 
-    const gatherApiData = async () => {
+    const gatherApiData = () => {
         setIsLoading(true);
-        try {
-            const response = await axios.post(`/phones/${phoneId}/gather-api-data`);
 
-            if (response.data.success) {
-                toast.success('Phone API data gathered successfully', {
-                    description: `Network: ${response.data.data.has_network_data ? '✓' : '✗'}, Config: ${response.data.data.has_config_data ? '✓' : '✗'}`,
-                });
-                // Reload the page to show updated data
-                window.location.reload();
-            } else {
-                toast.error('Failed to gather phone API data', {
-                    description: response.data.error,
-                });
-            }
-        } catch (error: any) {
-            if (error.response?.data?.error) {
-                toast.error('Error gathering phone API data', {
-                    description: error.response.data.error,
-                });
-            } else {
-                toast.error('Error gathering phone API data', {
-                    description: error.message || 'Unknown error',
-                });
-            }
-        } finally {
-            setIsLoading(false);
-        }
+        router.post(
+            `/phones/${phoneId}/gather-api-data`,
+            {},
+            {
+                onSuccess: (page) => {
+                    const response = page.props.flash?.api_response;
+                    if (response?.success) {
+                        toast.success('Phone API data gathered successfully', {
+                            description: `Network: ${response.data.has_network_data ? '✓' : '✗'}, Config: ${response.data.has_config_data ? '✓' : '✗'}`,
+                        });
+                    } else {
+                        toast.error('Failed to gather phone API data', {
+                            description: response?.error || 'Unknown error',
+                        });
+                    }
+                    setIsLoading(false);
+                },
+                onError: (errors) => {
+                    toast.error('Error gathering phone API data', {
+                        description: errors.api_error || 'Network error occurred',
+                    });
+                    setIsLoading(false);
+                },
+                onFinish: () => {
+                    setIsLoading(false);
+                },
+            },
+        );
     };
 
     const formatJson = (data: any) => {

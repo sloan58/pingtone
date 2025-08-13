@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Models\Phone;
 use App\Services\PhoneApi;
 use Illuminate\Http\Request;
@@ -15,22 +16,21 @@ class PhoneApiController extends Controller
      *
      * @param Request $request
      * @param string $phoneId
-     * @return JsonResponse
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function gatherData(Request $request, string $phoneId): JsonResponse
+    public function gatherData(Request $request, string $phoneId)
     {
         try {
             $phone = Phone::findOrFail($phoneId);
-            
+
             $phoneApi = new PhoneApi();
             $result = $phoneApi->gatherPhoneData($phone);
 
-            if ($result['success']) {
-                // Update the phone with the API data
-                $phone->update([
-                    'api_data' => $result['api_data']
-                ]);
+            $phone->update([
+                'api_data' => $result['api_data']
+            ]);
 
+            if ($result['success']) {
                 Log::info("Successfully gathered and stored phone API data", [
                     'phone' => $phone->name,
                     'ucm' => $phone->ucm->name,
@@ -38,7 +38,7 @@ class PhoneApiController extends Controller
                     'has_config_data' => !empty($result['api_data']['config']),
                 ]);
 
-                return response()->json([
+                return redirect()->back()->with('api_response', [
                     'success' => true,
                     'message' => 'Phone API data gathered successfully',
                     'data' => [
@@ -49,18 +49,13 @@ class PhoneApiController extends Controller
                     ]
                 ]);
             } else {
-                // Still update the phone with the error information
-                $phone->update([
-                    'api_data' => $result['api_data']
-                ]);
-
                 Log::warning("Failed to gather phone API data", [
                     'phone' => $phone->name,
                     'ucm' => $phone->ucm->name,
                     'error' => $result['error'],
                 ]);
 
-                return response()->json([
+                return redirect()->back()->withErrors(['api_error' => $result['error']])->with('api_response', [
                     'success' => false,
                     'message' => 'Failed to gather phone API data',
                     'error' => $result['error'],
@@ -68,21 +63,17 @@ class PhoneApiController extends Controller
                         'timestamp' => $result['api_data']['timestamp']->toDateTime()->format('c'),
                         'ip_address' => $result['api_data']['ip_address'],
                     ]
-                ], 400);
+                ]);
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error("Error in phone API data gathering", [
                 'phone_id' => $phoneId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while gathering phone API data',
-                'error' => $e->getMessage(),
-            ], 500);
+            return redirect()->back()->withErrors(['api_error' => $e->getMessage()]);
         }
     }
 }

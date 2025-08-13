@@ -183,27 +183,25 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
         <div className="space-y-4">
             {/* Compact Legend at the top */}
             <div className="rounded-lg border bg-muted/50 p-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-xs">
-                        <div className="flex items-center gap-1.5">
-                            <div className="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
-                            <span className="text-muted-foreground">Lines</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="h-2.5 w-2.5 rounded-full bg-green-500"></div>
-                            <span className="text-muted-foreground">Speed Dials</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="h-2.5 w-2.5 rounded-full bg-purple-500"></div>
-                            <span className="text-muted-foreground">BLFs</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="h-2.5 w-2.5 rounded-full bg-orange-500"></div>
-                            <span className="text-muted-foreground">Services</span>
-                        </div>
+                <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                        <span className="text-muted-foreground">Lines</span>
                     </div>
-                    <div className="text-xs text-muted-foreground">💡 Drag to reorder within same type</div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-green-500"></div>
+                        <span className="text-muted-foreground">Speed Dials</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-purple-500"></div>
+                        <span className="text-muted-foreground">BLFs</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="h-2.5 w-2.5 rounded-full bg-orange-500"></div>
+                        <span className="text-muted-foreground">Services</span>
+                    </div>
                 </div>
+                <div className="mt-2 text-xs text-muted-foreground">💡 Drag to reorder within same type</div>
             </div>
 
             {/* Header */}
