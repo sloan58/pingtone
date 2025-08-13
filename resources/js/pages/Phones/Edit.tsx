@@ -8,6 +8,7 @@ import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { PhoneStats } from '@/components/phone-edit/phone-stats';
 import { Combobox } from '@/components/ui/combobox';
 import { FormSection } from '@/components/ui/form-section';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -725,41 +726,48 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                             saving={processing}
                         />
 
-                        {/* Two Column Layout */}
-                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                            {/* Left Column - Phone Button Configuration */}
-                            <div className="lg:col-span-1">
-                                <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                    <div className="p-6">
-                                        <PhoneButtonLayout
-                                            buttons={data.buttons || []}
-                                            onButtonClick={(button) => {
-                                                // TODO: Open button configuration modal
-                                            }}
-                                            onAddButton={() => {
-                                                // TODO: Open add button modal
-                                            }}
-                                            onReorderButtons={(reorderedButtons) => {
-                                                handleButtonReorder(reorderedButtons);
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
+                        {/* Tabbed Interface */}
+                        <Tabs defaultValue="configuration" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="configuration">Configuration</TabsTrigger>
+                                <TabsTrigger value="api-data">API Data</TabsTrigger>
+                            </TabsList>
 
-                            {/* Right Column - Device Settings */}
-                            <div className="lg:col-span-2">
-                                <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                    <div className="border-b p-6">
-                                        <div className="flex items-start justify-between">
-                                            <div>
-                                                <h2 className="text-lg font-semibold">Device Settings</h2>
-                                                <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
+                            <TabsContent value="configuration" className="mt-6">
+                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                                    {/* Left Column - Phone Button Configuration */}
+                                    <div className="lg:col-span-1">
+                                        <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                            <div className="p-6">
+                                                <PhoneButtonLayout
+                                                    buttons={data.buttons || []}
+                                                    onButtonClick={(button) => {
+                                                        // TODO: Open button configuration modal
+                                                    }}
+                                                    onAddButton={() => {
+                                                        // TODO: Open add button modal
+                                                    }}
+                                                    onReorderButtons={(reorderedButtons) => {
+                                                        handleButtonReorder(reorderedButtons);
+                                                    }}
+                                                />
                                             </div>
-                                            <PhoneStats lastx={(phone as any).lastx} latestStatus={(phone as any).latestStatus} />
                                         </div>
                                     </div>
-                                    <form className="space-y-8 p-6">
+
+                                    {/* Right Column - Device Settings */}
+                                    <div className="lg:col-span-2">
+                                        <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                            <div className="border-b p-6">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <h2 className="text-lg font-semibold">Device Settings</h2>
+                                                        <p className="text-sm text-muted-foreground">Update basic phone configuration</p>
+                                                    </div>
+                                                    <PhoneStats lastx={(phone as any).lastx} latestStatus={(phone as any).latestStatus} />
+                                                </div>
+                                            </div>
+                                            <form className="space-y-8 p-6">
                                         {/* Device Information Section */}
                                         <FormSection title="Device Information">
                                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -2203,20 +2211,23 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                 </div>
                             </div>
                         </div>
+                            </TabsContent>
 
-                        {/* Phone API Data Section */}
-                        <div className="overflow-hidden rounded-lg border bg-card shadow">
-                            <div className="p-6">
-                                <PhoneApiData
-                                    phoneId={data.id}
-                                    apiData={updatedApiData}
-                                    onDataUpdate={(newData) => {
-                                        // Update the API data state
-                                        setUpdatedApiData(newData);
-                                    }}
-                                />
-                            </div>
-                        </div>
+                            <TabsContent value="api-data" className="mt-6">
+                                <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                    <div className="p-6">
+                                        <PhoneApiData
+                                            phoneId={data.id}
+                                            apiData={updatedApiData}
+                                            onDataUpdate={(newData) => {
+                                                // Update the API data state
+                                                setUpdatedApiData(newData);
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
                     </div>
                 </AppContent>
             </div>
