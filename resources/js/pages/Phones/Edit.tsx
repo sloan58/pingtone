@@ -154,6 +154,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [deviceProfiles, setDeviceProfiles] = useState<Option[]>([]);
     const [extensionMobilityData, setExtensionMobilityData] = useState<any>(null);
     const [extensionMobilityLoading, setExtensionMobilityLoading] = useState(false);
+    const [updatedApiData, setUpdatedApiData] = useState<any>((phone as any).api_data);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -2208,10 +2209,10 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                             <div className="p-6">
                                 <PhoneApiData
                                     phoneId={data.id}
-                                    apiData={(phone as any).api_data}
+                                    apiData={updatedApiData}
                                     onDataUpdate={(newData) => {
-                                        // Update the phone data with new API data
-                                        setData('api_data', newData);
+                                        // Update the API data state
+                                        setUpdatedApiData(newData);
                                     }}
                                 />
                             </div>
