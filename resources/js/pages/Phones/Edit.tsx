@@ -10,7 +10,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { FormSection } from '@/components/ui/form-section';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -705,7 +705,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                     <div className="space-y-4 p-6">
                         {/* Consolidated Header with Tabs */}
                         <Tabs defaultValue="configuration" className="w-full">
-                            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pb-4 pt-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                            <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                                 <div className="flex items-center gap-6">
                                     <div>
                                         <h1 className="text-2xl font-bold">{data.name}</h1>
@@ -728,7 +728,9 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                         // Data is already in the correct MongoDB object structure from the combobox handlers
                                         const transformedData = { ...data } as any;
 
-                                        patch(`/phones/${data.id}`, transformedData);
+                                        router.patch(`/phones/${data.id}`, transformedData, {
+                                        preserveScroll: true,
+                                    });
                                         // Reset the saving flag after a short delay to allow the request to complete
                                         setTimeout(() => {
                                             isSaving.current = false;
