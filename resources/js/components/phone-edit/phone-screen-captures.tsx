@@ -14,6 +14,7 @@ interface ScreenCapture {
     captured_at: string;
     image_url: string;
     formatted_file_size: string;
+    captured_by?: string;
 }
 
 interface PhoneScreenCapturesProps {
@@ -58,6 +59,7 @@ export function PhoneScreenCaptures({ phoneId, phoneName, canScreenCapture, scre
                         captured_at: data.screenCapture.captured_at,
                         image_url: data.screenCapture.image_url,
                         formatted_file_size: data.screenCapture.formatted_file_size,
+                        captured_by: data.screenCapture.captured_by,
                     };
                     setScreenCaptures((prev) => [newCapture, ...prev]);
                 }
@@ -187,7 +189,10 @@ export function PhoneScreenCaptures({ phoneId, phoneName, canScreenCapture, scre
                                                 {capture.formatted_file_size}
                                             </Badge>
                                         </div>
-                                        <p className="text-sm text-muted-foreground">Captured on {formatDate(capture.captured_at)}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Captured on {formatDate(capture.captured_at)}
+                                            {capture.captured_by && ` by ${capture.captured_by}`}
+                                        </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button variant="outline" size="sm" onClick={() => handleViewCapture(capture)}>

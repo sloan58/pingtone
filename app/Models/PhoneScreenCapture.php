@@ -14,6 +14,7 @@ class PhoneScreenCapture extends Model
         'file_size',
         'mime_type',
         'captured_at',
+        'captured_by',
     ];
 
     protected $casts = [

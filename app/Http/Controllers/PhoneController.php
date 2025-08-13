@@ -114,6 +114,7 @@ class PhoneController extends Controller
                 'captured_at' => $capture->captured_at->toISOString(),
                 'image_url' => $capture->image_url,
                 'formatted_file_size' => $capture->formatted_file_size,
+                'captured_by' => $capture->captured_by,
             ];
         });
 
@@ -208,6 +209,7 @@ class PhoneController extends Controller
                 'captured_at' => $screenCapture->captured_at->toISOString(),
                 'image_url' => $screenCapture->image_url,
                 'formatted_file_size' => $screenCapture->formatted_file_size,
+                'captured_by' => $screenCapture->captured_by,
             ];
 
             return response()->json([

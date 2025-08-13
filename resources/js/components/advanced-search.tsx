@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Combobox } from '@/components/ui/combobox';
 
 export type FilterRow = {
     field: string;
@@ -36,6 +37,14 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
         [],
     );
 
+    const logicOptions = useMemo(
+        () => [
+            { value: 'and', label: 'all' },
+            { value: 'or', label: 'any' },
+        ],
+        [],
+    );
+
     const addRow = () =>
         setRows((r) => {
             // Avoid duplicating a trailing empty row when initial filters also empty
@@ -61,14 +70,13 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <span className="text-sm">Match</span>
-                    <select
-                        className="rounded-md border bg-background p-1 text-sm"
+                    <Combobox
+                        options={logicOptions}
                         value={logic}
-                        onChange={(e) => setLogic(e.target.value as 'and' | 'or')}
-                    >
-                        <option value="and">all</option>
-                        <option value="or">any</option>
-                    </select>
+                        onValueChange={(value) => setLogic(value as 'and' | 'or')}
+                        placeholder="Select logic..."
+                        className="w-24"
+                    />
                     <span className="text-sm">conditions</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -84,28 +92,20 @@ export function AdvancedSearch({ fields, initial, onApply }: AdvancedSearchProps
             <div className="flex flex-col gap-2">
                 {rows.map((row, i) => (
                     <div key={i} className="flex items-center gap-2">
-                        <select
-                            className="w-48 rounded-md border bg-background p-2 text-sm"
+                        <Combobox
+                            options={fields}
                             value={row.field}
-                            onChange={(e) => updateRow(i, { field: e.target.value })}
-                        >
-                            {fields.map((f) => (
-                                <option key={f.value} value={f.value}>
-                                    {f.label}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            className="w-48 rounded-md border bg-background p-2 text-sm"
+                            onValueChange={(value) => updateRow(i, { field: value })}
+                            placeholder="Select field..."
+                            className="w-48"
+                        />
+                        <Combobox
+                            options={operators}
                             value={row.operator}
-                            onChange={(e) => updateRow(i, { operator: e.target.value as FilterRow['operator'] })}
-                        >
-                            {operators.map((o) => (
-                                <option key={o.value} value={o.value}>
-                                    {o.label}
-                                </option>
-                            ))}
-                        </select>
+                            onValueChange={(value) => updateRow(i, { operator: value as FilterRow['operator'] })}
+                            placeholder="Select operator..."
+                            className="w-48"
+                        />
                         <input
                             className="flex-1 rounded-md border bg-background p-2 text-sm"
                             value={row.value}

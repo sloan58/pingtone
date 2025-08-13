@@ -95,6 +95,7 @@ class PhoneScreenCaptureService
                 'file_size' => $fileSize,
                 'mime_type' => 'image/png',
                 'captured_at' => now(),
+                'captured_by' => auth()->user()->name
             ]);
 
             Log::info('Phone screen capture successful', [
