@@ -20,7 +20,7 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
     const gatherApiData = async () => {
         setIsLoading(true);
         try {
-            const response = await (window as any).axios.post(`/phones/${phoneId}/gather-api-data`);
+            const response = await axios.post(`/phones/${phoneId}/gather-api-data`);
 
             if (response.data.success) {
                 toast.success('Phone API data gathered successfully', {
