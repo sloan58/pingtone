@@ -5,8 +5,10 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AsyncCombobox } from '@/components/ui/async-combobox';
 import { FormSection } from '@/components/ui/form-section';
 import { Head, router } from '@inertiajs/react';
-import { ChevronRight, Phone, Settings } from 'lucide-react';
+import axios from 'axios';
+import { ChevronRight, Loader2, Phone, Settings } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Line {
     uuid: string;
@@ -63,6 +65,7 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
     const [hasChanges, setHasChanges] = useState(false);
     const [currentLine, setCurrentLine] = useState(line);
     const [targetLineConfig, setTargetLineConfig] = useState(buttonConfig);
+    const [isSaving, setIsSaving] = useState(false);
     const [targetLineIndex, setTargetLineIndex] = useState(() => {
         // Find the index of this button in the phone's lines array
         const lines = Array.isArray(phone.lines?.line) ? phone.lines.line : [phone.lines?.line];
@@ -145,6 +148,46 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
         });
     };
 
+    // Function to handle save
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const response = await axios.post(`/phones/${phone.id}/lines/${targetLineIndex}`, {
+                line: currentLine,
+                targetLineConfig: targetLineConfig,
+            });
+
+            const result = response.data;
+
+            // Update local state with fresh data from UCM
+            if (result.line) {
+                setCurrentLine(result.line);
+            }
+            if (result.targetLineConfig) {
+                setTargetLineConfig(result.targetLineConfig);
+            }
+
+            setHasChanges(false);
+
+            console.log('Changes saved successfully:', result);
+
+            // Show success toast
+            toast.success('Line updated successfully', {
+                description: 'The line configuration has been saved to UCM and updated in the database.',
+            });
+        } catch (error) {
+            console.error('Error saving changes:', error);
+
+            // Show error toast
+            const errorMessage = error.response?.data?.error || 'An unexpected error occurred while saving changes.';
+            toast.error('Failed to save changes', {
+                description: errorMessage,
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     // Function to get current display value for the line (reflects any changes made)
     const getCurrentLineDisplayValue = () => {
         return currentLine.patternAndPartition || `${currentLine.pattern} in ${currentLine.routePartitionName?._ || 'None'}`;
@@ -184,13 +227,22 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                 <h1 className="text-2xl font-bold">Button {buttonIndex}</h1>
                                 <p className="text-sm text-muted-foreground">
                                     {phone.name} • {buttonType} configuration
-                                    {hasChanges && (
-                                        <span className="ml-2 inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                                            Unsaved changes
-                                        </span>
-                                    )}
                                 </p>
                             </div>
+                            <button
+                                onClick={handleSave}
+                                disabled={isSaving}
+                                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save Changes'
+                                )}
+                            </button>
                         </div>
 
                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -251,6 +303,13 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                             ? currentLine.callingSearchSpaceName
                                                             : currentLine.callingSearchSpaceName?._ || currentLine.callingSearchSpaceName?.name || ''
                                                     }
+                                                    onChange={(e) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            callingSearchSpaceName: e.target.value,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
                                                     placeholder="Select calling search space"
                                                 />
                                             </div>
@@ -282,7 +341,14 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 <input
                                                     type="number"
                                                     className="w-full rounded-md border bg-background p-2"
-                                                    value={buttonConfig.index || ''}
+                                                    value={targetLineConfig.index || ''}
+                                                    onChange={(e) => {
+                                                        setTargetLineConfig({
+                                                            ...targetLineConfig,
+                                                            index: e.target.value,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
                                                     placeholder="Button position"
                                                 />
                                             </div>
@@ -291,7 +357,14 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 <input
                                                     type="text"
                                                     className="w-full rounded-md border bg-background p-2"
-                                                    value={buttonConfig.display || ''}
+                                                    value={targetLineConfig.display || ''}
+                                                    onChange={(e) => {
+                                                        setTargetLineConfig({
+                                                            ...targetLineConfig,
+                                                            display: e.target.value,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
                                                     placeholder="Display name on device"
                                                 />
                                             </div>
@@ -300,7 +373,14 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 <input
                                                     type="text"
                                                     className="w-full rounded-md border bg-background p-2"
-                                                    value={buttonConfig.e164_alt_num || ''}
+                                                    value={targetLineConfig.e164_alt_num || ''}
+                                                    onChange={(e) => {
+                                                        setTargetLineConfig({
+                                                            ...targetLineConfig,
+                                                            e164_alt_num: e.target.value,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
                                                     placeholder="E.164 alternate number"
                                                 />
                                             </div>
@@ -309,7 +389,14 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 <input
                                                     type="text"
                                                     className="w-full rounded-md border bg-background p-2"
-                                                    value={buttonConfig.external_phone_number_mask || ''}
+                                                    value={targetLineConfig.external_phone_number_mask || ''}
+                                                    onChange={(e) => {
+                                                        setTargetLineConfig({
+                                                            ...targetLineConfig,
+                                                            external_phone_number_mask: e.target.value,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
                                                     placeholder="External phone number mask"
                                                 />
                                             </div>
@@ -318,7 +405,14 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 <input
                                                     type="number"
                                                     className="w-full rounded-md border bg-background p-2"
-                                                    value={buttonConfig.max_num_calls || ''}
+                                                    value={targetLineConfig.max_num_calls || ''}
+                                                    onChange={(e) => {
+                                                        setTargetLineConfig({
+                                                            ...targetLineConfig,
+                                                            max_num_calls: parseInt(e.target.value) || 0,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
                                                     placeholder="Max calls"
                                                 />
                                             </div>
@@ -327,7 +421,14 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 <input
                                                     type="number"
                                                     className="w-full rounded-md border bg-background p-2"
-                                                    value={buttonConfig.busy_trigger || ''}
+                                                    value={targetLineConfig.busy_trigger || ''}
+                                                    onChange={(e) => {
+                                                        setTargetLineConfig({
+                                                            ...targetLineConfig,
+                                                            busy_trigger: parseInt(e.target.value) || 0,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
                                                     placeholder="Busy trigger"
                                                 />
                                             </div>

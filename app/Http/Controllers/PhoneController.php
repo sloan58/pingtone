@@ -300,7 +300,7 @@ class PhoneController extends Controller
         // Get the line details based on the button type
         $line = null;
         $type = $request->query('type', 'line');
-        
+
         switch ($type) {
             case 'line':
                 if (isset($buttonConfig['dirn']['uuid'])) {
@@ -324,6 +324,58 @@ class PhoneController extends Controller
             'line' => $line->append('patternAndPartition'),
             'latestStatus' => $latestStatus,
         ]);
+    }
+
+    /**
+     * Update a line configuration
+     */
+    public function updateLine(Request $request, Phone $phone, int $lineIndex)
+    {
+        $request->validate([
+            'line' => 'required|array',
+            'targetLineConfig' => 'required|array',
+        ]);
+
+        $lineData = $request->input('line');
+        $targetLineConfig = $request->input('targetLineConfig');
+
+        try {
+            // Step 1: Find the line by UUID
+            $line = Line::where('uuid', $lineData['uuid'])->first();
+            if (!$line) {
+                return response()->json(['error' => 'Line not found'], 404);
+            }
+
+            // Step 2: Send updateLine request to UCM
+            $axlApi = new Axl($phone->ucm);
+            $axlApi->updateLine($lineData);
+
+            // Step 3: Get fresh line data from UCM
+            $freshLineData = $axlApi->getLineByUuid($line->uuid);
+
+            // Step 4: Update our local database with fresh UCM data
+            $line->update($freshLineData);
+
+            // Step 5: Return fresh data to update the UI
+            return response()->json([
+                'success' => true,
+                'message' => 'Line updated successfully',
+                'line' => $line->fresh()->append('patternAndPartition'),
+                'targetLineConfig' => $targetLineConfig, // Return the phone-specific config as-is for now
+            ]);
+
+        } catch (SoapFault $e) {
+            // UCM update failed - return error
+            return response()->json([
+                'error' => 'Failed to update line in UCM: ' . $e->getMessage()
+            ], 500);
+
+        } catch (Exception $e) {
+            // Unexpected error
+            return response()->json([
+                'error' => 'An unexpected error occurred: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }

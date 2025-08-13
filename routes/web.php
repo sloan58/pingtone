@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('ucm', UcmController::class)->except(['show']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
     Route::get('/phones/{phone}/edit/button/{buttonIndex}', [PhoneController::class, 'editButton'])->name('phones.edit.button');
+    Route::post('/phones/{phone}/lines/{lineIndex}', [PhoneController::class, 'updateLine'])->name('phones.lines.update');
 
 
 

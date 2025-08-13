@@ -670,6 +670,56 @@ class Axl extends SoapClient
     }
 
     /**
+     * Update a line in UCM via AXL API
+     *
+     * @param array $updateObject The phone update object
+     * @return array The response from UCM
+     * @throws SoapFault
+     */
+    public function updateLine(array $updateObject): array
+    {
+        try {
+            unset($updateObject['confidentialAccess']);
+
+            if ($updateObject['useEnterpriseAltNum'] == 'false') {
+                unset($updateObject['enterpriseAltNum']);
+            }
+
+            if ($updateObject['useE164AltNum'] == 'false') {
+                unset($updateObject['e164AltNum']);
+            }
+
+            array_walk_recursive($updateObject, function(&$value) {
+                if ($value === null) {
+                    $value = '';
+                }
+            });
+
+            $res = $this->__soapCall('updateLine', [
+                'updateLine' => $updateObject,
+            ]);
+
+            Log::info("Successfully updated phone in UCM", [
+                'ucm' => $this->ucm->name,
+                'phone_name' => $updateObject['name'] ?? 'unknown',
+            ]);
+
+            return json_decode(json_encode($res), true);
+
+        } catch (SoapFault|Exception $e) {
+            Log::error("Failed to update line in UCM", [
+                'ucm' => $this->ucm->name,
+                'line_pattern' => $updateObject['pattern'] ?? 'unknown',
+                'faultcode' => $e->faultcode ?? '',
+                'faultstring' => $e->faultstring ?? '',
+                'debug_info' => $this->getDebugInfo(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
      * Get debug information for troubleshooting
      */
     public function getDebugInfo(): array
