@@ -4,7 +4,6 @@ import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { PhoneApiData } from '@/components/phone-edit/phone-api-data';
 import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
-import { PhoneHeader } from '@/components/phone-edit/phone-header';
 import { PhoneStats } from '@/components/phone-edit/phone-stats';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
