@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import { router } from '@inertiajs/react';
 import { RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
@@ -21,11 +22,15 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
     const gatherApiData = () => {
         setIsLoading(true);
 
-        router.post(`/phones/${phoneId}/gather-api-data`, {}, {
-            onFinish: () => {
-                setIsLoading(false);
+        router.post(
+            `/phones/${phoneId}/gather-api-data`,
+            {},
+            {
+                onFinish: () => {
+                    setIsLoading(false);
+                },
             },
-        });
+        );
     };
 
     const formatJson = (data: any) => {
