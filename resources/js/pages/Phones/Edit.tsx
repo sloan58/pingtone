@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type PhoneForm = {
+    _id?: string;
     id: string;
     uuid?: string;
     ucm_id: string;
@@ -60,6 +61,7 @@ type PhoneForm = {
     lines?: any;
     speedDials?: any[];
     blfs?: any[];
+    globalLineData?: any[];
     // Do Not Disturb fields
     dndStatus?: boolean | string;
     dndOption?: string;
@@ -89,12 +91,13 @@ type Option = { id: string; name: string; uuid?: string; sourceId?: string; user
 
 interface Props {
     phone: PhoneForm;
+    globalLineData?: any[]; // Global line data from the backend
     phoneButtonTemplate?: any; // The phone button template data from the API
     mohAudioSources?: any[]; // MOH audio sources data from the backend
     screenCaptures?: any[]; // Screen captures data from the backend
 }
 
-export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, screenCaptures }: Props) {
+export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAudioSources, screenCaptures }: Props) {
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
     const isSaving = useRef(false);
 
@@ -197,8 +200,21 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, scre
                     const matchingLine = availableLines.find((line: any) => parseInt(line.index) === buttonNum);
                     if (matchingLine) {
                         button.label = matchingLine?.dirn?.pattern || matchingLine?.label || 'Line';
-                        button.target = matchingLine?.dirn?.pattern || '';
-                        button.isShared = matchingLine?.shared || false;
+                        button.target = matchingLine?.dirn?.uuid || matchingLine?.dirn?.pattern || '';
+
+                        // Check if line is shared by looking in globalLineData
+                        const globalLine = globalLineData?.find((line: any) => line.uuid === matchingLine.dirn?.uuid);
+                        button.isShared = globalLine?.isShared || false;
+
+                        // Build subtitle with route partition and description (skip pattern since it's already the label)
+                        const subtitleParts = [];
+                        if (matchingLine?.dirn?.routePartitionName?._) {
+                            subtitleParts.push(matchingLine.dirn.routePartitionName._);
+                        }
+                        if (globalLine?.description) {
+                            subtitleParts.push(globalLine.description);
+                        }
+                        button.subtitle = subtitleParts.length > 0 ? subtitleParts.join(' • ') : undefined;
                     } else {
                         button.label = 'Add Line';
                         button.target = '';
@@ -252,13 +268,23 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, scre
             if (phone.lines?.line) {
                 const lines = Array.isArray(phone.lines.line) ? phone.lines.line : [phone.lines.line];
                 lines.forEach((line: any) => {
+                    // Build subtitle with route partition (skip pattern since it's already the label)
+                    const subtitleParts = [];
+                    if (line.dirn?.routePartitionName?._) {
+                        subtitleParts.push(line.dirn.routePartitionName._);
+                    }
+
+                    // Check if line is shared by looking in globalLineData
+                    const globalLine = globalLineData?.find((gl: any) => gl.uuid === line.dirn?.uuid);
+
                     buttonsFromPhone.push({
                         index: parseInt(line.index) || buttonsFromPhone.length + 1,
                         type: 'line',
                         label: line.dirn?.pattern || line.label || 'Line',
-                        target: line.dirn?.pattern || '',
+                        target: line.dirn?.uuid || line.dirn?.pattern || '',
+                        subtitle: subtitleParts.length > 0 ? subtitleParts.join(' • ') : undefined,
                         feature: 'Line',
-                        isShared: line.shared || false,
+                        isShared: globalLine?.isShared || false,
                     });
                 });
             }
@@ -759,7 +785,15 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, scre
                                                 <PhoneButtonLayout
                                                     buttons={data.buttons || []}
                                                     onButtonClick={(button) => {
-                                                        // TODO: Open button configuration modal
+                                                        if (button.type?.toLowerCase() === 'line' && button.target) {
+                                                            // Find the global line data to get the MongoDB ID
+                                                            const globalLine = globalLineData?.find((line: any) => line.uuid === button.target);
+
+                                                            if (globalLine) {
+                                                                // Navigate to line configuration with phone context
+                                                                router.visit(`/lines/${globalLine.id}/edit?phone=${(phone as any).id}`);
+                                                            }
+                                                        }
                                                     }}
                                                     onAddButton={() => {
                                                         // TODO: Open add button modal

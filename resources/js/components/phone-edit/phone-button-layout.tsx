@@ -6,6 +6,7 @@ interface PhoneButton {
     type: string;
     label: string;
     target: string;
+    subtitle?: string;
     feature?: string;
     isShared?: boolean;
 }
@@ -298,7 +299,10 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                                         </span>
                                     )}
                                 </div>
-                                {button.target && button.target !== getButtonLabel(button) && (
+                                {button.subtitle && button.subtitle !== getButtonLabel(button) && (
+                                    <p className="mt-1 truncate text-sm text-muted-foreground">{button.subtitle}</p>
+                                )}
+                                {!button.subtitle && button.target && button.target !== getButtonLabel(button) && (
                                     <p className="mt-1 truncate text-sm text-muted-foreground">{button.target}</p>
                                 )}
                             </div>
@@ -306,7 +310,13 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                             {/* Action Icon */}
                             {onButtonClick && (
                                 <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 hover:bg-white">
+                                    <div
+                                        className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-white/80 hover:bg-white"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onButtonClick?.(button);
+                                        }}
+                                    >
                                         <Settings className="h-4 w-4 text-gray-600" />
                                     </div>
                                 </div>

@@ -46,7 +46,7 @@ class PhoneController extends Controller
                 }));
             }
         }
-        $logic = strtolower((string) $request->input('logic', 'and')) === 'or' ? 'or' : 'and';
+        $logic = strtolower((string)$request->input('logic', 'and')) === 'or' ? 'or' : 'and';
         if (!empty($filters)) {
             $this->applyFilters($query, $filters, $logic, [
                 'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
@@ -54,22 +54,24 @@ class PhoneController extends Controller
         }
 
         // TanStack Table server-driven paging/sorting (filters to be added later if needed)
-        $sort = (string) $request->input('sort', 'name:asc');
+        $sort = (string)$request->input('sort', 'name:asc');
         [$sortField, $sortDir] = array_pad(explode(':', $sort, 2), 2, 'asc');
-        $sortField = in_array($sortField, ['name','description','model','devicePoolName']) ? $sortField : 'name';
+        $sortField = in_array($sortField, ['name', 'description', 'model', 'devicePoolName']) ? $sortField : 'name';
         $sortDir = strtolower($sortDir) === 'desc' ? 'desc' : 'asc';
 
-        $perPage = (int) $request->input('perPage', 20);
-        if ($perPage < 5 || $perPage > 100) { $perPage = 20; }
+        $perPage = (int)$request->input('perPage', 20);
+        if ($perPage < 5 || $perPage > 100) {
+            $perPage = 20;
+        }
 
         $phones = $query->orderBy($sortField, $sortDir)
             ->paginate($perPage)
-            ->appends($request->only('page','perPage','sort'));
+            ->appends($request->only('page', 'perPage', 'sort'));
 
         return Inertia::render('Phones/Index', [
             'phones' => $phones,
             'tableState' => [
-                'sort' => $sortField.':'.$sortDir,
+                'sort' => $sortField . ':' . $sortDir,
                 'perPage' => $perPage,
             ],
             'filters' => [
@@ -135,16 +137,22 @@ class PhoneController extends Controller
 
         $phoneData = $phone->toArray();
 
+        $globalLineData = [];
         foreach ($phoneData['lines']['line'] ?? [] as $index => $line) {
-            $isShared = Line::where('uuid', $line['dirn']['uuid'])->first()?->isShared ?? false;
-            $phoneData['lines']['line'][$index]['shared'] = $isShared;
+            if ($lineRecord = Line::where('uuid', $line['dirn']['uuid'])->first()) {
+                $globalLineData[] = [
+                    ...$lineRecord->toArray(),
+                    'isShared' => $lineRecord->isShared
+                ];
+            }
         }
 
         return Inertia::render('Phones/Edit', [
             'phone' => $phoneData + [
-                'latestStatus' => $latestStatus,
-                'canScreenCapture' => $canScreenCapture,
-            ],
+                    'latestStatus' => $latestStatus,
+                    'canScreenCapture' => $canScreenCapture,
+                ],
+            'globalLineData' => $globalLineData,
             'phoneButtonTemplate' => $phoneButtonTemplate,
             'mohAudioSources' => $mohAudioSources,
             'screenCaptures' => $transformedScreenCaptures,
@@ -264,4 +272,6 @@ class PhoneController extends Controller
             ], 500);
         }
     }
+
+
 }

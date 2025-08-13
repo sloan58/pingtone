@@ -1,14 +1,15 @@
 <?php
 
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Application;
 use App\Http\Controllers\UcmController;
+use App\Http\Controllers\LineController;
 use App\Http\Controllers\PhoneController;
 use App\Http\Controllers\PhoneApiController;
-use App\Http\Controllers\InfrastructureOptionsController;
-use App\Http\Controllers\SyncHistoryController;
 use App\Http\Controllers\DashboardController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use App\Http\Controllers\SyncHistoryController;
+use App\Http\Controllers\InfrastructureOptionsController;
 
 Route::get('/welcome', function () {
     return Inertia::render('Welcome', [
@@ -24,23 +25,26 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('ucm', UcmController::class)->except(['show']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
-    
+
+    // Line routes
+    Route::get('/lines/{line}/edit', [LineController::class, 'edit'])->name('lines.edit');
+
     // Phone screen capture routes
     Route::post('/phones/{phone}/capture-screenshot', [PhoneController::class, 'captureScreenshot'])->name('phones.capture-screenshot');
     Route::delete('/phone-screen-captures/{screenCapture}', [PhoneController::class, 'deleteScreenCapture'])->name('phone-screen-captures.delete');
-    
+
     // Phone API data gathering
     Route::get('/phones/{phone}/gather-api-data', [PhoneApiController::class, 'gatherData'])->name('phones.gather-api-data');
-    
+
     // UCM API test route
     Route::post('/ucm/{ucm}/test-connection', [UcmController::class, 'testConnection'])->name('ucm.test-connection');
-    
+
     // Sync History routes
     Route::get('/ucm/{ucm}/sync-history', [SyncHistoryController::class, 'index'])->name('ucm.sync-history');
     Route::post('/ucm/{ucm}/sync', [SyncHistoryController::class, 'startSync'])->name('ucm.sync.start');
     Route::patch('/sync-history/{syncHistory}/complete', [SyncHistoryController::class, 'completeSync'])->name('sync-history.complete');
     Route::patch('/sync-history/{syncHistory}/fail', [SyncHistoryController::class, 'failSync'])->name('sync-history.fail');
-    
+
 
 });
 
@@ -77,6 +81,8 @@ Route::get('/test-toast', function () {
             'message' => 'This is a test toast notification to verify the system is working.'
         ]);
 })->name('test.toast');
+
+
 
 require __DIR__.'/auth.php';
 require __DIR__.'/settings.php';

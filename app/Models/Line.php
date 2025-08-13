@@ -10,6 +10,14 @@ class Line extends Model
 {
     protected $guarded = [];
 
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName(): string
+    {
+        return '_id';
+    }
+    
     public function ucm(): BelongsTo
     {
         return $this->belongsTo(Ucm::class);
