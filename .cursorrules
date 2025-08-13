@@ -71,6 +71,16 @@ pingtone/
 - Add more NDM features (users, device profiles, etc.)
 - Enhance the UI with shadcn/ui components
 
+## Important Development Rules
+
+### Frontend API Calls
+- **NEVER use fetch() and manually set CSRF tokens**
+- Always use Inertia.js router methods (router.get, router.post, router.delete, etc.) for page navigation
+- For direct API calls, always use axios (imported globally in the app)
+- Inertia automatically handles CSRF tokens and request headers
+- Example: `router.post('/phones/capture-screenshot', data)` instead of `fetch('/phones/capture-screenshot', { headers: { 'X-CSRF-TOKEN': token } })`
+- Example: `axios.post('/api/phones/capture-screenshot', data)` for direct API calls
+
 ## MCP Server Configuration
 
 The shadcn-ui MCP server is configured to provide access to the complete shadcn/ui component library:

@@ -642,13 +642,6 @@ class Axl extends SoapClient
     public function updatePhone(array $updateObject): array
     {
         try {
-            Log::info("AXL UPDATE PHONE - digestUser:", [
-                'ucm' => $this->ucm->name,
-                'phone_name' => $updateObject['name'] ?? 'unknown',
-                'digestUser' => $updateObject['digestUser'] ?? 'NOT_SET',
-                'has_digestUser' => isset($updateObject['digestUser']),
-            ]);
-
             // Normalize the update payload
             $updateObject = $this->normalizePhoneUpdatePayload($updateObject);
 
@@ -725,6 +718,62 @@ class Axl extends SoapClient
             ]);
 
             throw $e;
+        }
+    }
+
+    /**
+     * Get full UCM application user details by userid (RAppUser)
+     * @throws SoapFault
+     */
+    public function getAppUserByUserId(string $userid): array
+    {
+        try {
+            $res = $this->__soapCall('getAppUser', [
+                'getAppUser' => [
+                    'userid' => $userid,
+                ],
+            ]);
+
+            return json_decode(json_encode($res->return->appUser), true);
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$userid]);
+        }
+    }
+
+    /**
+     * Get UCM application user with specific returned tags
+     * @throws SoapFault
+     */
+    public function getAppUser(array $params): object
+    {
+        try {
+            $res = $this->__soapCall('getAppUser', [
+                'getAppUser' => $params,
+            ]);
+
+            return $res->return->appUser;
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$params]);
+        }
+    }
+
+    /**
+     * Update UCM application user
+     * @throws SoapFault
+     */
+    public function updateAppUser(array $params): string
+    {
+        try {
+            $res = $this->__soapCall('updateAppUser', [
+                'updateAppUser' => $params,
+            ]);
+
+            return $res->return;
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$params]);
         }
     }
 }

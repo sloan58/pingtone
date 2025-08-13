@@ -9,6 +9,8 @@ use Inertia\Inertia;
 use App\Models\Phone;
 use App\Services\Axl;
 use App\Models\PhoneStatus;
+use App\Models\PhoneScreenCapture;
+use App\Services\PhoneScreenCaptureService;
 use Illuminate\Http\Request;
 use App\Models\MohAudioSource;
 use App\Models\PhoneButtonTemplate;
@@ -17,6 +19,14 @@ use App\Http\Controllers\Concerns\AppliesSearchFilters;
 class PhoneController extends Controller
 {
     use AppliesSearchFilters;
+
+    protected PhoneScreenCaptureService $screenCaptureService;
+
+    public function __construct(PhoneScreenCaptureService $screenCaptureService)
+    {
+        $this->screenCaptureService = $screenCaptureService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -93,10 +103,39 @@ class PhoneController extends Controller
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name', 'sourceId']);
 
+        // Get screen captures for this phone
+        $screenCaptures = $this->screenCaptureService->getScreenCaptures($phone);
+
+        // Transform screen captures to include accessors and match frontend expectations
+        $transformedScreenCaptures = $screenCaptures->map(function ($capture) {
+            return [
+                'id' => $capture->_id,
+                'filename' => $capture->filename,
+                'captured_at' => $capture->captured_at->toISOString(),
+                'image_url' => $capture->image_url,
+                'formatted_file_size' => $capture->formatted_file_size,
+            ];
+        });
+
+        $canScreenCapture = $phone->canScreenCapture();
+        
+        Log::info('Phone edit page - screen capture check', [
+            'phone_id' => $phone->_id,
+            'phone_name' => $phone->name,
+            'model' => $phone->model,
+            'currentStatus' => $phone->currentStatus,
+            'currentIpAddress' => $phone->currentIpAddress,
+            'canScreenCapture' => $canScreenCapture,
+        ]);
+
         return Inertia::render('Phones/Edit', [
-            'phone' => $phone->toArray() + ['latestStatus' => $latestStatus],
+            'phone' => $phone->toArray() + [
+                'latestStatus' => $latestStatus,
+                'canScreenCapture' => $canScreenCapture,
+            ],
             'phoneButtonTemplate' => $phoneButtonTemplate,
             'mohAudioSources' => $mohAudioSources,
+            'screenCaptures' => $transformedScreenCaptures,
         ]);
     }
 
@@ -151,6 +190,65 @@ class PhoneController extends Controller
                 'title' => 'Update failed',
                 'message' => 'An unexpected error occurred: ' . $e->getMessage(),
             ])->withErrors(['general' => 'An unexpected error occurred: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Capture a screenshot from the phone.
+     */
+    public function captureScreenshot(Phone $phone)
+    {
+        try {
+            $screenCapture = $this->screenCaptureService->captureScreenshot($phone);
+
+            // Transform the data to include accessors and match frontend expectations
+            $screenCaptureData = [
+                'id' => $screenCapture->_id,
+                'filename' => $screenCapture->filename,
+                'captured_at' => $screenCapture->captured_at->toISOString(),
+                'image_url' => $screenCapture->image_url,
+                'formatted_file_size' => $screenCapture->formatted_file_size,
+            ];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Screenshot captured successfully',
+                'screenCapture' => $screenCaptureData,
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to capture screenshot: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a screen capture.
+     */
+    public function deleteScreenCapture(PhoneScreenCapture $screenCapture)
+    {
+        try {
+            $success = $this->screenCaptureService->deleteScreenCapture($screenCapture);
+
+            if ($success) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Screen capture deleted successfully',
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete screen capture',
+                ], 500);
+            }
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete screen capture: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }

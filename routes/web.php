@@ -25,6 +25,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('ucm', UcmController::class)->except(['show']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
     
+    // Phone screen capture routes
+    Route::post('/phones/{phone}/capture-screenshot', [PhoneController::class, 'captureScreenshot'])->name('phones.capture-screenshot');
+    Route::delete('/phone-screen-captures/{screenCapture}', [PhoneController::class, 'deleteScreenCapture'])->name('phone-screen-captures.delete');
+    
     // Phone API data gathering
     Route::get('/phones/{phone}/gather-api-data', [PhoneApiController::class, 'gatherData'])->name('phones.gather-api-data');
     

@@ -4,6 +4,7 @@ import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { PhoneApiData } from '@/components/phone-edit/phone-api-data';
 import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
+import { PhoneScreenCaptures } from '@/components/phone-edit/phone-screen-captures';
 import { PhoneStats } from '@/components/phone-edit/phone-stats';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
@@ -90,9 +91,10 @@ interface Props {
     phone: PhoneForm;
     phoneButtonTemplate?: any; // The phone button template data from the API
     mohAudioSources?: any[]; // MOH audio sources data from the backend
+    screenCaptures?: any[]; // Screen captures data from the backend
 }
 
-export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Props) {
+export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, screenCaptures }: Props) {
     const { data, setData, patch, processing, errors } = useForm<PhoneForm>(phone as any);
     const isSaving = useRef(false);
 
@@ -714,9 +716,10 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                             {data.model} • {(phone as any).ucm?.name}
                                         </p>
                                     </div>
-                                    <TabsList className="grid w-full grid-cols-2">
+                                    <TabsList className="grid w-full grid-cols-3">
                                         <TabsTrigger value="configuration">Configuration</TabsTrigger>
                                         <TabsTrigger value="api-data">API Data</TabsTrigger>
+                                        <TabsTrigger value="screen-captures">Screen Captures</TabsTrigger>
                                     </TabsList>
                                 </div>
                                 <Button
@@ -2286,6 +2289,19 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                                 // Update the API data state
                                                 setUpdatedApiData(newData);
                                             }}
+                                        />
+                                    </div>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="screen-captures" className="mt-4">
+                                <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                    <div className="p-4">
+                                        <PhoneScreenCaptures
+                                            phoneId={data.id}
+                                            phoneName={data.name}
+                                            canScreenCapture={(phone as any).canScreenCapture}
+                                            screenCaptures={screenCaptures || []}
                                         />
                                     </div>
                                 </div>

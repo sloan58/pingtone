@@ -241,15 +241,29 @@ class InfraSyncJob implements ShouldQueue
                 break;
 
             case 'ucm_users':
+                // Sync end users
                 $users = $axlApi->listUcmObjects('listUser', [
                     'searchCriteria' => ['userid' => '%'],
                     'returnedTags' => ['userid' => ''],
                 ], 'user');
                 foreach ($users as $user) {
                     try {
-                        UcmUser::storeUcmDetails($axlApi->getUserByUserId($user['userid']), $this->ucm);
+                        UcmUser::storeUcmDetails($axlApi->getUserByUserId($user['userid']), $this->ucm, 'enduser');
                     } catch (Exception $e) {
                         Log::warning("{$this->ucm->name}: get user failed: {$user['userid']} - {$e->getMessage()}");
+                    }
+                }
+
+                // Sync application users
+                $appUsers = $axlApi->listUcmObjects('listAppUser', [
+                    'searchCriteria' => ['userid' => '%'],
+                    'returnedTags' => ['userid' => ''],
+                ], 'appUser');
+                foreach ($appUsers as $appUser) {
+                    try {
+                        UcmUser::storeUcmDetails($axlApi->getAppUserByUserId($appUser['userid']), $this->ucm, 'appuser');
+                    } catch (Exception $e) {
+                        Log::warning("{$this->ucm->name}: get app user failed: {$appUser['userid']} - {$e->getMessage()}");
                     }
                 }
                 $this->ucm->ucmUsers()->where('updated_at', '<', $start)->delete();

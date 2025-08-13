@@ -5,8 +5,12 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
 import { initializeTheme } from './hooks/use-appearance';
+import axios from 'axios';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+// Configure axios defaults
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

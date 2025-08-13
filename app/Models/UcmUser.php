@@ -14,9 +14,10 @@ class UcmUser extends Model
         return $this->belongsTo(Ucm::class);
     }
 
-    public static function storeUcmDetails(array $user, Ucm $ucm): void
+    public static function storeUcmDetails(array $user, Ucm $ucm, string $type = 'enduser'): void
     {
         $user['ucm_id'] = $ucm->id;
+        $user['type'] = $type;
         self::updateOrCreate(['uuid' => $user['uuid']], $user)->touch();
     }
 }

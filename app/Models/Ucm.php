@@ -234,6 +234,22 @@ class Ucm extends Model
     }
 
     /**
+     * Get the end users associated with this UCM.
+     */
+    public function endUsers(): HasMany
+    {
+        return $this->ucmUsers()->where('type', 'enduser');
+    }
+
+    /**
+     * Get the application users associated with this UCM.
+     */
+    public function appUsers(): HasMany
+    {
+        return $this->ucmUsers()->where('type', 'appuser');
+    }
+
+    /**
      * Get the sync history for this UCM.
      */
     public function syncHistory(): MorphMany
