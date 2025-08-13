@@ -16,9 +16,9 @@ class PhoneApiController extends Controller
      *
      * @param Request $request
      * @param string $phoneId
-     * @return \Illuminate\Http\RedirectResponse
+     * @return JsonResponse
      */
-    public function gatherData(Request $request, string $phoneId)
+    public function gatherData(Request $request, string $phoneId): JsonResponse
     {
         try {
             $phone = Phone::findOrFail($phoneId);
@@ -38,14 +38,15 @@ class PhoneApiController extends Controller
                     'has_config_data' => !empty($result['api_data']['config']),
                 ]);
 
-                return redirect()->back()->with('toast', [
-                    'type' => 'success',
-                    'title' => 'Phone API data gathered successfully',
-                    'message' => sprintf(
-                        'Network: %s, Config: %s',
-                        !empty($result['api_data']['network']) ? '✓' : '✗',
-                        !empty($result['api_data']['config']) ? '✓' : '✗'
-                    ),
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Phone API data gathered successfully',
+                    'data' => [
+                        'has_network_data' => !empty($result['api_data']['network']),
+                        'has_config_data' => !empty($result['api_data']['config']),
+                        'timestamp' => $result['api_data']['timestamp']->toDateTime()->format('c'),
+                        'ip_address' => $result['api_data']['ip_address'],
+                    ]
                 ]);
             } else {
                 Log::warning("Failed to gather phone API data", [
@@ -54,11 +55,15 @@ class PhoneApiController extends Controller
                     'error' => $result['error'],
                 ]);
 
-                return redirect()->back()->with('toast', [
-                    'type' => 'error',
-                    'title' => 'Failed to gather phone API data',
-                    'message' => $result['error'],
-                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to gather phone API data',
+                    'error' => $result['error'],
+                    'data' => [
+                        'timestamp' => $result['api_data']['timestamp']->toDateTime()->format('c'),
+                        'ip_address' => $result['api_data']['ip_address'],
+                    ]
+                ], 400);
             }
 
         } catch (Exception $e) {
@@ -68,11 +73,11 @@ class PhoneApiController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return redirect()->back()->with('toast', [
-                'type' => 'error',
-                'title' => 'Error gathering phone API data',
-                'message' => $e->getMessage(),
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while gathering phone API data',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 }

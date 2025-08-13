@@ -1,7 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { router } from '@inertiajs/react';
 import { RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
 
@@ -17,20 +15,36 @@ interface PhoneApiDataProps {
 
 export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
     const [isLoading, setIsLoading] = useState(false);
-    useToast(); // Use the project's toast hook
 
-    const gatherApiData = () => {
+    const gatherApiData = async () => {
         setIsLoading(true);
+        try {
+            const response = await axios.post(`/phones/${phoneId}/gather-api-data`);
 
-        router.post(
-            `/phones/${phoneId}/gather-api-data`,
-            {},
-            {
-                onFinish: () => {
-                    setIsLoading(false);
-                },
-            },
-        );
+            if (response.data.success) {
+                toast.success('Phone API data gathered successfully', {
+                    description: `Network: ${response.data.data.has_network_data ? '✓' : '✗'}, Config: ${response.data.data.has_config_data ? '✓' : '✗'}`,
+                });
+                // Reload the page to show updated data
+                window.location.reload();
+            } else {
+                toast.error('Failed to gather phone API data', {
+                    description: response.data.error,
+                });
+            }
+        } catch (error: any) {
+            if (error.response?.data?.error) {
+                toast.error('Error gathering phone API data', {
+                    description: error.response.data.error,
+                });
+            } else {
+                toast.error('Error gathering phone API data', {
+                    description: error.message || 'Unknown error',
+                });
+            }
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const formatJson = (data: any) => {
