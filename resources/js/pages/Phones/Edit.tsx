@@ -181,12 +181,13 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, scre
         // Map template buttons to phone configuration
         const mappedButtons = sortedTemplateButtons.map((templateButton: any) => {
             const buttonNum = parseInt(templateButton.buttonnum) || 1;
-            const button = {
+            const button: any = {
                 index: buttonNum,
                 type: templateButton.feature?.toLowerCase() || 'line',
                 label: '',
                 target: '',
                 feature: templateButton.feature || 'Line',
+                isShared: false,
             };
 
             // Map based on feature type
@@ -197,9 +198,11 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, scre
                     if (matchingLine) {
                         button.label = matchingLine?.dirn?.pattern || matchingLine?.label || 'Line';
                         button.target = matchingLine?.dirn?.pattern || '';
+                        button.isShared = matchingLine?.shared || false;
                     } else {
                         button.label = 'Add Line';
                         button.target = '';
+                        button.isShared = false;
                     }
                     break;
                 case 'speed_dial':
@@ -255,6 +258,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources, scre
                         label: line.dirn?.pattern || line.label || 'Line',
                         target: line.dirn?.pattern || '',
                         feature: 'Line',
+                        isShared: line.shared || false,
                     });
                 });
             }

@@ -7,6 +7,7 @@ interface PhoneButton {
     label: string;
     target: string;
     feature?: string;
+    isShared?: boolean;
 }
 
 interface PhoneButtonLayoutProps {
@@ -291,7 +292,7 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                     <span className="truncate font-medium text-foreground">{getButtonLabel(button)}</span>
-                                    {button.type?.toLowerCase() === 'line' && button.target && (
+                                    {button.type?.toLowerCase() === 'line' && button.isShared && (
                                         <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
                                             Shared
                                         </span>

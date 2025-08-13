@@ -43,6 +43,14 @@ class Ucm extends Model
     ];
 
     /**
+     * Get all devices associated with this UCM.
+     */
+    public function devices(): HasMany
+    {
+        return $this->hasMany(Device::class);
+    }
+
+    /**
      * Get the phones associated with this UCM.
      */
     public function phones(): HasMany
@@ -200,8 +208,6 @@ class Ucm extends Model
     {
         return $this->hasMany(PhoneStatus::class);
     }
-
-
 
     // Phone vendor configs are embedded on Phone documents in this project
 

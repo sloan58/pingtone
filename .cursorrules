@@ -73,6 +73,13 @@ pingtone/
 
 ## Important Development Rules
 
+### Scope and Focus
+- **Stay within the scope of what is asked as closely as possible**
+- Avoid unnecessary sprawl and over-engineering
+- Focus on the specific task or question presented
+- Only add additional features or improvements if explicitly requested
+- When in doubt, ask for clarification rather than making assumptions
+
 ### Frontend API Calls
 - **NEVER use fetch() and manually set CSRF tokens**
 - Always use Inertia.js router methods (router.get, router.post, router.delete, etc.) for page navigation

@@ -6,14 +6,15 @@ use Log;
 use Exception;
 use SoapFault;
 use Inertia\Inertia;
+use App\Models\Line;
 use App\Models\Phone;
 use App\Services\Axl;
 use App\Models\PhoneStatus;
-use App\Models\PhoneScreenCapture;
-use App\Services\PhoneScreenCaptureService;
 use Illuminate\Http\Request;
 use App\Models\MohAudioSource;
+use App\Models\PhoneScreenCapture;
 use App\Models\PhoneButtonTemplate;
+use App\Services\PhoneScreenCaptureService;
 use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
 class PhoneController extends Controller
@@ -92,6 +93,7 @@ class PhoneController extends Controller
             ->first() ?? [];
 
         // Ensure we get the template from the same UCM as the phone
+        // We need the template details on page load to build the button UI
         $phoneButtonTemplate = null;
         if (isset($phone->phoneTemplateName['_'])) {
             $phoneButtonTemplate = PhoneButtonTemplate::where('ucm_id', $phone->ucm_id)
@@ -99,6 +101,8 @@ class PhoneController extends Controller
                 ->first();
         }
 
+        // The phone moh setting doesn't have the friendly name to display in the select
+        // so we're sending all the information in another field.
         $mohAudioSources = MohAudioSource::where('ucm_id', $phone->ucm_id)
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name', 'sourceId']);
@@ -119,7 +123,7 @@ class PhoneController extends Controller
         });
 
         $canScreenCapture = $phone->canScreenCapture();
-        
+
         Log::info('Phone edit page - screen capture check', [
             'phone_id' => $phone->_id,
             'phone_name' => $phone->name,
@@ -129,8 +133,15 @@ class PhoneController extends Controller
             'canScreenCapture' => $canScreenCapture,
         ]);
 
+        $phoneData = $phone->toArray();
+
+        foreach ($phoneData['lines']['line'] ?? [] as $index => $line) {
+            $isShared = Line::where('uuid', $line['dirn']['uuid'])->first()?->isShared ?? false;
+            $phoneData['lines']['line'][$index]['shared'] = $isShared;
+        }
+
         return Inertia::render('Phones/Edit', [
-            'phone' => $phone->toArray() + [
+            'phone' => $phoneData + [
                 'latestStatus' => $latestStatus,
                 'canScreenCapture' => $canScreenCapture,
             ],

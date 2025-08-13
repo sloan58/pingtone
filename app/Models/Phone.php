@@ -3,21 +3,20 @@
 namespace App\Models;
 
 use Log;
-use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\HasMany;
-use MongoDB\Laravel\Relations\BelongsTo;
 
-class Phone extends Model
+class Phone extends Device
 {
-    protected $guarded = [];
-
-    public function ucm(): BelongsTo
+    /**
+     * Get the device class for this model
+     */
+    protected static function getDeviceClass(): string
     {
-        return $this->belongsTo(Ucm::class);
+        return 'Phone';
     }
 
     /**
-     * Get the phone status records for this phone.
+     * Get the device status records for this device.
      */
     public function statuses(): HasMany
     {
@@ -25,7 +24,7 @@ class Phone extends Model
     }
 
     /**
-     * Get the screen captures for this phone.
+     * Get the screen captures for this device.
      */
     public function screenCaptures(): HasMany
     {
@@ -33,7 +32,7 @@ class Phone extends Model
     }
 
     /**
-     * Get the current IP address from the latest PhoneStatus record.
+     * Get the current IP address from the latest status record.
      */
     public function getCurrentIpAddressAttribute(): ?string
     {
@@ -54,7 +53,7 @@ class Phone extends Model
     }
 
     /**
-     * Get the current status from the latest PhoneStatus record.
+     * Get the current status from the latest status record.
      */
     public function getCurrentStatusAttribute(): ?string
     {
@@ -67,6 +66,49 @@ class Phone extends Model
         }
 
         return $latestStatus->device_data['Status'];
+    }
+
+    /**
+     * Store UCM details for this device
+     */
+    public static function storeUcmDetails(array $device, Ucm $ucm): void
+    {
+        $device['ucm_id'] = $ucm->id;
+        $device['class'] = static::getDeviceClass();
+        $model = self::updateOrCreate(['uuid' => $device['uuid']], $device);
+        $model->touch();
+    }
+
+    /**
+     * Update device lastx statistics using bulk operations
+     */
+    public static function updateLastXStats(array $stats, Ucm $ucm): void
+    {
+        $operations = [];
+        foreach ($stats as $stat) {
+            $operations[] = [
+                'updateOne' => [
+                    [
+                        'uuid' => "{{$stat['uuid']}}",
+                        'ucm_id' => $ucm->id,
+                        'class' => static::getDeviceClass()
+                    ],
+                    [
+                        '$set' => ['lastx' => $stat]
+                    ]
+                ]
+            ];
+        }
+
+        $result = self::raw()->bulkWrite($operations);
+
+        Log::info("Bulk updated device stats", [
+            'ucm_id' => $ucm->id,
+            'device_class' => static::getDeviceClass(),
+            'matched_count' => $result->getMatchedCount(),
+            'modified_count' => $result->getModifiedCount(),
+            'stats_count' => count($stats)
+        ]);
     }
 
     /**
@@ -100,9 +142,9 @@ class Phone extends Model
             Log::info('Phone screen capture check failed - UCM credentials', [
                 'phone_id' => $this->_id,
                 'phone_name' => $this->name,
-                'has_ucm' => (bool) $this->ucm,
-                'has_username' => $this->ucm ? (bool) $this->ucm->username : false,
-                'has_password' => $this->ucm ? (bool) $this->ucm->password : false,
+                'has_ucm' => (bool)$this->ucm,
+                'has_username' => $this->ucm ? (bool)$this->ucm->username : false,
+                'has_password' => $this->ucm ? (bool)$this->ucm->password : false,
             ]);
             return false;
         }
@@ -116,42 +158,5 @@ class Phone extends Model
         ]);
 
         return true;
-    }
-
-    public static function storeUcmDetails(array $phone, Ucm $ucm): void
-    {
-        $phone['ucm_id'] = $ucm->id;
-        $model = self::updateOrCreate(['uuid' => $phone['uuid']], $phone);
-        $model->touch();
-    }
-
-    /**
-     * Update phone lastx statistics using bulk operations
-     */
-    public static function updateLastXStats(array $stats, Ucm $ucm): void
-    {
-        $operations = [];
-        foreach ($stats as $stat) {
-            $operations[] = [
-                'updateOne' => [
-                    [
-                        'uuid' => "{{$stat['uuid']}}",
-                        'ucm_id' => $ucm->id
-                    ],
-                    [
-                        '$set' => ['lastx' => $stat]
-                    ]
-                ]
-            ];
-        }
-
-        $result = self::raw()->bulkWrite($operations);
-
-        Log::info("Bulk updated phone stats", [
-            'ucm_id' => $ucm->id,
-            'matched_count' => $result->getMatchedCount(),
-            'modified_count' => $result->getModifiedCount(),
-            'stats_count' => count($stats)
-        ]);
     }
 }

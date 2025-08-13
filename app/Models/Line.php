@@ -32,6 +32,37 @@ class Line extends Model
             ->withTimestamps();
     }
 
+    /**
+     * Check if this line is shared (used by 2 or more devices)
+     */
+    public function getIsSharedAttribute(): bool
+    {
+        // Count devices that have this line in their lines.line array
+        $deviceCount = Phone::raw()->countDocuments([
+            'lines.line' => [
+                '$elemMatch' => [
+                    'dirn.uuid' => $this->uuid
+                ]
+            ]
+        ]);
+
+        return $deviceCount >= 2;
+    }
+
+    /**
+     * Get the count of devices using this line
+     */
+    public function getDeviceCountAttribute(): int
+    {
+        return Phone::raw()->countDocuments([
+            'lines.line' => [
+                '$elemMatch' => [
+                    'dirn.uuid' => $this->uuid
+                ]
+            ]
+        ]);
+    }
+
     public static function storeUcmDetails(array $line, Ucm $ucm): void
     {
         $line['ucm_id'] = $ucm->id;

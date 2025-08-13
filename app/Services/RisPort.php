@@ -44,8 +44,8 @@ class RisPort extends SoapClient
      */
     public function queryPhoneStatus(?array $phones = null): array
     {
-        $phoneList = $phones ?? $this->ucm->phones()->pluck('name')->toArray();
-        
+        $phoneList = count($phones) ? $phones : $this->ucm->phones()->pluck('name')->toArray();
+
         Log::info("Querying phone status from RisPort", [
             'ucm' => $this->ucm->name,
             'phone_count' => count($phoneList),
@@ -59,7 +59,7 @@ class RisPort extends SoapClient
         // Process phones in chunks to avoid overwhelming the API
         $chunkSize = 1000;
         $allResults = [];
-        
+
         foreach (array_chunk($phoneList, $chunkSize) as $chunkIndex => $chunk) {
             Log::info("Processing phone chunk", [
                 'ucm' => $this->ucm->name,
@@ -117,7 +117,7 @@ class RisPort extends SoapClient
 
             // Convert response to array and return complete data
             $responseArray = json_decode(json_encode($response), true);
-            
+
             Log::info("Successfully received RisPort response", [
                 'ucm' => $this->ucm->name,
                 'has_data' => !empty($responseArray['selectCmDeviceReturn']['SelectCmDeviceResult']['CmNodes'] ?? null),
@@ -154,7 +154,7 @@ class RisPort extends SoapClient
         if (preg_match('/^AxisFault: Exceeded allowed rate for Reatime information/', $e->faultstring) ||
             str_contains($e->faultstring, 'rate limit') ||
             str_contains($e->faultstring, 'throttle')) {
-            
+
             Log::warning("{$this->ucm->name}: Received throttle response from RisPort", [
                 'faultstring' => $e->faultstring,
                 'tries' => $this->tries,
@@ -164,7 +164,7 @@ class RisPort extends SoapClient
                 $sleepSeconds = ($this->tries + 1) * 30; // 30s, 60s, 90s
                 Log::info("{$this->ucm->name}: Sleeping {$sleepSeconds} seconds before retry");
                 sleep($sleepSeconds);
-                
+
                 $this->tries++;
                 return $this->{$method}(...$args);
             }
