@@ -26,7 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
     
     // Phone API data gathering
-    Route::post('/phones/{phone}/gather-api-data', [PhoneApiController::class, 'gatherData'])->name('phones.gather-api-data');
+    Route::get('/phones/{phone}/gather-api-data', [PhoneApiController::class, 'gatherData'])->name('phones.gather-api-data');
     
     // UCM API test route
     Route::post('/ucm/{ucm}/test-connection', [UcmController::class, 'testConnection'])->name('ucm.test-connection');

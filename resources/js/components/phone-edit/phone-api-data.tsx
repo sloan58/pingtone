@@ -21,16 +21,10 @@ export function PhoneApiData({ phoneId, apiData, onDataUpdate }: PhoneApiDataPro
         if (!isLoading) {
             setIsLoading(true);
             try {
-                const response = await fetch(`/phones/${phoneId}/gather-api-data`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    },
-                });
+                const response = await fetch(`/phones/${phoneId}/gather-api-data`);
 
                 const responseData = await response.json();
-                
+
                 if (responseData.success) {
                     // Update the parent component with new data
                     if (onDataUpdate) {
