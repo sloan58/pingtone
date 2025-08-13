@@ -10,7 +10,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { FormSection } from '@/components/ui/form-section';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
-import { Head, useForm, usePage, router } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -156,6 +156,7 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
     const [extensionMobilityData, setExtensionMobilityData] = useState<any>(null);
     const [extensionMobilityLoading, setExtensionMobilityLoading] = useState(false);
     const [updatedApiData, setUpdatedApiData] = useState<any>((phone as any).api_data);
+    const [isSavingState, setIsSavingState] = useState(false);
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -720,26 +721,25 @@ export default function Edit({ phone, phoneButtonTemplate, mohAudioSources }: Pr
                                 </div>
                                 <Button
                                     onClick={() => {
-                                        if (isSaving.current) {
+                                        if (isSavingState) {
                                             return;
                                         }
-                                        isSaving.current = true;
+                                        setIsSavingState(true);
 
                                         // Data is already in the correct MongoDB object structure from the combobox handlers
                                         const transformedData = { ...data } as any;
 
                                         router.patch(`/phones/${data.id}`, transformedData, {
-                                        preserveScroll: true,
-                                    });
-                                        // Reset the saving flag after a short delay to allow the request to complete
-                                        setTimeout(() => {
-                                            isSaving.current = false;
-                                        }, 1000);
+                                            preserveScroll: true,
+                                            onFinish: () => {
+                                                setIsSavingState(false);
+                                            },
+                                        });
                                     }}
-                                    disabled={processing}
+                                    disabled={isSavingState}
                                     className="ml-4"
                                 >
-                                    {processing ? 'Saving...' : 'Save'}
+                                    {isSavingState ? 'Saving...' : 'Save'}
                                 </Button>
                             </div>
 
