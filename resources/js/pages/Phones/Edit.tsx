@@ -709,10 +709,10 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
         if (!extensionMobilityLoading) {
             setExtensionMobilityLoading(true);
             try {
-                const phoneUuid = (phone as any).uuid || data.uuid;
-                if (phoneUuid) {
+                const phoneId = (phone as any).id || data.id;
+                if (phoneId) {
                     const params = new URLSearchParams();
-                    params.append('phoneUuid', phoneUuid);
+                    params.append('phoneId', phoneId);
 
                     const url = `/api/ucm/${data.ucm_id}/options/extension-mobility-dynamic?${params.toString()}`;
 

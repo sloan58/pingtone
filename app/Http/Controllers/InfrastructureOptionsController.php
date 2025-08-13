@@ -372,15 +372,24 @@ class InfrastructureOptionsController extends Controller
 
     public function extensionMobilityDynamic(Ucm $ucm, Request $request): JsonResponse
     {
-        $phoneUuid = $request->get('phoneUuid');
+        $phoneId = $request->get('phoneId');
         
-        if (!$phoneUuid) {
-            return response()->json(['error' => 'Phone UUID is required'], 400);
+        if (!$phoneId) {
+            return response()->json(['error' => 'Phone ID is required'], 400);
         }
 
         try {
+            // Get the phone to retrieve its UUID
+            $phone = Phone::where('_id', $phoneId)
+                ->where('ucm_id', $ucm->getKey())
+                ->first();
+            
+            if (!$phone) {
+                return response()->json(['error' => 'Phone not found'], 404);
+            }
+
             $axl = $ucm->axlApi();
-            $data = $axl->getExtensionMobilityDynamicForPhone($phoneUuid);
+            $data = $axl->getExtensionMobilityDynamicForPhone($phone->uuid);
             
             return response()->json($data);
         } catch (\Exception $e) {
