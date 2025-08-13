@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+import { RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
-import { RefreshCw, Wifi, Settings } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PhoneApiDataProps {
     phoneId: string;
@@ -20,31 +20,29 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
     const gatherApiData = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`/phones/${phoneId}/gather-api-data`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-            });
+            const response = await axios.post(`/phones/${phoneId}/gather-api-data`);
 
-            const result = await response.json();
-
-            if (result.success) {
+            if (response.data.success) {
                 toast.success('Phone API data gathered successfully', {
-                    description: `Network: ${result.data.has_network_data ? '✓' : '✗'}, Config: ${result.data.has_config_data ? '✓' : '✗'}`,
+                    description: `Network: ${response.data.data.has_network_data ? '✓' : '✗'}, Config: ${response.data.data.has_config_data ? '✓' : '✗'}`,
                 });
                 // Reload the page to show updated data
                 window.location.reload();
             } else {
                 toast.error('Failed to gather phone API data', {
-                    description: result.error,
+                    description: response.data.error,
                 });
             }
         } catch (error) {
-            toast.error('Error gathering phone API data', {
-                description: error instanceof Error ? error.message : 'Unknown error',
-            });
+            if (axios.isAxiosError(error)) {
+                toast.error('Error gathering phone API data', {
+                    description: error.response?.data?.error || error.message,
+                });
+            } else {
+                toast.error('Error gathering phone API data', {
+                    description: error instanceof Error ? error.message : 'Unknown error',
+                });
+            }
         } finally {
             setIsLoading(false);
         }
@@ -67,42 +65,27 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-semibold">Phone API Data</h3>
-                    <p className="text-sm text-muted-foreground">
-                        Device information and network configuration from phone APIs
-                    </p>
+                    <p className="text-sm text-muted-foreground">Device information and network configuration from phone APIs</p>
                 </div>
-                <Button
-                    onClick={gatherApiData}
-                    disabled={isLoading}
-                    size="sm"
-                    variant="outline"
-                >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                <Button onClick={gatherApiData} disabled={isLoading} size="sm" variant="outline">
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                     {isLoading ? 'Gathering...' : 'Gather Data'}
                 </Button>
             </div>
 
-            {apiData?.ip_address && (
-                <div className="text-sm text-muted-foreground">
-                    IP Address: {apiData.ip_address}
-                </div>
-            )}
+            {apiData?.ip_address && <div className="text-sm text-muted-foreground">IP Address: {apiData.ip_address}</div>}
 
-            {lastGathered && (
-                <div className="text-sm text-muted-foreground">
-                    Last gathered: {lastGathered}
-                </div>
-            )}
+            {lastGathered && <div className="text-sm text-muted-foreground">Last gathered: {lastGathered}</div>}
 
             {!hasData && (
                 <div className="rounded-lg border border-dashed p-8 text-center">
-                    <Wifi className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No API Data Available</h3>
-                    <p className="text-muted-foreground mb-4">
+                    <Wifi className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                    <h3 className="mb-2 text-lg font-semibold">No API Data Available</h3>
+                    <p className="mb-4 text-muted-foreground">
                         Click "Gather Data" to retrieve device information and network configuration from this phone.
                     </p>
                     <Button onClick={gatherApiData} disabled={isLoading}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                         {isLoading ? 'Gathering...' : 'Gather Data'}
                     </Button>
                 </div>
@@ -125,18 +108,14 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
                         <div className="rounded-lg border bg-card">
                             <div className="border-b p-4">
                                 <h4 className="font-semibold">Network Configuration</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Network settings and configuration from the phone
-                                </p>
+                                <p className="text-sm text-muted-foreground">Network settings and configuration from the phone</p>
                             </div>
                             <div className="p-4">
                                 {apiData?.network ? (
-                                    <pre className="text-sm bg-muted p-4 rounded-md overflow-auto max-h-96">
-                                        {formatJson(apiData.network)}
-                                    </pre>
+                                    <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-sm">{formatJson(apiData.network)}</pre>
                                 ) : (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        <Wifi className="mx-auto h-8 w-8 mb-2" />
+                                    <div className="py-8 text-center text-muted-foreground">
+                                        <Wifi className="mx-auto mb-2 h-8 w-8" />
                                         <p>No network configuration data available</p>
                                     </div>
                                 )}
@@ -148,18 +127,14 @@ export function PhoneApiData({ phoneId, apiData }: PhoneApiDataProps) {
                         <div className="rounded-lg border bg-card">
                             <div className="border-b p-4">
                                 <h4 className="font-semibold">Device Information</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Device details and configuration information
-                                </p>
+                                <p className="text-sm text-muted-foreground">Device details and configuration information</p>
                             </div>
                             <div className="p-4">
                                 {apiData?.config ? (
-                                    <pre className="text-sm bg-muted p-4 rounded-md overflow-auto max-h-96">
-                                        {formatJson(apiData.config)}
-                                    </pre>
+                                    <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-sm">{formatJson(apiData.config)}</pre>
                                 ) : (
-                                    <div className="text-center py-8 text-muted-foreground">
-                                        <Settings className="mx-auto h-8 w-8 mb-2" />
+                                    <div className="py-8 text-center text-muted-foreground">
+                                        <Settings className="mx-auto mb-2 h-8 w-8" />
                                         <p>No device information data available</p>
                                     </div>
                                 )}
