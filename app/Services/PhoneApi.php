@@ -54,22 +54,26 @@ class PhoneApi
         ]);
 
         try {
-            // Make concurrent requests to both endpoints
+            // Make concurrent requests to all four endpoints
             $responses = Http::pool(function ($pool) use ($ipAddress) {
                 return [
                     $pool->as('network')->timeout($this->timeout)->get("http://{$ipAddress}/NetworkConfigurationX"),
                     $pool->as('config')->timeout($this->timeout)->get("http://{$ipAddress}/DeviceInformationX"),
+                    $pool->as('port')->timeout($this->timeout)->get("http://{$ipAddress}/PortInformationX?1"),
+                    $pool->as('log')->timeout($this->timeout)->get("http://{$ipAddress}/DeviceLogX?1"),
                 ];
             });
 
             $networkData = null;
             $configData = null;
+            $portData = null;
+            $logData = null;
             $errors = [];
 
             // Process network configuration response
             if ($responses['network']->successful()) {
                 try {
-                    $networkData = $this->xmlToArray($responses['network']->body());
+                    $networkData = ['raw_xml' => $responses['network']->body()];
                     Log::debug("Successfully gathered network data from phone", [
                         'phone' => $phone->name,
                         'ip' => $ipAddress,
@@ -95,7 +99,7 @@ class PhoneApi
             // Process device information response
             if ($responses['config']->successful()) {
                 try {
-                    $configData = $this->xmlToArray($responses['config']->body());
+                    $configData = ['raw_xml' => $responses['config']->body()];
                     Log::debug("Successfully gathered device info from phone", [
                         'phone' => $phone->name,
                         'ip' => $ipAddress,
@@ -118,7 +122,59 @@ class PhoneApi
                 ]);
             }
 
-            $success = !empty($networkData) || !empty($configData);
+            // Process port information response
+            if ($responses['port']->successful()) {
+                try {
+                    $portData = ['raw_xml' => $responses['port']->body()];
+                    Log::debug("Successfully gathered port info from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
+                    ]);
+                } catch (Exception $e) {
+                    $errors[] = "Port info parsing failed: " . $e->getMessage();
+                    Log::warning("Failed to parse port info XML from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                $errors[] = "Port info request failed: HTTP {$responses['port']->status()}";
+                Log::debug("Failed to get port info from phone", [
+                    'phone' => $phone->name,
+                    'ip' => $ipAddress,
+                    'status' => $responses['port']->status(),
+                    'error' => $responses['port']->body(),
+                ]);
+            }
+
+            // Process device log response
+            if ($responses['log']->successful()) {
+                try {
+                    $logData = ['raw_xml' => $responses['log']->body()];
+                    Log::debug("Successfully gathered device log from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
+                    ]);
+                } catch (Exception $e) {
+                    $errors[] = "Device log parsing failed: " . $e->getMessage();
+                    Log::warning("Failed to parse device log XML from phone", [
+                        'phone' => $phone->name,
+                        'ip' => $ipAddress,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                $errors[] = "Device log request failed: HTTP {$responses['log']->status()}";
+                Log::debug("Failed to get device log from phone", [
+                    'phone' => $phone->name,
+                    'ip' => $ipAddress,
+                    'status' => $responses['log']->status(),
+                    'error' => $responses['log']->body(),
+                ]);
+            }
+
+            $success = !empty($networkData) || !empty($configData) || !empty($portData) || !empty($logData);
             $errorMessage = !empty($errors) ? implode('; ', $errors) : null;
 
             return [
@@ -127,6 +183,8 @@ class PhoneApi
                 'api_data' => [
                     'network' => $networkData,
                     'config' => $configData,
+                    'port' => $portData,
+                    'log' => $logData,
                     'timestamp' => new UTCDateTime(),
                     'ip_address' => $ipAddress,
                 ],
@@ -146,6 +204,8 @@ class PhoneApi
                 'api_data' => [
                     'network' => null,
                     'config' => null,
+                    'port' => null,
+                    'log' => null,
                     'timestamp' => new UTCDateTime(),
                     'ip_address' => $ipAddress,
                 ],
@@ -194,6 +254,8 @@ class PhoneApi
         // Convert SimpleXMLElement to array
         return json_decode(json_encode($xml), true);
     }
+
+
 
     /**
      * Set the timeout for API requests

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Settings, Wifi } from 'lucide-react';
+import { XmlDisplay } from '@/components/xml-display';
+import { FileText, Network, RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
 
 interface PhoneApiDataProps {
@@ -8,6 +9,8 @@ interface PhoneApiDataProps {
     apiData?: {
         network?: any;
         config?: any;
+        port?: any;
+        log?: any;
         timestamp?: string;
         ip_address?: string;
     };
@@ -41,16 +44,7 @@ export function PhoneApiData({ phoneId, apiData, onDataUpdate }: PhoneApiDataPro
         }
     };
 
-    const formatJson = (data: any) => {
-        if (!data) return null;
-        try {
-            return JSON.stringify(data, null, 2);
-        } catch {
-            return String(data);
-        }
-    };
-
-    const hasData = apiData && (apiData.network || apiData.config);
+    const hasData = apiData && (apiData.network || apiData.config || apiData.port || apiData.log);
     const lastGathered = apiData?.timestamp ? new Date(apiData.timestamp).toLocaleString() : null;
 
     return (
@@ -86,14 +80,22 @@ export function PhoneApiData({ phoneId, apiData, onDataUpdate }: PhoneApiDataPro
 
             {hasData && (
                 <Tabs defaultValue="network" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="network" className="flex items-center gap-2">
                             <Wifi className="h-4 w-4" />
-                            Network Configuration
+                            Network
                         </TabsTrigger>
                         <TabsTrigger value="config" className="flex items-center gap-2">
                             <Settings className="h-4 w-4" />
-                            Device Information
+                            Device Info
+                        </TabsTrigger>
+                        <TabsTrigger value="port" className="flex items-center gap-2">
+                            <Network className="h-4 w-4" />
+                            Port Info
+                        </TabsTrigger>
+                        <TabsTrigger value="log" className="flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            Device Log
                         </TabsTrigger>
                     </TabsList>
 
@@ -104,8 +106,8 @@ export function PhoneApiData({ phoneId, apiData, onDataUpdate }: PhoneApiDataPro
                                 <p className="text-sm text-muted-foreground">Network settings and configuration from the phone</p>
                             </div>
                             <div className="p-4">
-                                {apiData?.network ? (
-                                    <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-sm">{formatJson(apiData.network)}</pre>
+                                {apiData?.network?.raw_xml ? (
+                                    <XmlDisplay xml={apiData.network.raw_xml} />
                                 ) : (
                                     <div className="py-8 text-center text-muted-foreground">
                                         <Wifi className="mx-auto mb-2 h-8 w-8" />
@@ -123,12 +125,50 @@ export function PhoneApiData({ phoneId, apiData, onDataUpdate }: PhoneApiDataPro
                                 <p className="text-sm text-muted-foreground">Device details and configuration information</p>
                             </div>
                             <div className="p-4">
-                                {apiData?.config ? (
-                                    <pre className="max-h-96 overflow-auto rounded-md bg-muted p-4 text-sm">{formatJson(apiData.config)}</pre>
+                                {apiData?.config?.raw_xml ? (
+                                    <XmlDisplay xml={apiData.config.raw_xml} />
                                 ) : (
                                     <div className="py-8 text-center text-muted-foreground">
                                         <Settings className="mx-auto mb-2 h-8 w-8" />
                                         <p>No device information data available</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="port" className="mt-4">
+                        <div className="rounded-lg border bg-card">
+                            <div className="border-b p-4">
+                                <h4 className="font-semibold">Port Information</h4>
+                                <p className="text-sm text-muted-foreground">Port details and status information</p>
+                            </div>
+                            <div className="p-4">
+                                {apiData?.port?.raw_xml ? (
+                                    <XmlDisplay xml={apiData.port.raw_xml} />
+                                ) : (
+                                    <div className="py-8 text-center text-muted-foreground">
+                                        <Network className="mx-auto mb-2 h-8 w-8" />
+                                        <p>No port information data available</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="log" className="mt-4">
+                        <div className="rounded-lg border bg-card">
+                            <div className="border-b p-4">
+                                <h4 className="font-semibold">Device Log</h4>
+                                <p className="text-sm text-muted-foreground">Device log entries and system information</p>
+                            </div>
+                            <div className="p-4">
+                                {apiData?.log?.raw_xml ? (
+                                    <XmlDisplay xml={apiData.log.raw_xml} />
+                                ) : (
+                                    <div className="py-8 text-center text-muted-foreground">
+                                        <FileText className="mx-auto mb-2 h-8 w-8" />
+                                        <p>No device log data available</p>
                                     </div>
                                 )}
                             </div>

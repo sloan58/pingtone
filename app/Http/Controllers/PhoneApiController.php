@@ -44,6 +44,8 @@ class PhoneApiController extends Controller
                     'data' => [
                         'network' => $result['api_data']['network'],
                         'config' => $result['api_data']['config'],
+                        'port' => $result['api_data']['port'],
+                        'log' => $result['api_data']['log'],
                         'timestamp' => $result['api_data']['timestamp']->toDateTime()->format('c'),
                         'ip_address' => $result['api_data']['ip_address'],
                     ]
@@ -62,6 +64,8 @@ class PhoneApiController extends Controller
                     'data' => [
                         'network' => $result['api_data']['network'],
                         'config' => $result['api_data']['config'],
+                        'port' => $result['api_data']['port'],
+                        'log' => $result['api_data']['log'],
                         'timestamp' => $result['api_data']['timestamp']->toDateTime()->format('c'),
                         'ip_address' => $result['api_data']['ip_address'],
                     ]
