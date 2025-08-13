@@ -273,5 +273,57 @@ class PhoneController extends Controller
         }
     }
 
+    /**
+     * Show the form for editing a specific button on a phone.
+     */
+    public function editButton(Request $request, Phone $phone, int $buttonIndex)
+    {
+        $phone->load('ucm');
+
+        // Get the latest RisPort status for this phone
+        $latestStatus = PhoneStatus::where('phone_name', $phone->name)
+            ->where('ucm_id', $phone->ucm_id)
+            ->orderBy('timestamp', 'desc')
+            ->first() ?? [];
+
+        // Get the button configuration
+        $buttonConfig = null;
+        if (isset($phone->lines['line'])) {
+            $lines = is_array($phone->lines['line']) ? $phone->lines['line'] : [$phone->lines['line']];
+            $buttonConfig = collect($lines)->firstWhere('index', (string)$buttonIndex);
+        }
+
+        if (!$buttonConfig) {
+            abort(404, 'Button configuration not found');
+        }
+
+        // Get the line details based on the button type
+        $line = null;
+        $type = $request->query('type', 'line');
+        
+        switch ($type) {
+            case 'line':
+                if (isset($buttonConfig['dirn']['uuid'])) {
+                    $line = Line::where('uuid', $buttonConfig['dirn']['uuid'])->first();
+                }
+                break;
+            // Add other button types here as needed (speed dial, etc.)
+            default:
+                abort(400, 'Invalid button type');
+        }
+
+        if (!$line) {
+            abort(404, 'Line not found');
+        }
+
+        return Inertia::render('Phones/EditButton', [
+            'phone' => $phone,
+            'buttonIndex' => $buttonIndex,
+            'buttonType' => $type,
+            'buttonConfig' => $buttonConfig,
+            'line' => $line->append('patternAndPartition'),
+            'latestStatus' => $latestStatus,
+        ]);
+    }
 
 }

@@ -789,13 +789,8 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
                                                     buttons={data.buttons || []}
                                                     onButtonClick={(button) => {
                                                         if (button.type?.toLowerCase() === 'line' && button.target) {
-                                                            // Find the global line data to get the MongoDB ID
-                                                            const globalLine = globalLineData?.find((line: any) => line.uuid === button.target);
-
-                                                            if (globalLine) {
-                                                                // Navigate to line configuration with phone context
-                                                                router.visit(`/lines/${globalLine.id}/edit?phone=${(phone as any).id}`);
-                                                            }
+                                                            // Navigate to button editing page
+                                                            router.visit(`/phones/${(phone as any).id}/edit/button/${button.index}?type=line`);
                                                         }
                                                     }}
                                                     onAddButton={() => {

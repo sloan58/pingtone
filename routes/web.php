@@ -25,9 +25,9 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('ucm', UcmController::class)->except(['show']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
+    Route::get('/phones/{phone}/edit/button/{buttonIndex}', [PhoneController::class, 'editButton'])->name('phones.edit.button');
 
-    // Line routes
-    Route::get('/lines/{line}/edit', [LineController::class, 'edit'])->name('lines.edit');
+
 
     // Phone screen capture routes
     Route::post('/phones/{phone}/capture-screenshot', [PhoneController::class, 'captureScreenshot'])->name('phones.capture-screenshot');
@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
 // Infrastructure options (scoped by UCM)
 Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/device-pools', [InfrastructureOptionsController::class, 'devicePools']);
+    Route::get('/ucm/{ucm}/options/external-call-control-profiles', [InfrastructureOptionsController::class, 'externalCallControlProfiles']);
     Route::get('/ucm/{ucm}/options/phone-models', [InfrastructureOptionsController::class, 'phoneModels']);
     Route::get('/ucm/{ucm}/options/phones', [InfrastructureOptionsController::class, 'phones']);
     Route::get('/ucm/{ucm}/options/common-device-configs', [InfrastructureOptionsController::class, 'commonDeviceConfigs']);
@@ -71,6 +72,10 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/sip-profiles', [InfrastructureOptionsController::class, 'sipProfiles']);
     Route::get('/ucm/{ucm}/options/device-profiles', [InfrastructureOptionsController::class, 'deviceProfiles']);
     Route::get('/ucm/{ucm}/options/extension-mobility-dynamic', [InfrastructureOptionsController::class, 'extensionMobilityDynamic']);
+    
+    // Line search and details for async select
+    Route::get('/lines/search', [LineController::class, 'search'])->name('lines.search');
+    Route::get('/lines/{uuid}', [LineController::class, 'show'])->name('lines.show');
 });
 
 Route::get('/test-toast', function () {

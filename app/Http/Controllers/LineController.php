@@ -10,27 +10,49 @@ use Illuminate\Http\Request;
 class LineController extends Controller
 {
     /**
-     * Show the form for editing the specified line.
+     * Search lines for async select component
      */
-    public function edit(Request $request, Line $line)
+    public function search(Request $request)
     {
-        $phone = null;
-        $deviceSpecificLine = null;
+        $query = $request->input('query', '');
+        $limit = min((int) $request->input('limit', 10), 50); // Max 50 results
 
-        if ($request->has('phone')) {
-            $phone = Phone::find($request->get('phone'));
-            
-            if ($phone && isset($phone->lines['line'])) {
-                // Extract the device-specific line configuration for this line
-                $lines = is_array($phone->lines['line']) ? $phone->lines['line'] : [$phone->lines['line']];
-                $deviceSpecificLine = collect($lines)->firstWhere('dirn.uuid', $line->uuid);
-            }
+        $linesQuery = Line::query();
+
+        if (!empty($query)) {
+            // Search by pattern or partition name
+            $linesQuery->where(function ($q) use ($query) {
+                $q->where('pattern', 'like', "%{$query}%")
+                  ->orWhere('routePartitionName._', 'like', "%{$query}%");
+            });
         }
 
-        return Inertia::render('Lines/Configure', [
-            'line' => $line,
-            'phone' => $phone,
-            'deviceSpecificLine' => $deviceSpecificLine,
+        $lines = $linesQuery->limit($limit)->get();
+
+        return response()->json([
+            'options' => $lines->map(function ($line) {
+                return [
+                    'value' => $line->uuid,
+                    'label' => $line->patternAndPartition,
+                    'pattern' => $line->pattern,
+                    'routePartition' => $line->routePartitionName,
+                ];
+            })
         ]);
     }
+
+    /**
+     * Get line details by UUID
+     */
+    public function show(Request $request, string $uuid)
+    {
+        $line = Line::where('uuid', $uuid)->first();
+        
+        if (!$line) {
+            return response()->json(['error' => 'Line not found'], 404);
+        }
+
+        return response()->json($line->append('patternAndPartition'));
+    }
+
 }

@@ -24,12 +24,29 @@ use App\Models\SipDialRules;
 use App\Models\PhoneSecurityProfile;
 use App\Models\SipProfile;
 use App\Models\DeviceProfile;
+use App\Models\ExternalCallControlProfile;
 
 class InfrastructureOptionsController extends Controller
 {
     public function devicePools(Ucm $ucm): JsonResponse
     {
         $options = DevicePool::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function externalCallControlProfiles(Ucm $ucm): JsonResponse
+    {
+        $options = ExternalCallControlProfile::query()
             ->where('ucm_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])

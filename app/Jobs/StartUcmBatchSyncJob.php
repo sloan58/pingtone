@@ -46,6 +46,7 @@ class StartUcmBatchSyncJob implements ShouldQueue
             'route_partitions',
             'calling_search_spaces',
             'device_pools',
+            'external_call_control_profiles',
             'service_profiles',
             'sip_profiles',
             'locations',

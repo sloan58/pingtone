@@ -11,6 +11,7 @@ use App\Models\Location;
 use App\Models\AarGroup;
 use App\Models\LineGroup;
 use App\Models\DevicePool;
+use App\Models\ExternalCallControlProfile;
 use App\Models\SipProfile;
 use App\Models\PhoneModel;
 use App\Models\UserLocale;
@@ -143,6 +144,15 @@ class InfraSyncJob implements ShouldQueue
                 ], 'devicePool');
                 DevicePool::storeUcmData($data, $this->ucm);
                 $this->ucm->devicePools()->where('updated_at', '<', $start)->delete();
+                break;
+
+            case 'external_call_control_profiles':
+                $data = $axlApi->listUcmObjects('listExternalCallControlProfile', [
+                    'searchCriteria' => ['name' => '%'],
+                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                ], 'externalCallControlProfile');
+                ExternalCallControlProfile::storeUcmData($data, $this->ucm);
+                $this->ucm->externalCallControlProfiles()->where('updated_at', '<', $start)->delete();
                 break;
 
             case 'service_profiles':

@@ -17,7 +17,7 @@ class Line extends Model
     {
         return '_id';
     }
-    
+
     public function ucm(): BelongsTo
     {
         return $this->belongsTo(Ucm::class);
@@ -55,6 +55,13 @@ class Line extends Model
         ]);
 
         return $deviceCount >= 2;
+    }
+
+    public function getPatternAndPartitionAttribute(): string
+    {
+        $partition = $this->routePartitionName['_'] ?: 'None';
+
+        return "{$this->pattern} in {$partition}";
     }
 
     /**

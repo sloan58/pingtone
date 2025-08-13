@@ -121,6 +121,11 @@ class Ucm extends Model
         return $this->hasMany(DevicePool::class);
     }
 
+    public function externalCallControlProfiles(): HasMany
+    {
+        return $this->hasMany(ExternalCallControlProfile::class);
+    }
+
     public function serviceProfiles(): HasMany
     {
         return $this->hasMany(ServiceProfile::class);
