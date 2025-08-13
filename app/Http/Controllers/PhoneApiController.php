@@ -42,8 +42,8 @@ class PhoneApiController extends Controller
                     'success' => true,
                     'message' => 'Phone API data gathered successfully',
                     'data' => [
-                        'has_network_data' => !empty($result['api_data']['network']),
-                        'has_config_data' => !empty($result['api_data']['config']),
+                        'network' => $result['api_data']['network'],
+                        'config' => $result['api_data']['config'],
                         'timestamp' => $result['api_data']['timestamp']->toDateTime()->format('c'),
                         'ip_address' => $result['api_data']['ip_address'],
                     ]
@@ -60,6 +60,8 @@ class PhoneApiController extends Controller
                     'message' => 'Failed to gather phone API data',
                     'error' => $result['error'],
                     'data' => [
+                        'network' => $result['api_data']['network'],
+                        'config' => $result['api_data']['config'],
                         'timestamp' => $result['api_data']['timestamp']->toDateTime()->format('c'),
                         'ip_address' => $result['api_data']['ip_address'],
                     ]
