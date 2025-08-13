@@ -162,6 +162,7 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
     const [extensionMobilityLoading, setExtensionMobilityLoading] = useState(false);
     const [updatedApiData, setUpdatedApiData] = useState<any>((phone as any).api_data);
     const [isSavingState, setIsSavingState] = useState(false);
+    const [activeTab, setActiveTab] = useState('configuration');
 
     // Function to map phone button template to phone configuration
     const mapTemplateToPhoneButtons = useCallback(() => {
@@ -737,7 +738,7 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
                 <AppContent variant="sidebar" className="p-0">
                     <div className="space-y-4 p-6">
                         {/* Consolidated Header with Tabs */}
-                        <Tabs defaultValue="configuration" className="w-full">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                             <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                                 <div className="flex items-center gap-6">
                                     <div>
@@ -752,28 +753,30 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
                                         <TabsTrigger value="screen-captures">Screen Captures</TabsTrigger>
                                     </TabsList>
                                 </div>
-                                <Button
-                                    onClick={() => {
-                                        if (isSavingState) {
-                                            return;
-                                        }
-                                        setIsSavingState(true);
+                                {activeTab === 'configuration' && (
+                                    <Button
+                                        onClick={() => {
+                                            if (isSavingState) {
+                                                return;
+                                            }
+                                            setIsSavingState(true);
 
-                                        // Data is already in the correct MongoDB object structure from the combobox handlers
-                                        const transformedData = { ...data } as any;
+                                            // Data is already in the correct MongoDB object structure from the combobox handlers
+                                            const transformedData = { ...data } as any;
 
-                                        router.patch(`/phones/${data.id}`, transformedData, {
-                                            preserveScroll: true,
-                                            onFinish: () => {
-                                                setIsSavingState(false);
-                                            },
-                                        });
-                                    }}
-                                    disabled={isSavingState}
-                                    className="ml-4"
-                                >
-                                    {isSavingState ? 'Saving...' : 'Save'}
-                                </Button>
+                                            router.patch(`/phones/${data.id}`, transformedData, {
+                                                preserveScroll: true,
+                                                onFinish: () => {
+                                                    setIsSavingState(false);
+                                                },
+                                            });
+                                        }}
+                                        disabled={isSavingState}
+                                        className="ml-4"
+                                    >
+                                        {isSavingState ? 'Saving...' : 'Save'}
+                                    </Button>
+                                )}
                             </div>
 
                             <TabsContent value="configuration" className="mt-6">

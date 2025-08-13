@@ -53,19 +53,19 @@ export function PhoneScreenCaptureModal({ open, onOpenChange, capture }: PhoneSc
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden">
                 <DialogHeader className="flex-shrink-0 pr-12">
-                    <div className="flex items-center justify-between">
+                    <div className="space-y-4">
                         <DialogTitle className="text-lg font-semibold">{capture.filename}</DialogTitle>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>Captured on {formatDate(capture.captured_at)}</span>
+                            <span>•</span>
+                            <span>{capture.formatted_file_size}</span>
+                        </div>
+                        <div className="flex justify-start">
                             <Button variant="outline" size="sm" onClick={handleDownload}>
                                 <Download className="h-4 w-4" />
                                 Download
                             </Button>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>Captured on {formatDate(capture.captured_at)}</span>
-                        <span>•</span>
-                        <span>{capture.formatted_file_size}</span>
                     </div>
                 </DialogHeader>
                 <div className="flex-1 overflow-auto">
