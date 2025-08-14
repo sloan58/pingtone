@@ -1556,6 +1556,48 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                 </div>
                             </div>
 
+                            {/* PSTN Failover */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <h2 className="text-lg font-semibold">
+                                        PSTN Failover for Enterprise Alternate Number, +E.164 Alternate Number, and URI Dialing
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">Configure PSTN failover settings</p>
+                                </div>
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Advertised Failover Number</label>
+                                            <Select
+                                                value={(() => {
+                                                    const value = currentLine.pstnFailover;
+                                                    if (!value || value === '') return 'None';
+                                                    if (value === '100') return '100';
+                                                    if (value === '200') return '200';
+                                                    return 'None';
+                                                })()}
+                                                onValueChange={(value) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        pstnFailover: value === 'None' ? '' : value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            >
+                                                <SelectTrigger className="w-full bg-background">
+                                                    <SelectValue placeholder="Select failover number" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="None">None</SelectItem>
+                                                    <SelectItem value="100">Enterprise Number</SelectItem>
+                                                    <SelectItem value="200">+E.164 Number</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Debug Section - Remove this later */}
                             <div className="overflow-hidden rounded-lg border bg-card shadow">
                                 <div className="border-b p-6">
