@@ -5,6 +5,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AsyncCombobox } from '@/components/ui/async-combobox';
 import { FormSection } from '@/components/ui/form-section';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ChevronRight, Loader2, Phone, Settings } from 'lucide-react';
@@ -462,6 +463,28 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                     onMouseEnter={loadExternalCallControlProfiles}
                                                 />
                                             </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Allow CTI Control Flag</label>
+                                                <div className="flex items-center space-x-3">
+                                                    <Switch
+                                                        checked={
+                                                            currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true
+                                                        }
+                                                        onCheckedChange={(checked) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                allowCtiControlFlag: checked ? 'true' : 'false',
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                    />
+                                                    <span className="text-sm text-muted-foreground">
+                                                        {currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true
+                                                            ? 'Enabled'
+                                                            : 'Disabled'}
+                                                    </span>
+                                                </div>
+                                            </div>
 
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Presence Group</label>
@@ -573,27 +596,7 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Allow CTI Control Flag</label>
-                                                <Select
-                                                    value={currentLine.allowCtiControlFlag || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            allowCtiControlFlag: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+
                                             <div>
                                                 <label className="mb-1 block text-sm font-medium">Reject Anonymous Call</label>
                                                 <Select
