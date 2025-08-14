@@ -88,6 +88,13 @@ pingtone/
 - Example: `router.post('/phones/capture-screenshot', data)` instead of `fetch('/phones/capture-screenshot', { headers: { 'X-CSRF-TOKEN': token } })`
 - Example: `axios.post('/api/phones/capture-screenshot', data)` for direct API calls
 
+### Form Components
+- **ALWAYS use React Select components instead of HTML select elements**
+- Use the Radix UI Select components from `@/components/ui/select`
+- Never use native HTML `<select>` elements
+- This ensures consistent styling, accessibility, and user experience
+- Example: Use `<Select>`, `<SelectTrigger>`, `<SelectContent>`, `<SelectItem>` instead of `<select>` and `<option>`
+
 ## MCP Server Configuration
 
 The shadcn-ui MCP server is configured to provide access to the complete shadcn/ui component library:

@@ -38,6 +38,7 @@ interface AsyncComboboxProps {
   displayValue?: string
   fetchOptions: (query: string) => Promise<AsyncComboboxOption[]>
   debounceMs?: number
+  onMouseEnter?: () => void
 }
 
 export function AsyncCombobox({
@@ -52,6 +53,7 @@ export function AsyncCombobox({
   displayValue,
   fetchOptions,
   debounceMs = 300,
+  onMouseEnter,
 }: AsyncComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -122,6 +124,7 @@ export function AsyncCombobox({
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
           disabled={disabled}
+          onMouseEnter={onMouseEnter}
         >
           {displayText}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

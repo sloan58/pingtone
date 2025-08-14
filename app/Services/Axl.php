@@ -411,6 +411,24 @@ class Axl extends SoapClient
     }
 
     /**
+     * Update UCM user
+     * @throws SoapFault
+     */
+    public function updateUser(array $params): string
+    {
+        try {
+            $res = $this->__soapCall('updateUser', [
+                'updateUser' => $params,
+            ]);
+
+            return $res->return;
+
+        } catch (SoapFault $e) {
+            return $this->handleAxlApiError($e, [$params]);
+        }
+    }
+
+    /**
      * Get full line group details by name (RLineGroup)
      * @throws SoapFault
      */

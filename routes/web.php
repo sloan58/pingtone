@@ -6,6 +6,7 @@ use Illuminate\Foundation\Application;
 use App\Http\Controllers\UcmController;
 use App\Http\Controllers\LineController;
 use App\Http\Controllers\PhoneController;
+use App\Http\Controllers\UcmUserController;
 use App\Http\Controllers\PhoneApiController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SyncHistoryController;
@@ -25,6 +26,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('ucm', UcmController::class)->except(['show']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
+    Route::resource('ucm-users', UcmUserController::class)->only(['index']);
     Route::get('/phones/{phone}/edit/button/{buttonIndex}', [PhoneController::class, 'editButton'])->name('phones.edit.button');
     Route::post('/phones/{phone}/lines/{lineIndex}', [PhoneController::class, 'updateLine'])->name('phones.lines.update');
 
