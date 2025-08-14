@@ -417,7 +417,7 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
             <div className="flex flex-1 flex-col gap-4">
                 <AppHeader />
                 <AppContent variant="sidebar" className="p-0">
-                    <div className="space-y-4 p-6">
+                    <div className="p-6">
                         {/* Breadcrumbs */}
                         <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
                             <button
@@ -439,7 +439,7 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                         </nav>
 
                         {/* Sticky Header */}
-                        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                        <div className="sticky top-0 z-10 mt-4 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                             <div className="flex items-center gap-6">
                                 <div>
                                     <h1 className="text-2xl font-bold">Button {buttonIndex}</h1>
@@ -464,7 +464,7 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6">
+                        <div className="mt-4 space-y-4">
                             {/* Directory Number Information */}
                             <div className="overflow-hidden rounded-lg border bg-card shadow">
                                 <div className="border-b p-6">
@@ -1170,237 +1170,236 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                         </div>
                                     )}
                                 </div>
+                            </div>
 
-                                {/* +E.164 Alternate Number */}
-                                <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                    <div className="border-b p-6">
-                                        <h2 className="text-lg font-semibold">+E.164 Alternate Number</h2>
-                                        <p className="text-sm text-muted-foreground">Configure +E.164 alternate number settings</p>
-                                    </div>
-                                    <div className="p-6">
-                                        {currentLine.useE164AltNum === 'true' || currentLine.useE164AltNum === true ? (
-                                            <div className="space-y-6">
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">Number Mask</label>
-                                                    <input
-                                                        type="text"
-                                                        className="w-full rounded-md border bg-background p-2"
-                                                        value={currentLine.e164AltNum?.numMask || ''}
-                                                        onChange={(e) => {
-                                                            const mask = e.target.value;
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                e164AltNum: {
-                                                                    ...currentLine.e164AltNum,
-                                                                    numMask: mask,
-                                                                },
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                        placeholder="Enter number mask (e.g., +1234)"
-                                                    />
-                                                    <p className="mt-1 text-xs text-muted-foreground">
-                                                        Use digits 0-9, X for wildcards, or + for E.164. + must be first character.
-                                                    </p>
-                                                </div>
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">Alternate Number</label>
-                                                    <div className="w-full rounded-md border bg-muted p-2 text-sm text-muted-foreground">
-                                                        {(() => {
-                                                            const mask = currentLine.e164AltNum?.numMask || '';
-                                                            const directoryNumber = currentLine.pattern || '1002';
-
-                                                            if (!mask) return directoryNumber;
-
-                                                            // Handle E.164 format (starts with +)
-                                                            if (mask.startsWith('+')) {
-                                                                return mask;
-                                                            }
-
-                                                            // Validate mask format
-                                                            const validMask = /^[0-9X]+$/.test(mask);
-                                                            if (!validMask) {
-                                                                return <span className="font-medium text-red-500">Invalid mask format</span>;
-                                                            }
-
-                                                            // Apply mask to directory number
-                                                            let result = '';
-                                                            const dirNumStr = directoryNumber.toString();
-
-                                                            // Process each character in the mask
-                                                            for (let i = 0; i < mask.length; i++) {
-                                                                const maskChar = mask[i];
-                                                                const dirNumChar = dirNumStr[i];
-
-                                                                if (maskChar === 'X') {
-                                                                    // Keep original digit if available
-                                                                    result += dirNumChar || '';
-                                                                } else if (maskChar && /[0-9]/.test(maskChar)) {
-                                                                    // Use mask digit
-                                                                    result += maskChar;
-                                                                }
-                                                            }
-
-                                                            return result || 'Invalid mask';
-                                                        })()}
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                                    <div>
-                                                        <label className="mb-1 block text-sm font-medium">Route Partition</label>
-                                                        <AsyncCombobox
-                                                            value={currentLine.e164AltNum?.routePartition?.uuid || ''}
-                                                            onValueChange={(value, selectedOption) => {
-                                                                setCurrentLine({
-                                                                    ...currentLine,
-                                                                    e164AltNum: {
-                                                                        ...currentLine.e164AltNum,
-                                                                        routePartition: {
-                                                                            _: selectedOption?.label || '',
-                                                                            uuid: value,
-                                                                        },
-                                                                    },
-                                                                });
-                                                                setHasChanges(true);
-                                                            }}
-                                                            placeholder="Search for route partition..."
-                                                            searchPlaceholder="Type to search route partitions..."
-                                                            emptyMessage="No route partitions found."
-                                                            loadingMessage="Searching route partitions..."
-                                                            fetchOptions={async (query: string) => {
-                                                                // Filter cached route partitions
-                                                                return routePartitions
-                                                                    .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
-                                                                    .map((option) => ({
-                                                                        value: option.uuid,
-                                                                        label: option.name,
-                                                                    }));
-                                                            }}
-                                                            displayValue={currentLine.e164AltNum?.routePartition?._ || ''}
-                                                            onMouseEnter={loadRoutePartitions}
-                                                        />
-                                                    </div>
-                                                    <div className="flex items-center space-x-3">
-                                                        <Switch
-                                                            checked={
-                                                                currentLine.e164AltNum?.isUrgent === 'true' ||
-                                                                currentLine.e164AltNum?.isUrgent === true
-                                                            }
-                                                            onCheckedChange={(checked) => {
-                                                                setCurrentLine({
-                                                                    ...currentLine,
-                                                                    e164AltNum: {
-                                                                        ...currentLine.e164AltNum,
-                                                                        isUrgent: checked ? 'true' : 'false',
-                                                                    },
-                                                                });
-                                                                setHasChanges(true);
-                                                            }}
-                                                        />
-                                                        <span className="text-sm font-medium">Is Urgent</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center space-x-3">
-                                                    <Switch
-                                                        checked={
-                                                            currentLine.e164AltNum?.addLocalRoutePartition === 'true' ||
-                                                            currentLine.e164AltNum?.addLocalRoutePartition === true
-                                                        }
-                                                        onCheckedChange={(checked) => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                e164AltNum: {
-                                                                    ...currentLine.e164AltNum,
-                                                                    addLocalRoutePartition: checked ? 'true' : 'false',
-                                                                },
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                    />
-                                                    <span className="text-sm font-medium">Add to Local Route Partition</span>
-                                                </div>
-                                                <div className="flex items-center space-x-3">
-                                                    <Switch
-                                                        checked={
-                                                            currentLine.e164AltNum?.advertiseGloballyIls === 'true' ||
-                                                            currentLine.e164AltNum?.advertiseGloballyIls === true
-                                                        }
-                                                        onCheckedChange={(checked) => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                e164AltNum: {
-                                                                    ...currentLine.e164AltNum,
-                                                                    advertiseGloballyIls: checked ? 'true' : 'false',
-                                                                },
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                    />
-                                                    <span className="text-sm font-medium">Advertise Globally via ILS</span>
-                                                </div>
-                                                <div className="pt-4">
-                                                    <button
-                                                        onClick={() => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                useE164AltNum: 'false',
-                                                                e164AltNum: undefined,
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                        className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                                                    >
-                                                        Remove +E.164 Alternate Number
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
+                            {/* +E.164 Alternate Number */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <h2 className="text-lg font-semibold">+E.164 Alternate Number</h2>
+                                    <p className="text-sm text-muted-foreground">Configure +E.164 alternate number settings</p>
+                                </div>
+                                <div className="p-6">
+                                    {currentLine.useE164AltNum === 'true' || currentLine.useE164AltNum === true ? (
+                                        <div className="space-y-6">
                                             <div>
-                                                <button
-                                                    onClick={() => {
+                                                <label className="mb-1 block text-sm font-medium">Number Mask</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full rounded-md border bg-background p-2"
+                                                    value={currentLine.e164AltNum?.numMask || ''}
+                                                    onChange={(e) => {
+                                                        const mask = e.target.value;
                                                         setCurrentLine({
                                                             ...currentLine,
-                                                            useE164AltNum: 'true',
                                                             e164AltNum: {
-                                                                numMask: '',
-                                                                isUrgent: 'false',
-                                                                addLocalRoutePartition: 'false',
-                                                                routePartition: { _: '', uuid: '' },
-                                                                advertiseGloballyIls: 'false',
+                                                                ...currentLine.e164AltNum,
+                                                                numMask: mask,
                                                             },
                                                         });
                                                         setHasChanges(true);
                                                     }}
-                                                    className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                                    placeholder="Enter number mask (e.g., +1234)"
+                                                />
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    Use digits 0-9, X for wildcards, or + for E.164. + must be first character.
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Alternate Number</label>
+                                                <div className="w-full rounded-md border bg-muted p-2 text-sm text-muted-foreground">
+                                                    {(() => {
+                                                        const mask = currentLine.e164AltNum?.numMask || '';
+                                                        const directoryNumber = currentLine.pattern || '1002';
+
+                                                        if (!mask) return directoryNumber;
+
+                                                        // Handle E.164 format (starts with +)
+                                                        if (mask.startsWith('+')) {
+                                                            return mask;
+                                                        }
+
+                                                        // Validate mask format
+                                                        const validMask = /^[0-9X]+$/.test(mask);
+                                                        if (!validMask) {
+                                                            return <span className="font-medium text-red-500">Invalid mask format</span>;
+                                                        }
+
+                                                        // Apply mask to directory number
+                                                        let result = '';
+                                                        const dirNumStr = directoryNumber.toString();
+
+                                                        // Process each character in the mask
+                                                        for (let i = 0; i < mask.length; i++) {
+                                                            const maskChar = mask[i];
+                                                            const dirNumChar = dirNumStr[i];
+
+                                                            if (maskChar === 'X') {
+                                                                // Keep original digit if available
+                                                                result += dirNumChar || '';
+                                                            } else if (maskChar && /[0-9]/.test(maskChar)) {
+                                                                // Use mask digit
+                                                                result += maskChar;
+                                                            }
+                                                        }
+
+                                                        return result || 'Invalid mask';
+                                                    })()}
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Route Partition</label>
+                                                    <AsyncCombobox
+                                                        value={currentLine.e164AltNum?.routePartition?.uuid || ''}
+                                                        onValueChange={(value, selectedOption) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                e164AltNum: {
+                                                                    ...currentLine.e164AltNum,
+                                                                    routePartition: {
+                                                                        _: selectedOption?.label || '',
+                                                                        uuid: value,
+                                                                    },
+                                                                },
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                        placeholder="Search for route partition..."
+                                                        searchPlaceholder="Type to search route partitions..."
+                                                        emptyMessage="No route partitions found."
+                                                        loadingMessage="Searching route partitions..."
+                                                        fetchOptions={async (query: string) => {
+                                                            // Filter cached route partitions
+                                                            return routePartitions
+                                                                .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
+                                                                .map((option) => ({
+                                                                    value: option.uuid,
+                                                                    label: option.name,
+                                                                }));
+                                                        }}
+                                                        displayValue={currentLine.e164AltNum?.routePartition?._ || ''}
+                                                        onMouseEnter={loadRoutePartitions}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center space-x-3">
+                                                    <Switch
+                                                        checked={
+                                                            currentLine.e164AltNum?.isUrgent === 'true' || currentLine.e164AltNum?.isUrgent === true
+                                                        }
+                                                        onCheckedChange={(checked) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                e164AltNum: {
+                                                                    ...currentLine.e164AltNum,
+                                                                    isUrgent: checked ? 'true' : 'false',
+                                                                },
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                    />
+                                                    <span className="text-sm font-medium">Is Urgent</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={
+                                                        currentLine.e164AltNum?.addLocalRoutePartition === 'true' ||
+                                                        currentLine.e164AltNum?.addLocalRoutePartition === true
+                                                    }
+                                                    onCheckedChange={(checked) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            e164AltNum: {
+                                                                ...currentLine.e164AltNum,
+                                                                addLocalRoutePartition: checked ? 'true' : 'false',
+                                                            },
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                />
+                                                <span className="text-sm font-medium">Add to Local Route Partition</span>
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={
+                                                        currentLine.e164AltNum?.advertiseGloballyIls === 'true' ||
+                                                        currentLine.e164AltNum?.advertiseGloballyIls === true
+                                                    }
+                                                    onCheckedChange={(checked) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            e164AltNum: {
+                                                                ...currentLine.e164AltNum,
+                                                                advertiseGloballyIls: checked ? 'true' : 'false',
+                                                            },
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                />
+                                                <span className="text-sm font-medium">Advertise Globally via ILS</span>
+                                            </div>
+                                            <div className="pt-4">
+                                                <button
+                                                    onClick={() => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            useE164AltNum: 'false',
+                                                            e164AltNum: undefined,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                    className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                                 >
-                                                    Add +E.164 Alternate Number
+                                                    Remove +E.164 Alternate Number
                                                 </button>
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        useE164AltNum: 'true',
+                                                        e164AltNum: {
+                                                            numMask: '',
+                                                            isUrgent: 'false',
+                                                            addLocalRoutePartition: 'false',
+                                                            routePartition: { _: '', uuid: '' },
+                                                            advertiseGloballyIls: 'false',
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                            >
+                                                Add +E.164 Alternate Number
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Debug Section - Remove this later */}
-                        <div className="mt-8 overflow-hidden rounded-lg border bg-card shadow">
-                            <div className="border-b p-6">
-                                <h3 className="text-lg font-semibold">Debug Information</h3>
-                                <p className="text-sm text-muted-foreground">Current line and target line configuration data</p>
-                            </div>
-                            <div className="p-6">
-                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                                    <div>
-                                        <h4 className="mb-2 font-medium">Line Data (Global)</h4>
-                                        <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
-                                            {JSON.stringify(currentLine, null, 2)}
-                                        </pre>
-                                    </div>
-                                    <div>
-                                        <h4 className="mb-2 font-medium">Target Line Config (Phone-specific)</h4>
-                                        <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
-                                            {JSON.stringify(targetLineConfig, null, 2)}
-                                        </pre>
+                            {/* Debug Section - Remove this later */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <h3 className="text-lg font-semibold">Debug Information</h3>
+                                    <p className="text-sm text-muted-foreground">Current line and target line configuration data</p>
+                                </div>
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                        <div>
+                                            <h4 className="mb-2 font-medium">Line Data (Global)</h4>
+                                            <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
+                                                {JSON.stringify(currentLine, null, 2)}
+                                            </pre>
+                                        </div>
+                                        <div>
+                                            <h4 className="mb-2 font-medium">Target Line Config (Phone-specific)</h4>
+                                            <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
+                                                {JSON.stringify(targetLineConfig, null, 2)}
+                                            </pre>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
