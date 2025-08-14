@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Exception;
+use SoapFault;
+use App\Services\Axl;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Line extends Model
 {
@@ -23,21 +25,29 @@ class Line extends Model
         return $this->belongsTo(Ucm::class);
     }
 
-    public function phones(): BelongsToMany
+    /**
+     * @throws SoapFault
+     * @throws Exception
+     */
+    public function updateAndSync(array $payload): void
     {
-        return $this->belongsToMany(Phone::class, 'device_line')
-            ->withPivot([
-                'index',
-                'dirn',
-                'display',
-                'display_ascii',
-                'e164_alt_num',
-                'external_phone_number_mask',
-                'max_num_calls',
-                'busy_trigger',
-                'ring_settings',
-            ])
-            ->withTimestamps();
+        $axlApi = new Axl($this->ucm);
+        $axlApi->updateLine($payload);
+
+        $this->sync();
+    }
+
+    /**
+     * @throws SoapFault
+     * @throws Exception
+     */
+    public function sync(): void
+    {
+        $axlApi = new Axl($this->ucm);
+
+        $freshLineData = $axlApi->getLineByUuid($this->uuid);
+
+        $this->update($freshLineData);
     }
 
     /**

@@ -55,6 +55,22 @@ export default function Index({
             },
         },
         {
+            accessorKey: 'callingSearchSpaceName._',
+            header: 'Calling Search Space',
+            cell: ({ row }) => {
+                const css = (row.original as any).callingSearchSpaceName;
+                return typeof css === 'string' ? css : css?._ || '';
+            },
+        },
+        {
+            accessorKey: 'ucm.name',
+            header: 'UCM',
+            cell: ({ row }) => {
+                const ucm = (row.original as any).ucm;
+                return ucm?.name || '';
+            },
+        },
+        {
             id: 'actions',
             header: 'Actions',
             cell: ({ row }) => (
@@ -90,6 +106,8 @@ export default function Index({
                                         { value: 'description', label: 'Description' },
                                         { value: 'model', label: 'Model' },
                                         { value: 'devicePoolName', label: 'Device Pool' },
+                                        { value: 'callingSearchSpaceName._', label: 'Calling Search Space' },
+                                        { value: 'ucm_id', label: 'UCM' },
                                     ]}
                                     initial={filters}
                                     onApply={(payload) => {

@@ -48,9 +48,62 @@ class PhoneController extends Controller
         }
         $logic = strtolower((string)$request->input('logic', 'and')) === 'or' ? 'or' : 'and';
         if (!empty($filters)) {
-            $this->applyFilters($query, $filters, $logic, [
-                'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
-            ]);
+            // Handle calling search space filtering separately since it's a nested field
+            $cssFilters = array_filter($filters, function($filter) {
+                return $filter['field'] === 'callingSearchSpaceName._';
+            });
+
+            $otherFilters = array_filter($filters, function($filter) {
+                return $filter['field'] !== 'callingSearchSpaceName._';
+            });
+
+            // Apply regular filters
+            if (!empty($otherFilters)) {
+                $this->applyFilters($query, array_values($otherFilters), $logic, [
+                    'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
+                ]);
+            }
+
+            // Apply calling search space filters
+            if (!empty($cssFilters)) {
+                foreach ($cssFilters as $filter) {
+                    $operator = strtolower($filter['operator']);
+                    $value = $filter['value'];
+
+                    switch ($operator) {
+                        case 'equals':
+                            $query->where('callingSearchSpaceName._', '=', $value);
+                            break;
+                        case 'not_equals':
+                            $query->where('callingSearchSpaceName._', '!=', $value);
+                            break;
+                        case 'contains':
+                            $like = '%'.str_replace(['%', '_'], ['\%','\_'], (string) $value).'%';
+                            $query->where('callingSearchSpaceName._', 'like', $like);
+                            break;
+                        case 'starts_with':
+                            $like = str_replace(['%', '_'], ['\%','\_'], (string) $value).'%';
+                            $query->where('callingSearchSpaceName._', 'like', $like);
+                            break;
+                        case 'ends_with':
+                            $like = '%'.str_replace(['%', '_'], ['\%','\_'], (string) $value);
+                            $query->where('callingSearchSpaceName._', 'like', $like);
+                            break;
+                        case 'in':
+                            $vals = is_array($value) ? $value : array_filter(array_map('trim', explode(',', (string) $value)));
+                            if (!empty($vals)) {
+                                $query->whereIn('callingSearchSpaceName._', $vals);
+                            }
+                            break;
+                        case 'not_in':
+                            $vals = is_array($value) ? $value : array_filter(array_map('trim', explode(',', (string) $value)));
+                            if (!empty($vals)) {
+                                $query->whereNotIn('callingSearchSpaceName._', $vals);
+                            }
+                            break;
+                    }
+                }
+            }
         }
 
         // TanStack Table server-driven paging/sorting (filters to be added later if needed)
@@ -340,23 +393,13 @@ class PhoneController extends Controller
         $targetLineConfig = $request->input('targetLineConfig');
 
         try {
-            // Step 1: Find the line by UUID
             $line = Line::where('uuid', $lineData['uuid'])->first();
             if (!$line) {
                 return response()->json(['error' => 'Line not found'], 404);
             }
 
-            // Step 2: Send updateLine request to UCM
-            $axlApi = new Axl($phone->ucm);
-            $axlApi->updateLine($lineData);
+            $line->updateAndSync($lineData);
 
-            // Step 3: Get fresh line data from UCM
-            $freshLineData = $axlApi->getLineByUuid($line->uuid);
-
-            // Step 4: Update our local database with fresh UCM data
-            $line->update($freshLineData);
-
-            // Step 5: Return fresh data to update the UI
             return response()->json([
                 'success' => true,
                 'message' => 'Line updated successfully',

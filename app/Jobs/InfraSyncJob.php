@@ -11,7 +11,6 @@ use App\Models\Location;
 use App\Models\AarGroup;
 use App\Models\LineGroup;
 use App\Models\DevicePool;
-use App\Models\ExternalCallControlProfile;
 use App\Models\SipProfile;
 use App\Models\PhoneModel;
 use App\Models\UserLocale;
@@ -36,6 +35,7 @@ use App\Models\PhoneSecurityProfile;
 use App\Models\MediaResourceGroupList;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
+use App\Models\ExternalCallControlProfile;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 
@@ -122,7 +122,7 @@ class InfraSyncJob implements ShouldQueue
             case 'route_partitions':
                 $data = $axlApi->listUcmObjects('listRoutePartition', [
                     'searchCriteria' => ['name' => '%'],
-                    'returnedTags' => ['name' => '', 'uuid' => ''],
+                    'returnedTags' => ['name' => '', 'partitionUsage' => '', 'uuid' => ''],
                 ], 'routePartition');
                 RoutePartition::storeUcmData($data, $this->ucm);
                 $this->ucm->routePartitions()->where('updated_at', '<', $start)->delete();

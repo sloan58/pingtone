@@ -74,6 +74,8 @@ Route::middleware('auth')->prefix('api')->group(function () {
     Route::get('/ucm/{ucm}/options/phone-security-profiles', [InfrastructureOptionsController::class, 'phoneSecurityProfiles']);
     Route::get('/ucm/{ucm}/options/sip-profiles', [InfrastructureOptionsController::class, 'sipProfiles']);
     Route::get('/ucm/{ucm}/options/device-profiles', [InfrastructureOptionsController::class, 'deviceProfiles']);
+    Route::get('/ucm/{ucm}/options/voicemail-profiles', [InfrastructureOptionsController::class, 'voicemailProfiles']);
+    Route::get('/ucm/{ucm}/options/route-partitions', [InfrastructureOptionsController::class, 'routePartitions']);
     Route::get('/ucm/{ucm}/options/extension-mobility-dynamic', [InfrastructureOptionsController::class, 'extensionMobilityDynamic']);
     
     // Line search and details for async select

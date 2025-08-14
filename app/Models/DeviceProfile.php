@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use MongoDB\Laravel\Relations\BelongsTo;
 
-class DeviceProfile extends Model
+class DeviceProfile extends Device
 {
-    protected $guarded = [];
+    /**
+     * Get the device class for this model
+     */
+    protected static function getDeviceClass(): string
+    {
+        return 'Device Profile';
+    }
 
     public function ucm(): BelongsTo
     {

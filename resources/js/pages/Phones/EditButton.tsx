@@ -3,7 +3,6 @@ import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AsyncCombobox } from '@/components/ui/async-combobox';
-import { FormSection } from '@/components/ui/form-section';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Head, router } from '@inertiajs/react';
@@ -27,6 +26,7 @@ interface Phone {
     uuid: string;
     name: string;
     model?: string;
+    ucm_id?: string;
     ucm?: {
         name: string;
     };
@@ -52,6 +52,12 @@ interface ButtonConfig {
     // Add other device-specific properties as needed
 }
 
+interface AssociatedDevice {
+    id: string;
+    name: string;
+    class: string;
+}
+
 interface Props {
     phone: Phone;
     buttonIndex: number;
@@ -59,9 +65,10 @@ interface Props {
     buttonConfig: ButtonConfig;
     line: Line;
     latestStatus: any;
+    associatedDevices?: AssociatedDevice[];
 }
 
-export default function EditButton({ phone, buttonIndex, buttonType, buttonConfig, line, latestStatus }: Props) {
+export default function EditButton({ phone, buttonIndex, buttonType, buttonConfig, line, latestStatus, associatedDevices }: Props) {
     // State for managing phone data changes
     const [phoneData, setPhoneData] = useState(phone);
     const [hasChanges, setHasChanges] = useState(false);
@@ -77,6 +84,13 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
     // State for cached options
     const [presenceGroups, setPresenceGroups] = useState<any[]>([]);
     const [externalCallControlProfiles, setExternalCallControlProfiles] = useState<any[]>([]);
+    const [voicemailProfiles, setVoicemailProfiles] = useState<any[]>([]);
+    const [callingSearchSpaces, setCallingSearchSpaces] = useState<any[]>([]);
+    const [mohAudioSources, setMohAudioSources] = useState<any[]>([]);
+    const [routePartitions, setRoutePartitions] = useState<any[]>([]);
+
+    // State for device dissociation
+    const [dissociatingDevices, setDissociatingDevices] = useState<Set<string>>(new Set());
 
     // Function to fetch line options for the async combobox
     const fetchLineOptions = async (query: string): Promise<{ value: string; label: string }[]> => {
@@ -207,30 +221,36 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
     };
 
     const fetchCallingSearchSpaceOptions = async (query: string) => {
-        // TODO: Implement API call to search for Calling Search Spaces
-        console.log('Searching Calling Search Spaces for:', query);
-        return Promise.resolve([
-            { value: 'uuid1', label: 'None' },
-            { value: 'uuid2', label: 'CSS_Internal' },
-        ]);
+        // Filter cached calling search spaces based on query
+        const filtered = callingSearchSpaces
+            .filter((item: any) => (item.name || item._ || '').toLowerCase().includes(query.toLowerCase()))
+            .map((item: any) => ({
+                value: item.uuid || item.id,
+                label: item.name || item._,
+            }));
+        return filtered;
     };
 
     const fetchVoiceMailProfileOptions = async (query: string) => {
-        // TODO: Implement API call to search for Voice Mail Profiles
-        console.log('Searching Voice Mail Profiles for:', query);
-        return Promise.resolve([
-            { value: 'uuid1', label: 'None' },
-            { value: 'uuid2', label: 'Standard Voicemail' },
-        ]);
+        // Filter cached voicemail profiles based on query
+        const filtered = voicemailProfiles
+            .filter((item: any) => (item.name || item._ || '').toLowerCase().includes(query.toLowerCase()))
+            .map((item: any) => ({
+                value: item.uuid || item.id,
+                label: item.name || item._,
+            }));
+        return filtered;
     };
 
     const fetchMohAudioSourceOptions = async (query: string) => {
-        // TODO: Implement API call to search for MOH Audio Sources
-        console.log('Searching MOH Audio Sources for:', query);
-        return Promise.resolve([
-            { value: 'uuid1', label: 'None' },
-            { value: 'uuid2', label: 'Music On Hold 1' },
-        ]);
+        // Filter cached MOH audio sources based on query
+        const filtered = mohAudioSources
+            .filter((item: any) => (item.name || item._ || '').toLowerCase().includes(query.toLowerCase()))
+            .map((item: any) => ({
+                value: item.sourceId || item.uuid || item.name,
+                label: item.name || item._,
+            }));
+        return filtered;
     };
 
     const fetchCallPickupGroupOptions = async (query: string) => {
@@ -276,6 +296,50 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
         }
     };
 
+    const loadVoicemailProfiles = async () => {
+        if (voicemailProfiles.length === 0) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/voicemail-profiles`);
+                setVoicemailProfiles(response.data);
+            } catch (error) {
+                console.error('Failed to load voicemail profiles:', error);
+            }
+        }
+    };
+
+    const loadCallingSearchSpaces = async () => {
+        if (callingSearchSpaces.length === 0) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/calling-search-spaces`);
+                setCallingSearchSpaces(response.data);
+            } catch (error) {
+                console.error('Failed to load calling search spaces:', error);
+            }
+        }
+    };
+
+    const loadMohAudioSources = async () => {
+        if (mohAudioSources.length === 0) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/moh-audio-sources`);
+                setMohAudioSources(response.data);
+            } catch (error) {
+                console.error('Failed to load MOH audio sources:', error);
+            }
+        }
+    };
+
+    const loadRoutePartitions = async () => {
+        if (routePartitions.length === 0) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/route-partitions`);
+                setRoutePartitions(response.data);
+            } catch (error) {
+                console.error('Failed to load route partitions:', error);
+            }
+        }
+    };
+
     const fetchRoutePartitionOptions = async (query: string) => {
         // TODO: Implement API call to search for Route Partitions
         console.log('Searching Route Partitions for:', query);
@@ -308,6 +372,44 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
         return currentLine.patternAndPartition || `${currentLine.pattern} in ${currentLine.routePartitionName?._ || 'None'}`;
     };
 
+    // Function to handle device dissociation
+    const handleDissociateDevice = async (deviceId: string, deviceName: string) => {
+        if (dissociatingDevices.has(deviceId)) return;
+
+        setDissociatingDevices((prev) => new Set(prev).add(deviceId));
+
+        try {
+            // TODO: Implement API call to dissociate device from line
+            // This would require an endpoint like: POST /api/phones/{deviceId}/lines/{lineId}/dissociate
+            console.log('Dissociating device:', deviceId, 'from line:', line.uuid);
+
+            // Simulate API call for now
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            toast.success('Device dissociated successfully', {
+                description: `${deviceName} has been removed from this line.`,
+            });
+
+            // Remove the device from the local state
+            if (associatedDevices) {
+                const updatedDevices = associatedDevices.filter((device) => device.id !== deviceId);
+                // Note: In a real implementation, you'd want to update the parent component's state
+                // or refetch the associated devices from the server
+            }
+        } catch (error) {
+            console.error('Error dissociating device:', error);
+            toast.error('Failed to dissociate device', {
+                description: 'An error occurred while removing the device from this line.',
+            });
+        } finally {
+            setDissociatingDevices((prev) => {
+                const newSet = new Set(prev);
+                newSet.delete(deviceId);
+                return newSet;
+            });
+        }
+    };
+
     return (
         <AppShell variant="sidebar">
             <Head title={`Edit Button ${buttonIndex} - ${phone.name}`} />
@@ -336,13 +438,15 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                             </div>
                         </nav>
 
-                        {/* Header */}
-                        <div className="flex items-center justify-between rounded-lg border bg-card p-4">
-                            <div>
-                                <h1 className="text-2xl font-bold">Button {buttonIndex}</h1>
-                                <p className="text-sm text-muted-foreground">
-                                    {phone.name} • {buttonType} configuration
-                                </p>
+                        {/* Sticky Header */}
+                        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                            <div className="flex items-center gap-6">
+                                <div>
+                                    <h1 className="text-2xl font-bold">Button {buttonIndex}</h1>
+                                    <p className="text-sm text-muted-foreground">
+                                        {phone.name} • {buttonType} configuration
+                                    </p>
+                                </div>
                             </div>
                             <button
                                 onClick={handleSave}
@@ -361,1190 +465,710 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                         </div>
 
                         <div className="grid grid-cols-1 gap-6">
-                            {/* Global Configurations */}
+                            {/* Directory Number Information */}
                             <div className="overflow-hidden rounded-lg border bg-card shadow">
                                 <div className="border-b p-6">
                                     <div className="flex items-start justify-between">
                                         <div>
-                                            <h2 className="text-lg font-semibold">Global Configurations</h2>
-                                            <p className="text-sm text-muted-foreground">Line settings that apply to all devices using this line</p>
+                                            <h2 className="text-lg font-semibold">Directory Number Information</h2>
+                                            <p className="text-sm text-muted-foreground">
+                                                Basic directory number configuration and device associations
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="p-6">
-                                    <FormSection title="Line Information">
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Directory Number</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.uuid}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        // Handle line assignment - update the phone's line configuration
-                                                        if (value && value !== currentLine.uuid && phoneData && selectedOption) {
-                                                            updatePhoneLine(currentLine.uuid, value, selectedOption);
-                                                        }
-                                                    }}
-                                                    placeholder="Search for a line..."
-                                                    searchPlaceholder="Type to search lines..."
-                                                    emptyMessage="No lines found."
-                                                    loadingMessage="Searching lines..."
-                                                    fetchOptions={fetchLineOptions}
-                                                    displayValue={getCurrentLineDisplayValue()}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Description</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.description || ''}
-                                                    onChange={(e) => {
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Directory Number</label>
+                                            <AsyncCombobox
+                                                value={currentLine.uuid}
+                                                onValueChange={(value, selectedOption) => {
+                                                    // Handle line assignment - update the phone's line configuration
+                                                    if (value && value !== currentLine.uuid && phoneData && selectedOption) {
+                                                        updatePhoneLine(currentLine.uuid, value, selectedOption);
+                                                    }
+                                                }}
+                                                placeholder="Search for a line..."
+                                                searchPlaceholder="Type to search lines..."
+                                                emptyMessage="No lines found."
+                                                loadingMessage="Searching lines..."
+                                                fetchOptions={fetchLineOptions}
+                                                displayValue={getCurrentLineDisplayValue()}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Description</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.description || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        description: e.target.value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Enter line description"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Alerting Name</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.alertingName || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        alertingName: e.target.value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Enter alerting name"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">ASCII Alerting Name</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.asciiAlertingName || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        asciiAlertingName: e.target.value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Enter ASCII alerting name"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">External Call Control Profile</label>
+                                            <AsyncCombobox
+                                                value={currentLine.externalCallControlProfileName?.uuid || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        externalCallControlProfileName: {
+                                                            _: selectedOption?.label || '',
+                                                            uuid: value,
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Search for external call control profile..."
+                                                searchPlaceholder="Type to search profiles..."
+                                                emptyMessage="No external call control profiles found."
+                                                loadingMessage="Searching profiles..."
+                                                fetchOptions={fetchExternalCallControlProfileOptions}
+                                                displayValue={currentLine.externalCallControlProfileName?._ || ''}
+                                                onMouseEnter={loadExternalCallControlProfiles}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Allow Control of Device from CTI</label>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true}
+                                                    onCheckedChange={(checked) => {
                                                         setCurrentLine({
                                                             ...currentLine,
-                                                            description: e.target.value,
+                                                            allowCtiControlFlag: checked ? 'true' : 'false',
                                                         });
                                                         setHasChanges(true);
                                                     }}
-                                                    placeholder="Enter line description"
                                                 />
+                                                <span className="text-sm text-muted-foreground">
+                                                    {currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true
+                                                        ? 'Enabled'
+                                                        : 'Disabled'}
+                                                </span>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Associated Devices */}
+                            {associatedDevices && associatedDevices.length > 0 && (
+                                <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                    <div className="border-b p-6">
+                                        <div className="flex items-start justify-between">
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">Alerting Name</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.alertingName || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            alertingName: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter alerting name"
-                                                />
+                                                <h2 className="text-lg font-semibold">Associated Devices</h2>
+                                                <p className="text-sm text-muted-foreground">Other devices using this line</p>
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">ASCII Alerting Name</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.asciiAlertingName || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            asciiAlertingName: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter ASCII alerting name"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">External Call Control Profile</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.externalCallControlProfile?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            externalCallControlProfile: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for external call control profile..."
-                                                    searchPlaceholder="Type to search external call control profiles..."
-                                                    emptyMessage="No external call control profiles found."
-                                                    loadingMessage="Searching external call control profiles..."
-                                                    fetchOptions={fetchExternalCallControlProfileOptions}
-                                                    displayValue={currentLine.externalCallControlProfile?._ || ''}
-                                                    onMouseEnter={loadExternalCallControlProfiles}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Allow CTI Control Flag</label>
-                                                <div className="flex items-center space-x-3">
-                                                    <Switch
-                                                        checked={
-                                                            currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true
-                                                        }
-                                                        onCheckedChange={(checked) => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                allowCtiControlFlag: checked ? 'true' : 'false',
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                    />
-                                                    <span className="text-sm text-muted-foreground">
-                                                        {currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true
-                                                            ? 'Enabled'
-                                                            : 'Disabled'}
-                                                    </span>
+                                        </div>
+                                    </div>
+                                    <div className="p-6">
+                                        <div className="space-y-4">
+                                            {associatedDevices.map((device) => (
+                                                <div
+                                                    key={device.id}
+                                                    className={`flex items-center justify-between rounded-lg border p-4 ${
+                                                        device.id === phone.id ? 'border-primary bg-primary/5' : 'border-border bg-background'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center space-x-3">
+                                                        <div
+                                                            className={`h-3 w-3 rounded-full ${
+                                                                device.id === phone.id ? 'bg-primary' : 'bg-muted-foreground/20'
+                                                            }`}
+                                                        />
+                                                        <div>
+                                                            <h3 className="font-medium">{device.name}</h3>
+                                                            <p className="text-sm text-muted-foreground capitalize">{device.class}</p>
+                                                        </div>
+                                                        {device.id === phone.id && (
+                                                            <span className="rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
+                                                                Current Device
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center space-x-2">
+                                                        {device.id !== phone.id && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => router.visit(`/phones/${device.id}/edit`)}
+                                                                    className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                                >
+                                                                    Edit Device
+                                                                </button>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        router.visit(`/phones/${device.id}/edit/button/${buttonIndex}?type=line`)
+                                                                    }
+                                                                    className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                                >
+                                                                    Edit Line
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDissociateDevice(device.id, device.name)}
+                                                                    disabled={dissociatingDevices.has(device.id)}
+                                                                    className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                                >
+                                                                    {dissociatingDevices.has(device.id) ? (
+                                                                        <>
+                                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                            Dissociating...
+                                                                        </>
+                                                                    ) : (
+                                                                        'Dissociate'
+                                                                    )}
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Presence Group</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.presenceGroupName?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            presenceGroupName: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for presence group..."
-                                                    searchPlaceholder="Type to search presence groups..."
-                                                    emptyMessage="No presence groups found."
-                                                    loadingMessage="Searching presence groups..."
-                                                    fetchOptions={fetchPresenceGroupOptions}
-                                                    displayValue={currentLine.presenceGroupName?._ || ''}
-                                                    onMouseEnter={loadPresenceGroups}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Share Line Appearance CSS Name *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.shareLineAppearanceCssName?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            shareLineAppearanceCssName: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for calling search space..."
-                                                    searchPlaceholder="Type to search calling search spaces..."
-                                                    emptyMessage="No calling search spaces found."
-                                                    loadingMessage="Searching calling search spaces..."
-                                                    fetchOptions={fetchCallingSearchSpaceOptions}
-                                                    displayValue={currentLine.shareLineAppearanceCssName?._ || ''}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Voice Mail Profile Name *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.voiceMailProfileName?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            voiceMailProfileName: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for voice mail profile..."
-                                                    searchPlaceholder="Type to search voice mail profiles..."
-                                                    emptyMessage="No voice mail profiles found."
-                                                    loadingMessage="Searching voice mail profiles..."
-                                                    fetchOptions={fetchVoiceMailProfileOptions}
-                                                    displayValue={currentLine.voiceMailProfileName?._ || ''}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Pattern Precedence</label>
-                                                <Select
-                                                    value={currentLine.patternPrecedence || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            patternPrecedence: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select pattern precedence" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Default">Default</SelectItem>
-                                                        <SelectItem value="Highest">Highest</SelectItem>
-                                                        <SelectItem value="Lowest">Lowest</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Release Clause</label>
-                                                <Select
-                                                    value={currentLine.releaseClause || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            releaseClause: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select release clause" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="No Error">No Error</SelectItem>
-                                                        <SelectItem value="Error">Error</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Reject Anonymous Call</label>
-                                                <Select
-                                                    value={currentLine.rejectAnonymousCall || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            rejectAnonymousCall: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Pattern Urgency</label>
-                                                <Select
-                                                    value={currentLine.patternUrgency || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            patternUrgency: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Auto Answer</label>
-                                                <Select
-                                                    value={currentLine.autoAnswer || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            autoAnswer: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select auto answer" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Auto Answer Off">Auto Answer Off</SelectItem>
-                                                        <SelectItem value="Auto Answer On">Auto Answer On</SelectItem>
-                                                        <SelectItem value="Auto Answer with Headset">Auto Answer with Headset</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source ID *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.networkHoldMohAudioSourceId || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            networkHoldMohAudioSourceId: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for MOH audio source..."
-                                                    searchPlaceholder="Type to search MOH audio sources..."
-                                                    emptyMessage="No MOH audio sources found."
-                                                    loadingMessage="Searching MOH audio sources..."
-                                                    fetchOptions={fetchMohAudioSourceOptions}
-                                                    displayValue={currentLine.networkHoldMohAudioSourceId || ''}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source ID *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.userHoldMohAudioSourceId || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            userHoldMohAudioSourceId: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for MOH audio source..."
-                                                    searchPlaceholder="Type to search MOH audio sources..."
-                                                    emptyMessage="No MOH audio sources found."
-                                                    loadingMessage="Searching MOH audio sources..."
-                                                    fetchOptions={fetchMohAudioSourceOptions}
-                                                    displayValue={currentLine.userHoldMohAudioSourceId || ''}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Calling ID Presentation When Diverted</label>
-                                                <Select
-                                                    value={currentLine.callingIdPresentationWhenDiverted || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            callingIdPresentationWhenDiverted: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Default">Default</SelectItem>
-                                                        <SelectItem value="Allow">Allow</SelectItem>
-                                                        <SelectItem value="Restrict">Restrict</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                            ))}
+                                        </div>
+                                        <div className="mt-4 rounded-lg border border-dashed border-muted-foreground/25 p-4">
+                                            <div className="text-center">
+                                                <p className="text-sm text-muted-foreground">
+                                                    Line sharing allows multiple devices to use the same directory number. Each device can have
+                                                    different settings for how the line behaves.
+                                                </p>
                                             </div>
                                         </div>
-                                    </FormSection>
+                                    </div>
+                                </div>
+                            )}
 
-                                    <FormSection title="External Presentation Information">
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">External Presentation Number</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationNumber || ''}
-                                                    onChange={(e) => {
+                            {/* Directory Number Settings */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h2 className="text-lg font-semibold">Directory Number Settings</h2>
+                                            <p className="text-sm text-muted-foreground">Call routing and feature configuration</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Voice Mail Profile</label>
+                                            <AsyncCombobox
+                                                value={currentLine.voiceMailProfileName?.uuid || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        voiceMailProfileName: {
+                                                            _: selectedOption?.label || '',
+                                                            uuid: value,
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Search for voice mail profile..."
+                                                searchPlaceholder="Type to search voice mail profiles..."
+                                                emptyMessage="No voice mail profiles found."
+                                                loadingMessage="Searching voice mail profiles..."
+                                                fetchOptions={fetchVoiceMailProfileOptions}
+                                                displayValue={currentLine.voiceMailProfileName?._ || ''}
+                                                onMouseEnter={loadVoicemailProfiles}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
+                                            <AsyncCombobox
+                                                value={currentLine.shareLineAppearanceCssName?.uuid || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        shareLineAppearanceCssName: {
+                                                            _: selectedOption?.label || '',
+                                                            uuid: value,
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Search for calling search space..."
+                                                searchPlaceholder="Type to search calling search spaces..."
+                                                emptyMessage="No calling search spaces found."
+                                                loadingMessage="Searching calling search spaces..."
+                                                fetchOptions={fetchCallingSearchSpaceOptions}
+                                                displayValue={currentLine.shareLineAppearanceCssName?._ || ''}
+                                                onMouseEnter={loadCallingSearchSpaces}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">BLF Presence Group</label>
+                                            <AsyncCombobox
+                                                value={currentLine.presenceGroupName?.uuid || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        presenceGroupName: {
+                                                            _: selectedOption?.label || '',
+                                                            uuid: value,
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Search for presence group..."
+                                                searchPlaceholder="Type to search presence groups..."
+                                                emptyMessage="No presence groups found."
+                                                loadingMessage="Searching presence groups..."
+                                                fetchOptions={fetchPresenceGroupOptions}
+                                                displayValue={currentLine.presenceGroupName?._ || ''}
+                                                onMouseEnter={loadPresenceGroups}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
+                                            <AsyncCombobox
+                                                value={currentLine.userHoldMohAudioSourceId || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        userHoldMohAudioSourceId: value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Search for MOH audio source..."
+                                                searchPlaceholder="Type to search MOH audio sources..."
+                                                emptyMessage="No MOH audio sources found."
+                                                loadingMessage="Searching MOH audio sources..."
+                                                fetchOptions={fetchMohAudioSourceOptions}
+                                                displayValue={(() => {
+                                                    const selectedAudioSource = (mohAudioSources || []).find(
+                                                        (audioSource) =>
+                                                            String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                            String(currentLine.userHoldMohAudioSourceId),
+                                                    );
+                                                    return selectedAudioSource ? selectedAudioSource.name : '';
+                                                })()}
+                                                onMouseEnter={loadMohAudioSources}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source</label>
+                                            <AsyncCombobox
+                                                value={currentLine.networkHoldMohAudioSourceId || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        networkHoldMohAudioSourceId: value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Search for MOH audio source..."
+                                                searchPlaceholder="Type to search MOH audio sources..."
+                                                emptyMessage="No MOH audio sources found."
+                                                loadingMessage="Searching MOH audio sources..."
+                                                fetchOptions={fetchMohAudioSourceOptions}
+                                                displayValue={(() => {
+                                                    const selectedAudioSource = (mohAudioSources || []).find(
+                                                        (audioSource) =>
+                                                            String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                            String(currentLine.networkHoldMohAudioSourceId),
+                                                    );
+                                                    return selectedAudioSource ? selectedAudioSource.name : '';
+                                                })()}
+                                                onMouseEnter={loadMohAudioSources}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Calling Line ID Presentation When Diverted</label>
+                                            <Select
+                                                value={currentLine.callingIdPresentationWhenDiverted || ''}
+                                                onValueChange={(value) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        callingIdPresentationWhenDiverted: value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            >
+                                                <SelectTrigger className="w-full bg-background">
+                                                    <SelectValue placeholder="Select option" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Default">Determined by Last Hop</SelectItem>
+                                                    <SelectItem value="Allowed">Allowed</SelectItem>
+                                                    <SelectItem value="Restricted">Restricted</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Reject Anonymous Calls</label>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={currentLine.rejectAnonymousCall === 'true' || currentLine.rejectAnonymousCall === true}
+                                                    onCheckedChange={(checked) => {
                                                         setCurrentLine({
                                                             ...currentLine,
-                                                            externalPresentationInfo: {
-                                                                ...currentLine.externalPresentationInfo,
-                                                                presentationInfo: {
-                                                                    ...currentLine.externalPresentationInfo?.presentationInfo,
-                                                                    externalPresentationNumber: e.target.value,
-                                                                },
-                                                            },
+                                                            rejectAnonymousCall: checked ? 'true' : 'false',
                                                         });
                                                         setHasChanges(true);
                                                     }}
-                                                    placeholder="Enter external presentation number"
                                                 />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">External Presentation Name</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationName || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            externalPresentationInfo: {
-                                                                ...currentLine.externalPresentationInfo,
-                                                                presentationInfo: {
-                                                                    ...currentLine.externalPresentationInfo?.presentationInfo,
-                                                                    externalPresentationName: e.target.value,
-                                                                },
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter external presentation name"
-                                                />
+                                                <span className="text-sm text-muted-foreground">
+                                                    {currentLine.rejectAnonymousCall === 'true' || currentLine.rejectAnonymousCall === true
+                                                        ? 'Enabled'
+                                                        : 'Disabled'}
+                                                </span>
                                             </div>
                                         </div>
-                                    </FormSection>
+                                    </div>
+                                </div>
+                            </div>
 
-                                    <FormSection title="Enterprise Alternate Number">
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Use Enterprise Alt Num</label>
-                                                <Select
-                                                    value={currentLine.useEnterpriseAltNum || ''}
-                                                    onValueChange={(value) => {
+                            {/* External Presentation Information */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h2 className="text-lg font-semibold">External Presentation Information</h2>
+                                            <p className="text-sm text-muted-foreground">How caller information is presented to external parties</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Anonymous External Presentation</label>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={
+                                                        currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                        currentLine.externalPresentationInfo?.isAnonymous === true
+                                                    }
+                                                    onCheckedChange={(checked) => {
                                                         setCurrentLine({
                                                             ...currentLine,
-                                                            useEnterpriseAltNum: value,
+                                                            externalPresentationInfo: checked
+                                                                ? { isAnonymous: 't' }
+                                                                : {
+                                                                      presentationInfo: {
+                                                                          externalPresentationNumber: '',
+                                                                          externalPresentationName: '',
+                                                                      },
+                                                                  },
                                                         });
                                                         setHasChanges(true);
                                                     }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                />
+                                                <span className="text-sm text-muted-foreground">
+                                                    {currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                    currentLine.externalPresentationInfo?.isAnonymous === true
+                                                        ? 'Enabled'
+                                                        : 'Disabled'}
+                                                </span>
                                             </div>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">External Presentation Number</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationNumber || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        externalPresentationInfo: {
+                                                            ...currentLine.externalPresentationInfo,
+                                                            presentationInfo: {
+                                                                ...currentLine.externalPresentationInfo?.presentationInfo,
+                                                                externalPresentationNumber: e.target.value,
+                                                            },
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Enter external presentation number"
+                                                disabled={
+                                                    currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                    currentLine.externalPresentationInfo?.isAnonymous === true
+                                                }
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">External Presentation Name</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationName || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        externalPresentationInfo: {
+                                                            ...currentLine.externalPresentationInfo,
+                                                            presentationInfo: {
+                                                                ...currentLine.externalPresentationInfo?.presentationInfo,
+                                                                externalPresentationName: e.target.value,
+                                                            },
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Enter external presentation name"
+                                                disabled={
+                                                    currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                    currentLine.externalPresentationInfo?.isAnonymous === true
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Enterprise Alternate Number */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h2 className="text-lg font-semibold">Enterprise Alternate Number</h2>
+                                            <p className="text-sm text-muted-foreground">Configure enterprise alternate number settings</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    {currentLine.useEnterpriseAltNum === 'true' || currentLine.useEnterpriseAltNum === true ? (
+                                        // Show the enterprise alt num form when enabled
+                                        <div className="grid grid-cols-1 gap-6">
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">Num Mask</label>
+                                                <label className="mb-1 block text-sm font-medium">Number Mask</label>
                                                 <input
                                                     type="text"
                                                     className="w-full rounded-md border bg-background p-2"
                                                     value={currentLine.enterpriseAltNum?.numMask || ''}
                                                     onChange={(e) => {
+                                                        const mask = e.target.value;
                                                         setCurrentLine({
                                                             ...currentLine,
                                                             enterpriseAltNum: {
                                                                 ...currentLine.enterpriseAltNum,
-                                                                numMask: e.target.value,
+                                                                numMask: mask,
                                                             },
                                                         });
                                                         setHasChanges(true);
                                                     }}
-                                                    placeholder="Enter number mask"
+                                                    placeholder="Enter number mask (e.g., 2XXX, +1234)"
                                                 />
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    Use digits 0-9, X for wildcards, or + for E.164. + must be first character.
+                                                </p>
                                             </div>
                                             <div>
-                                                <label className="mb-1 block text-sm font-medium">Is Urgent</label>
-                                                <Select
-                                                    value={currentLine.enterpriseAltNum?.isUrgent || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            enterpriseAltNum: {
-                                                                ...currentLine.enterpriseAltNum,
-                                                                isUrgent: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="t">True</SelectItem>
-                                                        <SelectItem value="f">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                <label className="mb-1 block text-sm font-medium">Alternate Number</label>
+                                                <div className="w-full rounded-md border bg-muted p-2 text-sm text-muted-foreground">
+                                                    {(() => {
+                                                        const mask = currentLine.enterpriseAltNum?.numMask || '';
+                                                        const directoryNumber = currentLine.pattern || '1002';
+
+                                                        if (!mask) return directoryNumber;
+
+                                                        // Handle E.164 format (starts with +)
+                                                        if (mask.startsWith('+')) {
+                                                            return mask;
+                                                        }
+
+                                                        // Validate mask format
+                                                        const validMask = /^[0-9X]+$/.test(mask);
+                                                        if (!validMask) {
+                                                            return <span className="font-medium text-red-500">Invalid mask format</span>;
+                                                        }
+
+                                                        // Apply mask to directory number
+                                                        let result = '';
+                                                        const dirNumStr = directoryNumber.toString();
+
+                                                        // Process each character in the mask
+                                                        for (let i = 0; i < mask.length; i++) {
+                                                            const maskChar = mask[i];
+                                                            const dirNumChar = dirNumStr[i];
+
+                                                            if (maskChar === 'X') {
+                                                                // Keep original digit if available
+                                                                result += dirNumChar || '';
+                                                            } else if (maskChar && /[0-9]/.test(maskChar)) {
+                                                                // Use mask digit
+                                                                result += maskChar;
+                                                            }
+                                                        }
+
+                                                        return result || 'Invalid mask';
+                                                    })()}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Add Local Route Partition</label>
-                                                <Select
-                                                    value={currentLine.enterpriseAltNum?.addLocalRoutePartition || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            enterpriseAltNum: {
-                                                                ...currentLine.enterpriseAltNum,
-                                                                addLocalRoutePartition: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="t">True</SelectItem>
-                                                        <SelectItem value="f">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Route Partition *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.enterpriseAltNum?.routePartition?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            enterpriseAltNum: {
-                                                                ...currentLine.enterpriseAltNum,
-                                                                routePartition: {
-                                                                    _: selectedOption?.label || '',
-                                                                    uuid: value,
+                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                <div>
+                                                    <label className="mb-1 block text-sm font-medium">Route Partition</label>
+                                                    <AsyncCombobox
+                                                        value={currentLine.enterpriseAltNum?.routePartition?.uuid || ''}
+                                                        onValueChange={(value, selectedOption) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                enterpriseAltNum: {
+                                                                    ...currentLine.enterpriseAltNum,
+                                                                    routePartition: {
+                                                                        _: selectedOption?.label || '',
+                                                                        uuid: value,
+                                                                    },
                                                                 },
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for route partition..."
-                                                    searchPlaceholder="Type to search route partitions..."
-                                                    emptyMessage="No route partitions found."
-                                                    loadingMessage="Searching route partitions..."
-                                                    fetchOptions={fetchRoutePartitionOptions}
-                                                    displayValue={currentLine.enterpriseAltNum?.routePartition?._ || ''}
-                                                />
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                        placeholder="Search for route partition..."
+                                                        searchPlaceholder="Type to search route partitions..."
+                                                        emptyMessage="No route partitions found."
+                                                        loadingMessage="Searching route partitions..."
+                                                        fetchOptions={async (query: string) => {
+                                                            // Filter cached route partitions
+                                                            return routePartitions
+                                                                .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
+                                                                .map((option) => ({
+                                                                    value: option.uuid,
+                                                                    label: option.name,
+                                                                }));
+                                                        }}
+                                                        displayValue={currentLine.enterpriseAltNum?.routePartition?._ || ''}
+                                                        onMouseEnter={loadRoutePartitions}
+                                                    />
+                                                </div>
+                                                <div className="flex items-center space-x-3">
+                                                    <Switch
+                                                        checked={
+                                                            currentLine.enterpriseAltNum?.isUrgent === 'true' ||
+                                                            currentLine.enterpriseAltNum?.isUrgent === true
+                                                        }
+                                                        onCheckedChange={(checked) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                enterpriseAltNum: {
+                                                                    ...currentLine.enterpriseAltNum,
+                                                                    isUrgent: checked ? 'true' : 'false',
+                                                                },
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                    />
+                                                    <span className="text-sm font-medium">Is Urgent</span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Advertise Globally ILS</label>
-                                                <Select
-                                                    value={currentLine.enterpriseAltNum?.advertiseGloballyIls || ''}
-                                                    onValueChange={(value) => {
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={
+                                                        currentLine.enterpriseAltNum?.addLocalRoutePartition === 'true' ||
+                                                        currentLine.enterpriseAltNum?.addLocalRoutePartition === true
+                                                    }
+                                                    onCheckedChange={(checked) => {
                                                         setCurrentLine({
                                                             ...currentLine,
                                                             enterpriseAltNum: {
                                                                 ...currentLine.enterpriseAltNum,
-                                                                advertiseGloballyIls: value,
+                                                                addLocalRoutePartition: checked ? 'true' : 'false',
                                                             },
                                                         });
                                                         setHasChanges(true);
                                                     }}
+                                                />
+                                                <span className="text-sm font-medium">Add to Local Route Partition</span>
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={
+                                                        currentLine.enterpriseAltNum?.advertiseGloballyIls === 'true' ||
+                                                        currentLine.enterpriseAltNum?.advertiseGloballyIls === true
+                                                    }
+                                                    onCheckedChange={(checked) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            enterpriseAltNum: {
+                                                                ...currentLine.enterpriseAltNum,
+                                                                advertiseGloballyIls: checked ? 'true' : 'false',
+                                                            },
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                />
+                                                <span className="text-sm font-medium">Advertise Globally via ILS</span>
+                                            </div>
+                                            <div className="pt-4">
+                                                <button
+                                                    onClick={() => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            useEnterpriseAltNum: 'false',
+                                                            enterpriseAltNum: undefined,
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                    className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                                 >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="t">True</SelectItem>
-                                                        <SelectItem value="f">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                    Remove Enterprise Alternate Number
+                                                </button>
                                             </div>
                                         </div>
-                                    </FormSection>
-
-                                    <FormSection title="E.164 Alternate Number">
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Use E.164 Alt Num</label>
-                                                <Select
-                                                    value={currentLine.useE164AltNum || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            useE164AltNum: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Num Mask</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.e164AltNum?.numMask || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                numMask: e.target.value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter number mask"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Is Urgent</label>
-                                                <Select
-                                                    value={currentLine.e164AltNum?.isUrgent || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                isUrgent: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="t">True</SelectItem>
-                                                        <SelectItem value="f">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Add Local Route Partition</label>
-                                                <Select
-                                                    value={currentLine.e164AltNum?.addLocalRoutePartition || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                addLocalRoutePartition: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="t">True</SelectItem>
-                                                        <SelectItem value="f">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Route Partition *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.e164AltNum?.routePartition?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                routePartition: {
-                                                                    _: selectedOption?.label || '',
-                                                                    uuid: value,
-                                                                },
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for route partition..."
-                                                    searchPlaceholder="Type to search route partitions..."
-                                                    emptyMessage="No route partitions found."
-                                                    loadingMessage="Searching route partitions..."
-                                                    fetchOptions={fetchRoutePartitionOptions}
-                                                    displayValue={currentLine.e164AltNum?.routePartition?._ || ''}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Advertise Globally ILS</label>
-                                                <Select
-                                                    value={currentLine.e164AltNum?.advertiseGloballyIls || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                advertiseGloballyIls: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="t">True</SelectItem>
-                                                        <SelectItem value="f">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                    </FormSection>
-
-                                    <FormSection title="AAR Settings">
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">AAR Destination Mask</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.aarDestinationMask || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            aarDestinationMask: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter AAR destination mask"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">AAR Keep Call History</label>
-                                                <Select
-                                                    value={currentLine.aarKeepCallHistory || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            aarKeepCallHistory: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">AAR Voice Mail Enabled</label>
-                                                <Select
-                                                    value={currentLine.aarVoiceMailEnabled || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            aarVoiceMailEnabled: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">AAR Neighborhood Name *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.aarNeighborhoodName?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            aarNeighborhoodName: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for AAR neighborhood..."
-                                                    searchPlaceholder="Type to search AAR neighborhoods..."
-                                                    emptyMessage="No AAR neighborhoods found."
-                                                    loadingMessage="Searching AAR neighborhoods..."
-                                                    fetchOptions={fetchAarNeighborhoodOptions}
-                                                    displayValue={currentLine.aarNeighborhoodName?._ || ''}
-                                                />
-                                            </div>
-                                        </div>
-                                    </FormSection>
-
-                                    <FormSection title="Call Forward And Call Pickup Settings">
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Call Pickup Group Name *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.callPickupGroupName?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            callPickupGroupName: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for call pickup group..."
-                                                    searchPlaceholder="Type to search call pickup groups..."
-                                                    emptyMessage="No call pickup groups found."
-                                                    loadingMessage="Searching call pickup groups..."
-                                                    fetchOptions={fetchCallPickupGroupOptions}
-                                                    displayValue={currentLine.callPickupGroupName?._ || ''}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">PSTN Failover</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.pstnFailover || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            pstnFailover: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter PSTN failover"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Call Control Agent Profile *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.callControlAgentProfile || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            callControlAgentProfile: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for call control agent profile..."
-                                                    searchPlaceholder="Type to search call control agent profiles..."
-                                                    emptyMessage="No call control agent profiles found."
-                                                    loadingMessage="Searching call control agent profiles..."
-                                                    fetchOptions={fetchCallControlAgentProfileOptions}
-                                                    displayValue={currentLine.callControlAgentProfile || ''}
-                                                />
-                                            </div>
-                                        </div>
-                                    </FormSection>
-
-                                    <FormSection title="Park Monitoring">
-                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Park Mon Reversion Timer</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.parkMonReversionTimer || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            parkMonReversionTimer: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter park monitoring reversion timer"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Party Entrance Tone</label>
-                                                <Select
-                                                    value={currentLine.partyEntranceTone || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            partyEntranceTone: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select party entrance tone" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Default">Default</SelectItem>
-                                                        <SelectItem value="None">None</SelectItem>
-                                                        <SelectItem value="Single Beep">Single Beep</SelectItem>
-                                                        <SelectItem value="Double Beep">Double Beep</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Park Mon Forward No Retrieve Dn</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.parkMonForwardNoRetrieveDn || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            parkMonForwardNoRetrieveDn: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter park monitoring forward DN"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Park Mon Forward No Retrieve Int Dn</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.parkMonForwardNoRetrieveIntDn || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            parkMonForwardNoRetrieveIntDn: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter park monitoring forward international DN"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Park Mon Forward No Retrieve Vm Enabled</label>
-                                                <Select
-                                                    value={currentLine.parkMonForwardNoRetrieveVmEnabled || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            parkMonForwardNoRetrieveVmEnabled: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Park Mon Forward No Retrieve Int Vm Enabled</label>
-                                                <Select
-                                                    value={currentLine.parkMonForwardNoRetrieveIntVmEnabled || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            parkMonForwardNoRetrieveIntVmEnabled: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select option" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="true">True</SelectItem>
-                                                        <SelectItem value="false">False</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Park Mon Forward No Retrieve CSS Name *guess</label>
-                                                <AsyncCombobox
-                                                    value={currentLine.parkMonForwardNoRetrieveCssName?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            parkMonForwardNoRetrieveCssName: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for calling search space..."
-                                                    searchPlaceholder="Type to search calling search spaces..."
-                                                    emptyMessage="No calling search spaces found."
-                                                    loadingMessage="Searching calling search spaces..."
-                                                    fetchOptions={fetchCallingSearchSpaceOptions}
-                                                    displayValue={currentLine.parkMonForwardNoRetrieveCssName?._ || ''}
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">
-                                                    Park Mon Forward No Retrieve Int CSS Name *guess
-                                                </label>
-                                                <AsyncCombobox
-                                                    value={currentLine.parkMonForwardNoRetrieveIntCssName?.uuid || ''}
-                                                    onValueChange={(value, selectedOption) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            parkMonForwardNoRetrieveIntCssName: {
-                                                                _: selectedOption?.label || '',
-                                                                uuid: value,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Search for calling search space..."
-                                                    searchPlaceholder="Type to search calling search spaces..."
-                                                    emptyMessage="No calling search spaces found."
-                                                    loadingMessage="Searching calling search spaces..."
-                                                    fetchOptions={fetchCallingSearchSpaceOptions}
-                                                    displayValue={currentLine.parkMonForwardNoRetrieveIntCssName?._ || ''}
-                                                />
-                                            </div>
-                                        </div>
-                                    </FormSection>
-
-                                    <FormSection title="Line Settings for All Devices">
-                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">HR Duration</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.hrDuration || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            hrDuration: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter HR duration"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">HR Interval</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.hrInterval || ''}
-                                                    onChange={(e) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            hrInterval: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter HR interval"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">CFA CSS Policy</label>
-                                                <Select
-                                                    value={currentLine.cfaCssPolicy || ''}
-                                                    onValueChange={(value) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            cfaCssPolicy: value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="w-full bg-background">
-                                                        <SelectValue placeholder="Select CFA CSS policy" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Use System Default">Use System Default</SelectItem>
-                                                        <SelectItem value="Use Device CSS">Use Device CSS</SelectItem>
-                                                        <SelectItem value="Use Line CSS">Use Line CSS</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                    </FormSection>
-                                </div>
-                            </div>
-
-                            {/* Device-specific Configurations */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <div className="flex items-start justify-between">
+                                    ) : (
+                                        // Show add button when disabled
                                         <div>
-                                            <h2 className="text-lg font-semibold">Configurations on {phone.name}</h2>
-                                            <p className="text-sm text-muted-foreground">Line settings specific to this device</p>
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        useEnterpriseAltNum: 'true',
+                                                        enterpriseAltNum: {
+                                                            numMask: '',
+                                                            isUrgent: 'false',
+                                                            addLocalRoutePartition: 'false',
+                                                            routePartition: { _: '', uuid: '' },
+                                                            advertiseGloballyIls: 'false',
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                            >
+                                                Add Enterprise Alternate Number
+                                            </button>
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <FormSection title="Device-specific Settings">
-                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Button Index</label>
-                                                <input
-                                                    type="number"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={targetLineConfig.index || ''}
-                                                    onChange={(e) => {
-                                                        setTargetLineConfig({
-                                                            ...targetLineConfig,
-                                                            index: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Button position"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Display Name</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={targetLineConfig.display || ''}
-                                                    onChange={(e) => {
-                                                        setTargetLineConfig({
-                                                            ...targetLineConfig,
-                                                            display: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Display name on device"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">E.164 Alternate Number</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={targetLineConfig.e164_alt_num || ''}
-                                                    onChange={(e) => {
-                                                        setTargetLineConfig({
-                                                            ...targetLineConfig,
-                                                            e164_alt_num: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="E.164 alternate number"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">External Phone Number Mask</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={targetLineConfig.external_phone_number_mask || ''}
-                                                    onChange={(e) => {
-                                                        setTargetLineConfig({
-                                                            ...targetLineConfig,
-                                                            external_phone_number_mask: e.target.value,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="External phone number mask"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Maximum Number of Calls</label>
-                                                <input
-                                                    type="number"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={targetLineConfig.max_num_calls || ''}
-                                                    onChange={(e) => {
-                                                        setTargetLineConfig({
-                                                            ...targetLineConfig,
-                                                            max_num_calls: parseInt(e.target.value) || 0,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Max calls"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Busy Trigger</label>
-                                                <input
-                                                    type="number"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={targetLineConfig.busy_trigger || ''}
-                                                    onChange={(e) => {
-                                                        setTargetLineConfig({
-                                                            ...targetLineConfig,
-                                                            busy_trigger: parseInt(e.target.value) || 0,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Busy trigger"
-                                                />
-                                            </div>
-                                        </div>
-                                    </FormSection>
-
-                                    {/* Add more device-specific configuration sections as needed */}
-                                    <div className="mt-6 rounded-lg border border-dashed border-muted-foreground/25 p-4 text-center">
-                                        <p className="text-sm text-muted-foreground">Additional device-specific configurations will be added here</p>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

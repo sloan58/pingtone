@@ -30,6 +30,9 @@ export interface Phone {
     protocol: string;
     location_name?: string;
     calling_search_space_name?: string;
+    callingSearchSpaceName?: {
+        _?: string;
+    };
     subscribe_calling_search_space_name?: string;
     device_pool_name?: string;
     sip_profile_name?: string;

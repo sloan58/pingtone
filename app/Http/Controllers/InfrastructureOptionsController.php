@@ -25,6 +25,8 @@ use App\Models\PhoneSecurityProfile;
 use App\Models\SipProfile;
 use App\Models\DeviceProfile;
 use App\Models\ExternalCallControlProfile;
+use App\Models\VoicemailProfile;
+use App\Models\RoutePartition;
 
 class InfrastructureOptionsController extends Controller
 {
@@ -387,6 +389,22 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
+    public function voicemailProfiles(Ucm $ucm): JsonResponse
+    {
+        $options = VoicemailProfile::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
     public function extensionMobilityDynamic(Ucm $ucm, Request $request): JsonResponse
     {
         $phoneId = $request->get('phoneId');
@@ -412,6 +430,23 @@ class InfrastructureOptionsController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    public function routePartitions(Ucm $ucm): JsonResponse
+    {
+        $options = RoutePartition::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->where('partitionUsage', 'General')
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
     }
 }
 

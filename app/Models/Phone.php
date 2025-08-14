@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Log;
 use MongoDB\Laravel\Relations\HasMany;
+use MongoDB\Laravel\Relations\BelongsTo;
 
 class Phone extends Device
 {
@@ -29,6 +30,31 @@ class Phone extends Device
     public function screenCaptures(): HasMany
     {
         return $this->hasMany(PhoneScreenCapture::class, 'phone_id', '_id');
+    }
+
+    /**
+     * Get the calling search space for this phone.
+     */
+    public function callingSearchSpace(): BelongsTo
+    {
+        return $this->belongsTo(CallingSearchSpace::class, 'callingSearchSpaceName._', 'name')
+            ->where('ucm_id', $this->ucm_id);
+    }
+
+    /**
+     * Get the calling search space name.
+     */
+    public function getCallingSearchSpaceNameAttribute(): ?string
+    {
+        return $this->callingSearchSpaceName['_'] ?? null;
+    }
+
+    /**
+     * Get the calling search space name for filtering (computed field).
+     */
+    public function getCallingSearchSpaceNameFilterAttribute(): ?string
+    {
+        return $this->callingSearchSpaceName['_'] ?? null;
     }
 
     /**

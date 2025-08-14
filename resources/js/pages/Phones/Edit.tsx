@@ -12,6 +12,7 @@ import { FormSection } from '@/components/ui/form-section';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { ChevronRight, Phone, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -737,6 +738,22 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
                 <AppHeader />
                 <AppContent variant="sidebar" className="p-0">
                     <div className="space-y-4 p-6">
+                        {/* Breadcrumbs */}
+                        <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+                            <button
+                                onClick={() => router.visit('/phones')}
+                                className="flex items-center space-x-1 transition-colors hover:text-foreground"
+                            >
+                                <Phone className="h-4 w-4" />
+                                <span>Phones</span>
+                            </button>
+                            <ChevronRight className="h-4 w-4" />
+                            <div className="flex items-center space-x-1 text-foreground">
+                                <Settings className="h-4 w-4" />
+                                <span>{data.name || data.id}</span>
+                            </div>
+                        </nav>
+
                         {/* Consolidated Header with Tabs */}
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                             <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
