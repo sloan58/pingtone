@@ -280,12 +280,6 @@ class PhoneController extends Controller
     {
         $phone->load('ucm');
 
-        // Get the latest RisPort status for this phone
-        $latestStatus = PhoneStatus::where('phone_name', $phone->name)
-            ->where('ucm_id', $phone->ucm_id)
-            ->orderBy('timestamp', 'desc')
-            ->first() ?? [];
-
         // Get the button configuration
         $buttonConfig = null;
         if (isset($phone->lines['line'])) {
@@ -299,12 +293,18 @@ class PhoneController extends Controller
 
         // Get the line details based on the button type
         $line = null;
+        $associatedDevices = null;
         $type = $request->query('type', 'line');
 
         switch ($type) {
             case 'line':
                 if (isset($buttonConfig['dirn']['uuid'])) {
                     $line = Line::where('uuid', $buttonConfig['dirn']['uuid'])->first();
+                    $associatedDevices = Phone::withoutGlobalScope("device_class")
+                        ->where('ucm_id', $line->ucm_id)
+                        ->where('lines.line.dirn.uuid', $line->uuid)
+                        ->select(['id', 'name', 'class'])
+                    ->get()->toArray();
                 }
                 break;
             // Add other button types here as needed (speed dial, etc.)
@@ -316,13 +316,13 @@ class PhoneController extends Controller
             abort(404, 'Line not found');
         }
 
-        return Inertia::render('Phones/EditButton', [
+            return Inertia::render('Phones/EditButton', [
             'phone' => $phone,
             'buttonIndex' => $buttonIndex,
             'buttonType' => $type,
             'buttonConfig' => $buttonConfig,
             'line' => $line->append('patternAndPartition'),
-            'latestStatus' => $latestStatus,
+            'associatedDevices' => $associatedDevices,
         ]);
     }
 

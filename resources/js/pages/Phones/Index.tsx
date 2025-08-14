@@ -6,7 +6,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { DataTable } from '@/components/data-table';
 import { Phone } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import * as React from 'react';
 
 interface Props {
@@ -23,12 +23,16 @@ export default function Index({
     phones,
     tableState,
     filters,
-}: Props & { tableState?: { sort: string; perPage: number }; filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' } }) {
+}: Props & {
+    tableState?: { sort: string; perPage: number; columnVisibility?: VisibilityState };
+    filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' };
+}) {
     const [sorting, setSorting] = React.useState(() => {
         const [id, dir] = (tableState?.sort ?? 'name:asc').split(':');
         return [{ id, desc: dir === 'desc' }];
     });
     const [perPage, setPerPage] = React.useState<number>(tableState?.perPage ?? phones.per_page ?? 20);
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(tableState?.columnVisibility ?? {});
 
     const columns: ColumnDef<Phone & any>[] = [
         {
@@ -60,6 +64,12 @@ export default function Index({
             ),
         },
     ];
+
+    const handleColumnVisibilityChange = (updater: VisibilityState) => {
+        setColumnVisibility(updater);
+        // Column visibility is purely UI state - no need for API calls
+    };
+
     return (
         <AppShell variant="sidebar">
             <Head title="Phones" />
@@ -107,7 +117,11 @@ export default function Index({
                                         const dir = first.desc ? 'desc' : 'asc';
                                         router.get(
                                             '/phones',
-                                            { sort: `${first.id}:${dir}`, page: phones.current_page, perPage },
+                                            {
+                                                sort: `${first.id}:${dir}`,
+                                                page: phones.current_page,
+                                                perPage,
+                                            },
                                             {
                                                 preserveState: true,
                                                 replace: true,
@@ -115,6 +129,8 @@ export default function Index({
                                         );
                                     }
                                 }}
+                                columnVisibility={columnVisibility}
+                                onColumnVisibilityChange={handleColumnVisibilityChange}
                             />
                             <div className="mt-4 flex items-center justify-between gap-4">
                                 <div className="text-sm text-muted-foreground">
@@ -132,7 +148,11 @@ export default function Index({
                                             const dir = first.desc ? 'desc' : 'asc';
                                             router.get(
                                                 '/phones',
-                                                { sort: `${first.id}:${dir}`, page: 1, perPage: next },
+                                                {
+                                                    sort: `${first.id}:${dir}`,
+                                                    page: 1,
+                                                    perPage: next,
+                                                },
                                                 { preserveState: true, replace: true },
                                             );
                                         }}
@@ -151,7 +171,11 @@ export default function Index({
                                             const dir = first.desc ? 'desc' : 'asc';
                                             router.get(
                                                 '/phones',
-                                                { sort: `${first.id}:${dir}`, page: phones.current_page - 1, perPage },
+                                                {
+                                                    sort: `${first.id}:${dir}`,
+                                                    page: phones.current_page - 1,
+                                                    perPage,
+                                                },
                                                 { preserveState: true, replace: true },
                                             );
                                         }}
@@ -166,7 +190,11 @@ export default function Index({
                                             const dir = first.desc ? 'desc' : 'asc';
                                             router.get(
                                                 '/phones',
-                                                { sort: `${first.id}:${dir}`, page: phones.current_page + 1, perPage },
+                                                {
+                                                    sort: `${first.id}:${dir}`,
+                                                    page: phones.current_page + 1,
+                                                    perPage,
+                                                },
                                                 { preserveState: true, replace: true },
                                             );
                                         }}
