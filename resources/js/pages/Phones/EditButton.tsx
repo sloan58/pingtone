@@ -1380,6 +1380,182 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                 </div>
                             </div>
 
+                            {/* Directory URIs */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <h2 className="text-lg font-semibold">Directory URIs</h2>
+                                    <p className="text-sm text-muted-foreground">Configure directory URI settings</p>
+                                </div>
+                                <div className="p-6">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full border-collapse border border-border">
+                                            <thead>
+                                                <tr className="bg-muted">
+                                                    <th className="border border-border p-2 text-left text-sm font-medium">Primary</th>
+                                                    <th className="border border-border p-2 text-left text-sm font-medium">URI</th>
+                                                    <th className="border border-border p-2 text-left text-sm font-medium">Partition</th>
+                                                    <th className="border border-border p-2 text-left text-sm font-medium">
+                                                        Advertise Globally via ILS
+                                                    </th>
+                                                    <th className="border border-border p-2 text-left text-sm font-medium">Remove</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(currentLine.directoryURIs?.directoryUri || []).map((uri, index) => (
+                                                    <tr key={index} className="border-b border-border">
+                                                        <td className="border border-border p-2">
+                                                            <input
+                                                                type="radio"
+                                                                name="primaryUri"
+                                                                checked={uri.isPrimary === 't' || uri.isPrimary === true}
+                                                                onChange={() => {
+                                                                    const updatedUris = (currentLine.directoryURIs?.directoryUri || []).map(
+                                                                        (u, i) => ({
+                                                                            ...u,
+                                                                            isPrimary: i === index ? 't' : 'f',
+                                                                        }),
+                                                                    );
+                                                                    setCurrentLine({
+                                                                        ...currentLine,
+                                                                        directoryURIs: {
+                                                                            directoryUri: updatedUris,
+                                                                        },
+                                                                    });
+                                                                    setHasChanges(true);
+                                                                }}
+                                                                className="h-4 w-4"
+                                                            />
+                                                        </td>
+                                                        <td className="border border-border p-2">
+                                                            <input
+                                                                type="text"
+                                                                value={uri.uri || ''}
+                                                                onChange={(e) => {
+                                                                    const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
+                                                                    updatedUris[index] = {
+                                                                        ...updatedUris[index],
+                                                                        uri: e.target.value,
+                                                                    };
+                                                                    setCurrentLine({
+                                                                        ...currentLine,
+                                                                        directoryURIs: {
+                                                                            directoryUri: updatedUris,
+                                                                        },
+                                                                    });
+                                                                    setHasChanges(true);
+                                                                }}
+                                                                className="w-full rounded border bg-background p-1 text-sm"
+                                                                placeholder="Enter URI"
+                                                            />
+                                                        </td>
+                                                        <td className="border border-border p-2">
+                                                            <AsyncCombobox
+                                                                value={uri.partition?.uuid || ''}
+                                                                onValueChange={(value, selectedOption) => {
+                                                                    const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
+                                                                    updatedUris[index] = {
+                                                                        ...updatedUris[index],
+                                                                        partition: {
+                                                                            _: selectedOption?.label || '',
+                                                                            uuid: value,
+                                                                        },
+                                                                    };
+                                                                    setCurrentLine({
+                                                                        ...currentLine,
+                                                                        directoryURIs: {
+                                                                            directoryUri: updatedUris,
+                                                                        },
+                                                                    });
+                                                                    setHasChanges(true);
+                                                                }}
+                                                                placeholder="Search for partition..."
+                                                                searchPlaceholder="Type to search partitions..."
+                                                                emptyMessage="No partitions found."
+                                                                loadingMessage="Searching partitions..."
+                                                                fetchOptions={async (query: string) => {
+                                                                    // Filter cached route partitions
+                                                                    return routePartitions
+                                                                        .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
+                                                                        .map((option) => ({
+                                                                            value: option.uuid,
+                                                                            label: option.name,
+                                                                        }));
+                                                                }}
+                                                                displayValue={uri.partition?._ || ''}
+                                                                onMouseEnter={loadRoutePartitions}
+                                                            />
+                                                        </td>
+                                                        <td className="border border-border p-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={uri.advertiseGloballyViaIls === 't' || uri.advertiseGloballyViaIls === true}
+                                                                onChange={(e) => {
+                                                                    const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
+                                                                    updatedUris[index] = {
+                                                                        ...updatedUris[index],
+                                                                        advertiseGloballyViaIls: e.target.checked ? 't' : 'f',
+                                                                    };
+                                                                    setCurrentLine({
+                                                                        ...currentLine,
+                                                                        directoryURIs: {
+                                                                            directoryUri: updatedUris,
+                                                                        },
+                                                                    });
+                                                                    setHasChanges(true);
+                                                                }}
+                                                                className="h-4 w-4"
+                                                            />
+                                                        </td>
+                                                        <td className="border border-border p-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    const updatedUris = (currentLine.directoryURIs?.directoryUri || []).filter(
+                                                                        (_, i) => i !== index,
+                                                                    );
+                                                                    setCurrentLine({
+                                                                        ...currentLine,
+                                                                        directoryURIs: {
+                                                                            directoryUri: updatedUris,
+                                                                        },
+                                                                    });
+                                                                    setHasChanges(true);
+                                                                }}
+                                                                className="inline-flex items-center justify-center rounded border border-destructive bg-background px-2 py-1 text-xs font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                                            >
+                                                                Remove
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => {
+                                                const newUri = {
+                                                    isPrimary: (currentLine.directoryURIs?.directoryUri || []).length === 0 ? 't' : 'f',
+                                                    uri: '',
+                                                    partition: { _: '', uuid: '' },
+                                                    advertiseGloballyViaIls: 'f',
+                                                };
+                                                const updatedUris = [...(currentLine.directoryURIs?.directoryUri || []), newUri];
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    directoryURIs: {
+                                                        directoryUri: updatedUris,
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                        >
+                                            Add Row
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Debug Section - Remove this later */}
                             <div className="overflow-hidden rounded-lg border bg-card shadow">
                                 <div className="border-b p-6">
