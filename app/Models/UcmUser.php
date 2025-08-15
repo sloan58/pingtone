@@ -4,6 +4,7 @@ namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
+use MongoDB\Laravel\Relations\BelongsToMany;
 
 class UcmUser extends Model
 {
@@ -12,6 +13,11 @@ class UcmUser extends Model
     public function ucm(): BelongsTo
     {
         return $this->belongsTo(Ucm::class);
+    }
+
+    public function serviceAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(ServiceArea::class);
     }
 
     public function scopeEndUsers($query)

@@ -10,6 +10,7 @@ use App\Http\Controllers\UcmUserController;
 use App\Http\Controllers\PhoneApiController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SyncHistoryController;
+use App\Http\Controllers\ServiceAreaController;
 use App\Http\Controllers\InfrastructureOptionsController;
 
 Route::get('/welcome', function () {
@@ -27,6 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('ucm', UcmController::class)->except(['show']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
     Route::resource('ucm-users', UcmUserController::class)->only(['index']);
+    Route::resource('service-areas', ServiceAreaController::class)->except(['show']);
+    Route::post('/service-areas/trigger-assignment', [ServiceAreaController::class, 'triggerAssignment'])->name('service-areas.trigger-assignment');
     Route::get('/phones/{phone}/edit/button/{buttonIndex}', [PhoneController::class, 'editButton'])->name('phones.edit.button');
     Route::post('/phones/{phone}/lines/{lineIndex}', [PhoneController::class, 'updateLine'])->name('phones.lines.update');
 

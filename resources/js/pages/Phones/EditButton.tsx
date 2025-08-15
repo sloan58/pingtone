@@ -3,6 +3,7 @@ import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AsyncCombobox } from '@/components/ui/async-combobox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Head, router } from '@inertiajs/react';
@@ -436,6 +437,44 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
         }
     };
 
+    // Reusable collapsible card section
+    const SectionCard = ({
+        title,
+        description,
+        children,
+        defaultOpen = true,
+    }: {
+        title: string;
+        description?: string;
+        children: React.ReactNode;
+        defaultOpen?: boolean;
+    }) => {
+        const storageKey = `editButton.section.${title.replace(/\s+/g, '-').toLowerCase()}`;
+        const persisted = typeof window !== 'undefined' ? window.localStorage.getItem(storageKey) : null;
+        const initialOpen = persisted === null ? defaultOpen : persisted === 'open';
+        const handleOpenChange = (open: boolean) => {
+            try {
+                window.localStorage.setItem(storageKey, open ? 'open' : 'closed');
+            } catch {}
+        };
+        return (
+            <Collapsible defaultOpen={initialOpen} onOpenChange={handleOpenChange}>
+                <div className="overflow-hidden rounded-lg border bg-card shadow">
+                    <CollapsibleTrigger className="group flex w-full items-center justify-between border-b p-6 text-left hover:bg-accent/30">
+                        <div>
+                            <h2 className="text-lg font-semibold">{title}</h2>
+                            {description && <p className="text-sm text-muted-foreground">{description}</p>}
+                        </div>
+                        <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                        <div className="p-6">{children}</div>
+                    </CollapsibleContent>
+                </div>
+            </Collapsible>
+        );
+    };
+
     return (
         <AppShell variant="sidebar">
             <Head title={`Edit Button ${buttonIndex} - ${phone.name}`} />
@@ -492,293 +531,268 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
 
                         <div className="mt-4 space-y-4">
                             {/* Directory Number Information */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h2 className="text-lg font-semibold">Directory Number Information</h2>
-                                            <p className="text-sm text-muted-foreground">
-                                                Basic directory number configuration and device associations
-                                            </p>
-                                        </div>
+                            <SectionCard
+                                title="Directory Number Information"
+                                description="Basic directory number configuration and device associations"
+                                defaultOpen
+                            >
+                                <div className="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Directory Number</label>
+                                        <AsyncCombobox
+                                            value={currentLine.uuid}
+                                            onValueChange={(value, selectedOption) => {
+                                                // Handle line assignment - update the phone's line configuration
+                                                if (value && value !== currentLine.uuid && phoneData && selectedOption) {
+                                                    updatePhoneLine(currentLine.uuid, value, selectedOption);
+                                                }
+                                            }}
+                                            placeholder="Search for a line..."
+                                            searchPlaceholder="Type to search lines..."
+                                            emptyMessage="No lines found."
+                                            loadingMessage="Searching lines..."
+                                            fetchOptions={fetchLineOptions}
+                                            displayValue={getCurrentLineDisplayValue()}
+                                        />
                                     </div>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Directory Number</label>
-                                            <AsyncCombobox
-                                                value={currentLine.uuid}
-                                                onValueChange={(value, selectedOption) => {
-                                                    // Handle line assignment - update the phone's line configuration
-                                                    if (value && value !== currentLine.uuid && phoneData && selectedOption) {
-                                                        updatePhoneLine(currentLine.uuid, value, selectedOption);
-                                                    }
-                                                }}
-                                                placeholder="Search for a line..."
-                                                searchPlaceholder="Type to search lines..."
-                                                emptyMessage="No lines found."
-                                                loadingMessage="Searching lines..."
-                                                fetchOptions={fetchLineOptions}
-                                                displayValue={getCurrentLineDisplayValue()}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Description</label>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-md border bg-background p-2"
-                                                value={currentLine.description || ''}
-                                                onChange={(e) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        description: e.target.value,
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Enter line description"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Alerting Name</label>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-md border bg-background p-2"
-                                                value={currentLine.alertingName || ''}
-                                                onChange={(e) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        alertingName: e.target.value,
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Enter alerting name"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">ASCII Alerting Name</label>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-md border bg-background p-2"
-                                                value={currentLine.asciiAlertingName || ''}
-                                                onChange={(e) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        asciiAlertingName: e.target.value,
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Enter ASCII alerting name"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">External Call Control Profile</label>
-                                            <AsyncCombobox
-                                                value={currentLine.externalCallControlProfileName?.uuid || ''}
-                                                onValueChange={(value, selectedOption) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        externalCallControlProfileName: {
-                                                            _: selectedOption?.label || '',
-                                                            uuid: value,
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Search for external call control profile..."
-                                                searchPlaceholder="Type to search profiles..."
-                                                emptyMessage="No external call control profiles found."
-                                                loadingMessage="Searching profiles..."
-                                                fetchOptions={fetchExternalCallControlProfileOptions}
-                                                displayValue={currentLine.externalCallControlProfileName?._ || ''}
-                                                onMouseEnter={loadExternalCallControlProfiles}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Allow Control of Device from CTI</label>
-                                            <div className="flex items-center space-x-3">
-                                                <Switch
-                                                    checked={currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true}
-                                                    onCheckedChange={(checked) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            allowCtiControlFlag: checked ? 'true' : 'false',
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                />
-                                                <span className="text-sm text-muted-foreground">
-                                                    {currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true
-                                                        ? 'Enabled'
-                                                        : 'Disabled'}
-                                                </span>
-                                            </div>
-                                        </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Description</label>
+                                        <input
+                                            type="text"
+                                            className="w-full rounded-md border bg-background p-2"
+                                            value={currentLine.description || ''}
+                                            onChange={(e) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    description: e.target.value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Enter line description"
+                                        />
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* AAR Settings */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <h2 className="text-lg font-semibold">AAR Settings</h2>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Alerting Name</label>
+                                        <input
+                                            type="text"
+                                            className="w-full rounded-md border bg-background p-2"
+                                            value={currentLine.alertingName || ''}
+                                            onChange={(e) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    alertingName: e.target.value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Enter alerting name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">ASCII Alerting Name</label>
+                                        <input
+                                            type="text"
+                                            className="w-full rounded-md border bg-background p-2"
+                                            value={currentLine.asciiAlertingName || ''}
+                                            onChange={(e) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    asciiAlertingName: e.target.value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Enter ASCII alerting name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">External Call Control Profile</label>
+                                        <AsyncCombobox
+                                            value={currentLine.externalCallControlProfileName?.uuid || ''}
+                                            onValueChange={(value, selectedOption) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    externalCallControlProfileName: {
+                                                        _: selectedOption?.label || '',
+                                                        uuid: value,
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Search for external call control profile..."
+                                            searchPlaceholder="Type to search profiles..."
+                                            emptyMessage="No external call control profiles found."
+                                            loadingMessage="Searching profiles..."
+                                            fetchOptions={fetchExternalCallControlProfileOptions}
+                                            displayValue={currentLine.externalCallControlProfileName?._ || ''}
+                                            onMouseEnter={loadExternalCallControlProfiles}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Allow Control of Device from CTI</label>
                                         <div className="flex items-center space-x-3">
                                             <Switch
-                                                checked={currentLine.aarVoiceMailEnabled === 'true' || currentLine.aarVoiceMailEnabled === true}
+                                                checked={currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true}
                                                 onCheckedChange={(checked) => {
                                                     setCurrentLine({
                                                         ...currentLine,
-                                                        aarVoiceMailEnabled: checked ? 'true' : 'false',
+                                                        allowCtiControlFlag: checked ? 'true' : 'false',
                                                     });
                                                     setHasChanges(true);
                                                 }}
                                             />
-                                            <span className="text-sm font-medium">Voice Mail</span>
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">AAR Destination Mask</label>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-md border bg-background p-2"
-                                                value={currentLine.aarDestinationMask || ''}
-                                                onChange={(e) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        aarDestinationMask: e.target.value,
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Enter AAR destination mask"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">AAR Group</label>
-                                            <AsyncCombobox
-                                                value={
-                                                    typeof currentLine.aarNeighborhoodName === 'string'
-                                                        ? ''
-                                                        : currentLine.aarNeighborhoodName?.uuid || ''
-                                                }
-                                                onValueChange={(value, selectedOption) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        aarNeighborhoodName: {
-                                                            _: selectedOption?.label || '',
-                                                            uuid: value,
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Select AAR group..."
-                                                searchPlaceholder="Search AAR groups..."
-                                                emptyMessage="No AAR groups found."
-                                                loadingMessage="Loading AAR groups..."
-                                                fetchOptions={async (query: string) => {
-                                                    return aarGroups
-                                                        .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
-                                                        .map((o: any) => ({ value: o.uuid, label: o.name }));
-                                                }}
-                                                displayValue={
-                                                    typeof currentLine.aarNeighborhoodName === 'string'
-                                                        ? currentLine.aarNeighborhoodName
-                                                        : currentLine.aarNeighborhoodName?._ || ''
-                                                }
-                                                onMouseEnter={loadAarGroups}
-                                            />
+                                            <span className="text-sm text-muted-foreground">
+                                                {currentLine.allowCtiControlFlag === 'true' || currentLine.allowCtiControlFlag === true
+                                                    ? 'Enabled'
+                                                    : 'Disabled'}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="mt-6 flex items-center space-x-3">
+                                </div>
+                            </SectionCard>
+
+                            {/* AAR Settings */}
+                            <SectionCard title="AAR Settings" description="Automated Alternate Routing settings">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                    <div className="flex items-center space-x-3">
                                         <Switch
-                                            checked={currentLine.aarKeepCallHistory === 'true' || currentLine.aarKeepCallHistory === true}
+                                            checked={currentLine.aarVoiceMailEnabled === 'true' || currentLine.aarVoiceMailEnabled === true}
                                             onCheckedChange={(checked) => {
                                                 setCurrentLine({
                                                     ...currentLine,
-                                                    aarKeepCallHistory: checked ? 'true' : 'false',
+                                                    aarVoiceMailEnabled: checked ? 'true' : 'false',
                                                 });
                                                 setHasChanges(true);
                                             }}
                                         />
-                                        <span className="text-sm">Retain this destination in the call forwarding history</span>
+                                        <span className="text-sm font-medium">Voice Mail</span>
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">AAR Destination Mask</label>
+                                        <input
+                                            type="text"
+                                            className="w-full rounded-md border bg-background p-2"
+                                            value={currentLine.aarDestinationMask || ''}
+                                            onChange={(e) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    aarDestinationMask: e.target.value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Enter AAR destination mask"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">AAR Group</label>
+                                        <AsyncCombobox
+                                            value={
+                                                typeof currentLine.aarNeighborhoodName === 'string' ? '' : currentLine.aarNeighborhoodName?.uuid || ''
+                                            }
+                                            onValueChange={(value, selectedOption) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    aarNeighborhoodName: {
+                                                        _: selectedOption?.label || '',
+                                                        uuid: value,
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Select AAR group..."
+                                            searchPlaceholder="Search AAR groups..."
+                                            emptyMessage="No AAR groups found."
+                                            loadingMessage="Loading AAR groups..."
+                                            fetchOptions={async (query: string) => {
+                                                return aarGroups
+                                                    .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
+                                                    .map((o: any) => ({ value: o.uuid, label: o.name }));
+                                            }}
+                                            displayValue={
+                                                typeof currentLine.aarNeighborhoodName === 'string'
+                                                    ? currentLine.aarNeighborhoodName
+                                                    : currentLine.aarNeighborhoodName?._ || ''
+                                            }
+                                            onMouseEnter={loadAarGroups}
+                                        />
                                     </div>
                                 </div>
-                            </div>
+                                <div className="mt-6 flex items-center space-x-3">
+                                    <Switch
+                                        checked={currentLine.aarKeepCallHistory === 'true' || currentLine.aarKeepCallHistory === true}
+                                        onCheckedChange={(checked) => {
+                                            setCurrentLine({
+                                                ...currentLine,
+                                                aarKeepCallHistory: checked ? 'true' : 'false',
+                                            });
+                                            setHasChanges(true);
+                                        }}
+                                    />
+                                    <span className="text-sm">Retain this destination in the call forwarding history</span>
+                                </div>
+                            </SectionCard>
 
                             {/* Associated Devices */}
                             {associatedDevices && associatedDevices.length > 0 && (
-                                <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                    <div className="border-b p-6">
-                                        <div className="flex items-start justify-between">
-                                            <div>
-                                                <h2 className="text-lg font-semibold">Associated Devices</h2>
-                                                <p className="text-sm text-muted-foreground">Other devices using this line</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="p-6">
-                                        <div className="space-y-4">
-                                            {associatedDevices.map((device) => (
-                                                <div
-                                                    key={device.id}
-                                                    className={`flex items-center justify-between rounded-lg border p-4 ${
-                                                        device.id === phone.id ? 'border-primary bg-primary/5' : 'border-border bg-background'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center space-x-3">
-                                                        <div
-                                                            className={`h-3 w-3 rounded-full ${
-                                                                device.id === phone.id ? 'bg-primary' : 'bg-muted-foreground/20'
-                                                            }`}
-                                                        />
-                                                        <div>
-                                                            <h3 className="font-medium">{device.name}</h3>
-                                                            <p className="text-sm text-muted-foreground capitalize">{device.class}</p>
-                                                        </div>
-                                                        {device.id === phone.id && (
-                                                            <span className="rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
-                                                                Current Device
-                                                            </span>
-                                                        )}
+                                <SectionCard title="Associated Devices" description="Other devices using this line">
+                                    <div className="space-y-4">
+                                        {associatedDevices.map((device) => (
+                                            <div
+                                                key={device.id}
+                                                className={`flex items-center justify-between rounded-lg border p-4 ${
+                                                    device.id === phone.id ? 'border-primary bg-primary/5' : 'border-border bg-background'
+                                                }`}
+                                            >
+                                                <div className="flex items-center space-x-3">
+                                                    <div
+                                                        className={`h-3 w-3 rounded-full ${
+                                                            device.id === phone.id ? 'bg-primary' : 'bg-muted-foreground/20'
+                                                        }`}
+                                                    />
+                                                    <div>
+                                                        <h3 className="font-medium">{device.name}</h3>
+                                                        <p className="text-sm text-muted-foreground capitalize">{device.class}</p>
                                                     </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        {device.id !== phone.id && (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => router.visit(`/phones/${device.id}/edit`)}
-                                                                    className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                                                >
-                                                                    Edit Device
-                                                                </button>
-                                                                <button
-                                                                    onClick={() =>
-                                                                        router.visit(`/phones/${device.id}/edit/button/${buttonIndex}?type=line`)
-                                                                    }
-                                                                    className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                                                >
-                                                                    Edit Line
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleDissociateDevice(device.id, device.name)}
-                                                                    disabled={dissociatingDevices.has(device.id)}
-                                                                    className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                                                >
-                                                                    {dissociatingDevices.has(device.id) ? (
-                                                                        <>
-                                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                                            Dissociating...
-                                                                        </>
-                                                                    ) : (
-                                                                        'Dissociate'
-                                                                    )}
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
+                                                    {device.id === phone.id && (
+                                                        <span className="rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
+                                                            Current Device
+                                                        </span>
+                                                    )}
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <div className="flex items-center space-x-2">
+                                                    {device.id !== phone.id && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => router.visit(`/phones/${device.id}/edit`)}
+                                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                            >
+                                                                Edit Device
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    router.visit(`/phones/${device.id}/edit/button/${buttonIndex}?type=line`)
+                                                                }
+                                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                            >
+                                                                Edit Line
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDissociateDevice(device.id, device.name)}
+                                                                disabled={dissociatingDevices.has(device.id)}
+                                                                className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                            >
+                                                                {dissociatingDevices.has(device.id) ? (
+                                                                    <>
+                                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                                        Dissociating...
+                                                                    </>
+                                                                ) : (
+                                                                    'Dissociate'
+                                                                )}
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
                                         <div className="mt-4 rounded-lg border border-dashed border-muted-foreground/25 p-4">
                                             <div className="text-center">
                                                 <p className="text-sm text-muted-foreground">
@@ -788,936 +802,886 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </SectionCard>
                             )}
 
                             {/* Directory Number Settings */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h2 className="text-lg font-semibold">Directory Number Settings</h2>
-                                            <p className="text-sm text-muted-foreground">Call routing and feature configuration</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Voice Mail Profile</label>
-                                            <AsyncCombobox
-                                                value={currentLine.voiceMailProfileName?.uuid || ''}
-                                                onValueChange={(value, selectedOption) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        voiceMailProfileName: {
-                                                            _: selectedOption?.label || '',
-                                                            uuid: value,
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Search for voice mail profile..."
-                                                searchPlaceholder="Type to search voice mail profiles..."
-                                                emptyMessage="No voice mail profiles found."
-                                                loadingMessage="Searching voice mail profiles..."
-                                                fetchOptions={fetchVoiceMailProfileOptions}
-                                                displayValue={currentLine.voiceMailProfileName?._ || ''}
-                                                onMouseEnter={loadVoicemailProfiles}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
-                                            <AsyncCombobox
-                                                value={currentLine.shareLineAppearanceCssName?.uuid || ''}
-                                                onValueChange={(value, selectedOption) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        shareLineAppearanceCssName: {
-                                                            _: selectedOption?.label || '',
-                                                            uuid: value,
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Search for calling search space..."
-                                                searchPlaceholder="Type to search calling search spaces..."
-                                                emptyMessage="No calling search spaces found."
-                                                loadingMessage="Searching calling search spaces..."
-                                                fetchOptions={fetchCallingSearchSpaceOptions}
-                                                displayValue={currentLine.shareLineAppearanceCssName?._ || ''}
-                                                onMouseEnter={loadCallingSearchSpaces}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">BLF Presence Group</label>
-                                            <AsyncCombobox
-                                                value={currentLine.presenceGroupName?.uuid || ''}
-                                                onValueChange={(value, selectedOption) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        presenceGroupName: {
-                                                            _: selectedOption?.label || '',
-                                                            uuid: value,
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Search for presence group..."
-                                                searchPlaceholder="Type to search presence groups..."
-                                                emptyMessage="No presence groups found."
-                                                loadingMessage="Searching presence groups..."
-                                                fetchOptions={fetchPresenceGroupOptions}
-                                                displayValue={currentLine.presenceGroupName?._ || ''}
-                                                onMouseEnter={loadPresenceGroups}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
-                                            <AsyncCombobox
-                                                value={currentLine.userHoldMohAudioSourceId || ''}
-                                                onValueChange={(value, selectedOption) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        userHoldMohAudioSourceId: value,
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Search for MOH audio source..."
-                                                searchPlaceholder="Type to search MOH audio sources..."
-                                                emptyMessage="No MOH audio sources found."
-                                                loadingMessage="Searching MOH audio sources..."
-                                                fetchOptions={fetchMohAudioSourceOptions}
-                                                displayValue={(() => {
-                                                    const selectedAudioSource = (mohAudioSources || []).find(
-                                                        (audioSource) =>
-                                                            String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
-                                                            String(currentLine.userHoldMohAudioSourceId),
-                                                    );
-                                                    return selectedAudioSource ? selectedAudioSource.name : '';
-                                                })()}
-                                                onMouseEnter={loadMohAudioSources}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source</label>
-                                            <AsyncCombobox
-                                                value={currentLine.networkHoldMohAudioSourceId || ''}
-                                                onValueChange={(value, selectedOption) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        networkHoldMohAudioSourceId: value,
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Search for MOH audio source..."
-                                                searchPlaceholder="Type to search MOH audio sources..."
-                                                emptyMessage="No MOH audio sources found."
-                                                loadingMessage="Searching MOH audio sources..."
-                                                fetchOptions={fetchMohAudioSourceOptions}
-                                                displayValue={(() => {
-                                                    const selectedAudioSource = (mohAudioSources || []).find(
-                                                        (audioSource) =>
-                                                            String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
-                                                            String(currentLine.networkHoldMohAudioSourceId),
-                                                    );
-                                                    return selectedAudioSource ? selectedAudioSource.name : '';
-                                                })()}
-                                                onMouseEnter={loadMohAudioSources}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Calling Line ID Presentation When Diverted</label>
-                                            <Select
-                                                value={currentLine.callingIdPresentationWhenDiverted || ''}
-                                                onValueChange={(value) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        callingIdPresentationWhenDiverted: value,
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                            >
-                                                <SelectTrigger className="w-full bg-background">
-                                                    <SelectValue placeholder="Select option" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Default">Determined by Last Hop</SelectItem>
-                                                    <SelectItem value="Allowed">Allowed</SelectItem>
-                                                    <SelectItem value="Restricted">Restricted</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Reject Anonymous Calls</label>
-                                            <div className="flex items-center space-x-3">
-                                                <Switch
-                                                    checked={currentLine.rejectAnonymousCall === 'true' || currentLine.rejectAnonymousCall === true}
-                                                    onCheckedChange={(checked) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            rejectAnonymousCall: checked ? 'true' : 'false',
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                />
-                                                <span className="text-sm text-muted-foreground">
-                                                    {currentLine.rejectAnonymousCall === 'true' || currentLine.rejectAnonymousCall === true
-                                                        ? 'Enabled'
-                                                        : 'Disabled'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* External Presentation Information */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h2 className="text-lg font-semibold">External Presentation Information</h2>
-                                            <p className="text-sm text-muted-foreground">How caller information is presented to external parties</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 gap-6">
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Anonymous External Presentation</label>
-                                            <div className="flex items-center space-x-3">
-                                                <Switch
-                                                    checked={
-                                                        currentLine.externalPresentationInfo?.isAnonymous === 't' ||
-                                                        currentLine.externalPresentationInfo?.isAnonymous === true
-                                                    }
-                                                    onCheckedChange={(checked) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            externalPresentationInfo: checked
-                                                                ? { isAnonymous: 't' }
-                                                                : {
-                                                                      presentationInfo: {
-                                                                          externalPresentationNumber: '',
-                                                                          externalPresentationName: '',
-                                                                      },
-                                                                  },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                />
-                                                <span className="text-sm text-muted-foreground">
-                                                    {currentLine.externalPresentationInfo?.isAnonymous === 't' ||
-                                                    currentLine.externalPresentationInfo?.isAnonymous === true
-                                                        ? 'Enabled'
-                                                        : 'Disabled'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">External Presentation Number</label>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationNumber || ''}
-                                                onChange={(e) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        externalPresentationInfo: {
-                                                            ...currentLine.externalPresentationInfo,
-                                                            presentationInfo: {
-                                                                ...currentLine.externalPresentationInfo?.presentationInfo,
-                                                                externalPresentationNumber: e.target.value,
-                                                            },
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Enter external presentation number"
-                                                disabled={
-                                                    currentLine.externalPresentationInfo?.isAnonymous === 't' ||
-                                                    currentLine.externalPresentationInfo?.isAnonymous === true
-                                                }
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">External Presentation Name</label>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationName || ''}
-                                                onChange={(e) => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        externalPresentationInfo: {
-                                                            ...currentLine.externalPresentationInfo,
-                                                            presentationInfo: {
-                                                                ...currentLine.externalPresentationInfo?.presentationInfo,
-                                                                externalPresentationName: e.target.value,
-                                                            },
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                placeholder="Enter external presentation name"
-                                                disabled={
-                                                    currentLine.externalPresentationInfo?.isAnonymous === 't' ||
-                                                    currentLine.externalPresentationInfo?.isAnonymous === true
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Enterprise Alternate Number */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h2 className="text-lg font-semibold">Enterprise Alternate Number</h2>
-                                            <p className="text-sm text-muted-foreground">Configure enterprise alternate number settings</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    {currentLine.useEnterpriseAltNum === 'true' || currentLine.useEnterpriseAltNum === true ? (
-                                        // Show the enterprise alt num form when enabled
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Number Mask</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.enterpriseAltNum?.numMask || ''}
-                                                    onChange={(e) => {
-                                                        const mask = e.target.value;
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            enterpriseAltNum: {
-                                                                ...currentLine.enterpriseAltNum,
-                                                                numMask: mask,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter number mask (e.g., 2XXX, +1234)"
-                                                />
-                                                <p className="mt-1 text-xs text-muted-foreground">
-                                                    Use digits 0-9, X for wildcards, or + for E.164. + must be first character.
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Alternate Number</label>
-                                                <div className="w-full rounded-md border bg-muted p-2 text-sm text-muted-foreground">
-                                                    {(() => {
-                                                        const mask = currentLine.enterpriseAltNum?.numMask || '';
-                                                        const directoryNumber = currentLine.pattern || '1002';
-
-                                                        if (!mask) return directoryNumber;
-
-                                                        // Handle E.164 format (starts with +)
-                                                        if (mask.startsWith('+')) {
-                                                            return mask;
-                                                        }
-
-                                                        // Validate mask format
-                                                        const validMask = /^[0-9X]+$/.test(mask);
-                                                        if (!validMask) {
-                                                            return <span className="font-medium text-red-500">Invalid mask format</span>;
-                                                        }
-
-                                                        // Apply mask to directory number
-                                                        let result = '';
-                                                        const dirNumStr = directoryNumber.toString();
-
-                                                        // Process each character in the mask
-                                                        for (let i = 0; i < mask.length; i++) {
-                                                            const maskChar = mask[i];
-                                                            const dirNumChar = dirNumStr[i];
-
-                                                            if (maskChar === 'X') {
-                                                                // Keep original digit if available
-                                                                result += dirNumChar || '';
-                                                            } else if (maskChar && /[0-9]/.test(maskChar)) {
-                                                                // Use mask digit
-                                                                result += maskChar;
-                                                            }
-                                                        }
-
-                                                        return result || 'Invalid mask';
-                                                    })()}
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">Route Partition</label>
-                                                    <AsyncCombobox
-                                                        value={currentLine.enterpriseAltNum?.routePartition?.uuid || ''}
-                                                        onValueChange={(value, selectedOption) => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                enterpriseAltNum: {
-                                                                    ...currentLine.enterpriseAltNum,
-                                                                    routePartition: {
-                                                                        _: selectedOption?.label || '',
-                                                                        uuid: value,
-                                                                    },
-                                                                },
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                        placeholder="Search for route partition..."
-                                                        searchPlaceholder="Type to search route partitions..."
-                                                        emptyMessage="No route partitions found."
-                                                        loadingMessage="Searching route partitions..."
-                                                        fetchOptions={async (query: string) => {
-                                                            // Filter cached route partitions
-                                                            return routePartitions
-                                                                .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
-                                                                .map((option) => ({
-                                                                    value: option.uuid,
-                                                                    label: option.name,
-                                                                }));
-                                                        }}
-                                                        displayValue={currentLine.enterpriseAltNum?.routePartition?._ || ''}
-                                                        onMouseEnter={loadRoutePartitions}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center space-x-3">
-                                                    <Switch
-                                                        checked={
-                                                            currentLine.enterpriseAltNum?.isUrgent === 'true' ||
-                                                            currentLine.enterpriseAltNum?.isUrgent === true
-                                                        }
-                                                        onCheckedChange={(checked) => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                enterpriseAltNum: {
-                                                                    ...currentLine.enterpriseAltNum,
-                                                                    isUrgent: checked ? 'true' : 'false',
-                                                                },
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                    />
-                                                    <span className="text-sm font-medium">Is Urgent</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-3">
-                                                <Switch
-                                                    checked={
-                                                        currentLine.enterpriseAltNum?.addLocalRoutePartition === 'true' ||
-                                                        currentLine.enterpriseAltNum?.addLocalRoutePartition === true
-                                                    }
-                                                    onCheckedChange={(checked) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            enterpriseAltNum: {
-                                                                ...currentLine.enterpriseAltNum,
-                                                                addLocalRoutePartition: checked ? 'true' : 'false',
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                />
-                                                <span className="text-sm font-medium">Add to Local Route Partition</span>
-                                            </div>
-                                            <div className="flex items-center space-x-3">
-                                                <Switch
-                                                    checked={
-                                                        currentLine.enterpriseAltNum?.advertiseGloballyIls === 'true' ||
-                                                        currentLine.enterpriseAltNum?.advertiseGloballyIls === true
-                                                    }
-                                                    onCheckedChange={(checked) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            enterpriseAltNum: {
-                                                                ...currentLine.enterpriseAltNum,
-                                                                advertiseGloballyIls: checked ? 'true' : 'false',
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                />
-                                                <span className="text-sm font-medium">Advertise Globally via ILS</span>
-                                            </div>
-                                            <div className="pt-4">
-                                                <button
-                                                    onClick={() => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            useEnterpriseAltNum: 'false',
-                                                            enterpriseAltNum: undefined,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                                                >
-                                                    Remove Enterprise Alternate Number
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        // Show add button when disabled
-                                        <div>
-                                            <button
-                                                onClick={() => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        useEnterpriseAltNum: 'true',
-                                                        enterpriseAltNum: {
-                                                            numMask: '',
-                                                            isUrgent: 'false',
-                                                            addLocalRoutePartition: 'false',
-                                                            routePartition: { _: '', uuid: '' },
-                                                            advertiseGloballyIls: 'false',
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                                            >
-                                                Add Enterprise Alternate Number
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* +E.164 Alternate Number */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <h2 className="text-lg font-semibold">+E.164 Alternate Number</h2>
-                                    <p className="text-sm text-muted-foreground">Configure +E.164 alternate number settings</p>
-                                </div>
-                                <div className="p-6">
-                                    {currentLine.useE164AltNum === 'true' || currentLine.useE164AltNum === true ? (
-                                        <div className="space-y-6">
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Number Mask</label>
-                                                <input
-                                                    type="text"
-                                                    className="w-full rounded-md border bg-background p-2"
-                                                    value={currentLine.e164AltNum?.numMask || ''}
-                                                    onChange={(e) => {
-                                                        const mask = e.target.value;
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                numMask: mask,
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    placeholder="Enter number mask (e.g., +1234)"
-                                                />
-                                                <p className="mt-1 text-xs text-muted-foreground">
-                                                    Use digits 0-9, X for wildcards, or + for E.164. + must be first character.
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <label className="mb-1 block text-sm font-medium">Alternate Number</label>
-                                                <div className="w-full rounded-md border bg-muted p-2 text-sm text-muted-foreground">
-                                                    {(() => {
-                                                        const mask = currentLine.e164AltNum?.numMask || '';
-                                                        const directoryNumber = currentLine.pattern || '1002';
-
-                                                        if (!mask) return directoryNumber;
-
-                                                        // Handle E.164 format (starts with +)
-                                                        if (mask.startsWith('+')) {
-                                                            return mask;
-                                                        }
-
-                                                        // Validate mask format
-                                                        const validMask = /^[0-9X]+$/.test(mask);
-                                                        if (!validMask) {
-                                                            return <span className="font-medium text-red-500">Invalid mask format</span>;
-                                                        }
-
-                                                        // Apply mask to directory number
-                                                        let result = '';
-                                                        const dirNumStr = directoryNumber.toString();
-
-                                                        // Process each character in the mask
-                                                        for (let i = 0; i < mask.length; i++) {
-                                                            const maskChar = mask[i];
-                                                            const dirNumChar = dirNumStr[i];
-
-                                                            if (maskChar === 'X') {
-                                                                // Keep original digit if available
-                                                                result += dirNumChar || '';
-                                                            } else if (maskChar && /[0-9]/.test(maskChar)) {
-                                                                // Use mask digit
-                                                                result += maskChar;
-                                                            }
-                                                        }
-
-                                                        return result || 'Invalid mask';
-                                                    })()}
-                                                </div>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                                <div>
-                                                    <label className="mb-1 block text-sm font-medium">Route Partition</label>
-                                                    <AsyncCombobox
-                                                        value={currentLine.e164AltNum?.routePartition?.uuid || ''}
-                                                        onValueChange={(value, selectedOption) => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                e164AltNum: {
-                                                                    ...currentLine.e164AltNum,
-                                                                    routePartition: {
-                                                                        _: selectedOption?.label || '',
-                                                                        uuid: value,
-                                                                    },
-                                                                },
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                        placeholder="Search for route partition..."
-                                                        searchPlaceholder="Type to search route partitions..."
-                                                        emptyMessage="No route partitions found."
-                                                        loadingMessage="Searching route partitions..."
-                                                        fetchOptions={async (query: string) => {
-                                                            // Filter cached route partitions
-                                                            return routePartitions
-                                                                .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
-                                                                .map((option) => ({
-                                                                    value: option.uuid,
-                                                                    label: option.name,
-                                                                }));
-                                                        }}
-                                                        displayValue={currentLine.e164AltNum?.routePartition?._ || ''}
-                                                        onMouseEnter={loadRoutePartitions}
-                                                    />
-                                                </div>
-                                                <div className="flex items-center space-x-3">
-                                                    <Switch
-                                                        checked={
-                                                            currentLine.e164AltNum?.isUrgent === 'true' || currentLine.e164AltNum?.isUrgent === true
-                                                        }
-                                                        onCheckedChange={(checked) => {
-                                                            setCurrentLine({
-                                                                ...currentLine,
-                                                                e164AltNum: {
-                                                                    ...currentLine.e164AltNum,
-                                                                    isUrgent: checked ? 'true' : 'false',
-                                                                },
-                                                            });
-                                                            setHasChanges(true);
-                                                        }}
-                                                    />
-                                                    <span className="text-sm font-medium">Is Urgent</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-3">
-                                                <Switch
-                                                    checked={
-                                                        currentLine.e164AltNum?.addLocalRoutePartition === 'true' ||
-                                                        currentLine.e164AltNum?.addLocalRoutePartition === true
-                                                    }
-                                                    onCheckedChange={(checked) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                addLocalRoutePartition: checked ? 'true' : 'false',
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                />
-                                                <span className="text-sm font-medium">Add to Local Route Partition</span>
-                                            </div>
-                                            <div className="flex items-center space-x-3">
-                                                <Switch
-                                                    checked={
-                                                        currentLine.e164AltNum?.advertiseGloballyIls === 'true' ||
-                                                        currentLine.e164AltNum?.advertiseGloballyIls === true
-                                                    }
-                                                    onCheckedChange={(checked) => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            e164AltNum: {
-                                                                ...currentLine.e164AltNum,
-                                                                advertiseGloballyIls: checked ? 'true' : 'false',
-                                                            },
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                />
-                                                <span className="text-sm font-medium">Advertise Globally via ILS</span>
-                                            </div>
-                                            <div className="pt-4">
-                                                <button
-                                                    onClick={() => {
-                                                        setCurrentLine({
-                                                            ...currentLine,
-                                                            useE164AltNum: 'false',
-                                                            e164AltNum: undefined,
-                                                        });
-                                                        setHasChanges(true);
-                                                    }}
-                                                    className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                                                >
-                                                    Remove +E.164 Alternate Number
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            <button
-                                                onClick={() => {
-                                                    setCurrentLine({
-                                                        ...currentLine,
-                                                        useE164AltNum: 'true',
-                                                        e164AltNum: {
-                                                            numMask: '',
-                                                            isUrgent: 'false',
-                                                            addLocalRoutePartition: 'false',
-                                                            routePartition: { _: '', uuid: '' },
-                                                            advertiseGloballyIls: 'false',
-                                                        },
-                                                    });
-                                                    setHasChanges(true);
-                                                }}
-                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                                            >
-                                                Add +E.164 Alternate Number
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Directory URIs */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <h2 className="text-lg font-semibold">Directory URIs</h2>
-                                    <p className="text-sm text-muted-foreground">Configure directory URI settings</p>
-                                </div>
-                                <div className="p-6">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full border-collapse border border-border">
-                                            <thead>
-                                                <tr className="bg-muted">
-                                                    <th className="border border-border p-2 text-left text-sm font-medium">Primary</th>
-                                                    <th className="border border-border p-2 text-left text-sm font-medium">URI</th>
-                                                    <th className="border border-border p-2 text-left text-sm font-medium">Partition</th>
-                                                    <th className="border border-border p-2 text-left text-sm font-medium">
-                                                        Advertise Globally via ILS
-                                                    </th>
-                                                    <th className="border border-border p-2 text-left text-sm font-medium">Remove</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {(currentLine.directoryURIs?.directoryUri || []).map((uri, index) => (
-                                                    <tr key={index} className="border-b border-border">
-                                                        <td className="border border-border p-2">
-                                                            <input
-                                                                type="radio"
-                                                                name="primaryUri"
-                                                                checked={uri.isPrimary === 't' || uri.isPrimary === true}
-                                                                onChange={() => {
-                                                                    const updatedUris = (currentLine.directoryURIs?.directoryUri || []).map(
-                                                                        (u, i) => ({
-                                                                            ...u,
-                                                                            isPrimary: i === index ? 't' : 'f',
-                                                                        }),
-                                                                    );
-                                                                    setCurrentLine({
-                                                                        ...currentLine,
-                                                                        directoryURIs: {
-                                                                            directoryUri: updatedUris,
-                                                                        },
-                                                                    });
-                                                                    setHasChanges(true);
-                                                                }}
-                                                                className="h-4 w-4"
-                                                            />
-                                                        </td>
-                                                        <td className="border border-border p-2">
-                                                            <input
-                                                                type="text"
-                                                                value={uri.uri || ''}
-                                                                onChange={(e) => {
-                                                                    const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
-                                                                    updatedUris[index] = {
-                                                                        ...updatedUris[index],
-                                                                        uri: e.target.value,
-                                                                    };
-                                                                    setCurrentLine({
-                                                                        ...currentLine,
-                                                                        directoryURIs: {
-                                                                            directoryUri: updatedUris,
-                                                                        },
-                                                                    });
-                                                                    setHasChanges(true);
-                                                                }}
-                                                                className="w-full rounded border bg-background p-1 text-sm"
-                                                                placeholder="Enter URI"
-                                                            />
-                                                        </td>
-                                                        <td className="border border-border p-2">
-                                                            <AsyncCombobox
-                                                                value={uri.partition?.uuid || ''}
-                                                                onValueChange={(value, selectedOption) => {
-                                                                    const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
-                                                                    updatedUris[index] = {
-                                                                        ...updatedUris[index],
-                                                                        partition: {
-                                                                            _: selectedOption?.label || '',
-                                                                            uuid: value,
-                                                                        },
-                                                                    };
-                                                                    setCurrentLine({
-                                                                        ...currentLine,
-                                                                        directoryURIs: {
-                                                                            directoryUri: updatedUris,
-                                                                        },
-                                                                    });
-                                                                    setHasChanges(true);
-                                                                }}
-                                                                placeholder="Search for partition..."
-                                                                searchPlaceholder="Type to search partitions..."
-                                                                emptyMessage="No partitions found."
-                                                                loadingMessage="Searching partitions..."
-                                                                fetchOptions={async (query: string) => {
-                                                                    // Filter cached route partitions
-                                                                    return routePartitions
-                                                                        .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
-                                                                        .map((option) => ({
-                                                                            value: option.uuid,
-                                                                            label: option.name,
-                                                                        }));
-                                                                }}
-                                                                displayValue={uri.partition?._ || ''}
-                                                                onMouseEnter={loadRoutePartitions}
-                                                            />
-                                                        </td>
-                                                        <td className="border border-border p-2">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={uri.advertiseGloballyViaIls === 't' || uri.advertiseGloballyViaIls === true}
-                                                                onChange={(e) => {
-                                                                    const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
-                                                                    updatedUris[index] = {
-                                                                        ...updatedUris[index],
-                                                                        advertiseGloballyViaIls: e.target.checked ? 't' : 'f',
-                                                                    };
-                                                                    setCurrentLine({
-                                                                        ...currentLine,
-                                                                        directoryURIs: {
-                                                                            directoryUri: updatedUris,
-                                                                        },
-                                                                    });
-                                                                    setHasChanges(true);
-                                                                }}
-                                                                className="h-4 w-4"
-                                                            />
-                                                        </td>
-                                                        <td className="border border-border p-2">
-                                                            <button
-                                                                onClick={() => {
-                                                                    const updatedUris = (currentLine.directoryURIs?.directoryUri || []).filter(
-                                                                        (_, i) => i !== index,
-                                                                    );
-                                                                    setCurrentLine({
-                                                                        ...currentLine,
-                                                                        directoryURIs: {
-                                                                            directoryUri: updatedUris,
-                                                                        },
-                                                                    });
-                                                                    setHasChanges(true);
-                                                                }}
-                                                                className="inline-flex items-center justify-center rounded border border-destructive bg-background px-2 py-1 text-xs font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                                                            >
-                                                                Remove
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div className="mt-4">
-                                        <button
-                                            onClick={() => {
-                                                const newUri = {
-                                                    isPrimary: (currentLine.directoryURIs?.directoryUri || []).length === 0 ? 't' : 'f',
-                                                    uri: '',
-                                                    partition: { _: '', uuid: '' },
-                                                    advertiseGloballyViaIls: 'f',
-                                                };
-                                                const updatedUris = [...(currentLine.directoryURIs?.directoryUri || []), newUri];
+                            <SectionCard title="Directory Number Settings" description="Call routing and feature configuration">
+                                <div className="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Voice Mail Profile</label>
+                                        <AsyncCombobox
+                                            value={currentLine.voiceMailProfileName?.uuid || ''}
+                                            onValueChange={(value, selectedOption) => {
                                                 setCurrentLine({
                                                     ...currentLine,
-                                                    directoryURIs: {
-                                                        directoryUri: updatedUris,
+                                                    voiceMailProfileName: {
+                                                        _: selectedOption?.label || '',
+                                                        uuid: value,
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Search for voice mail profile..."
+                                            searchPlaceholder="Type to search voice mail profiles..."
+                                            emptyMessage="No voice mail profiles found."
+                                            loadingMessage="Searching voice mail profiles..."
+                                            fetchOptions={fetchVoiceMailProfileOptions}
+                                            displayValue={currentLine.voiceMailProfileName?._ || ''}
+                                            onMouseEnter={loadVoicemailProfiles}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
+                                        <AsyncCombobox
+                                            value={currentLine.shareLineAppearanceCssName?.uuid || ''}
+                                            onValueChange={(value, selectedOption) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    shareLineAppearanceCssName: {
+                                                        _: selectedOption?.label || '',
+                                                        uuid: value,
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Search for calling search space..."
+                                            searchPlaceholder="Type to search calling search spaces..."
+                                            emptyMessage="No calling search spaces found."
+                                            loadingMessage="Searching calling search spaces..."
+                                            fetchOptions={fetchCallingSearchSpaceOptions}
+                                            displayValue={currentLine.shareLineAppearanceCssName?._ || ''}
+                                            onMouseEnter={loadCallingSearchSpaces}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">BLF Presence Group</label>
+                                        <AsyncCombobox
+                                            value={currentLine.presenceGroupName?.uuid || ''}
+                                            onValueChange={(value, selectedOption) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    presenceGroupName: {
+                                                        _: selectedOption?.label || '',
+                                                        uuid: value,
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Search for presence group..."
+                                            searchPlaceholder="Type to search presence groups..."
+                                            emptyMessage="No presence groups found."
+                                            loadingMessage="Searching presence groups..."
+                                            fetchOptions={fetchPresenceGroupOptions}
+                                            displayValue={currentLine.presenceGroupName?._ || ''}
+                                            onMouseEnter={loadPresenceGroups}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">User Hold MOH Audio Source</label>
+                                        <AsyncCombobox
+                                            value={currentLine.userHoldMohAudioSourceId || ''}
+                                            onValueChange={(value, selectedOption) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    userHoldMohAudioSourceId: value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Search for MOH audio source..."
+                                            searchPlaceholder="Type to search MOH audio sources..."
+                                            emptyMessage="No MOH audio sources found."
+                                            loadingMessage="Searching MOH audio sources..."
+                                            fetchOptions={fetchMohAudioSourceOptions}
+                                            displayValue={(() => {
+                                                const selectedAudioSource = (mohAudioSources || []).find(
+                                                    (audioSource) =>
+                                                        String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                        String(currentLine.userHoldMohAudioSourceId),
+                                                );
+                                                return selectedAudioSource ? selectedAudioSource.name : '';
+                                            })()}
+                                            onMouseEnter={loadMohAudioSources}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Network Hold MOH Audio Source</label>
+                                        <AsyncCombobox
+                                            value={currentLine.networkHoldMohAudioSourceId || ''}
+                                            onValueChange={(value, selectedOption) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    networkHoldMohAudioSourceId: value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Search for MOH audio source..."
+                                            searchPlaceholder="Type to search MOH audio sources..."
+                                            emptyMessage="No MOH audio sources found."
+                                            loadingMessage="Searching MOH audio sources..."
+                                            fetchOptions={fetchMohAudioSourceOptions}
+                                            displayValue={(() => {
+                                                const selectedAudioSource = (mohAudioSources || []).find(
+                                                    (audioSource) =>
+                                                        String(audioSource.sourceId || audioSource.uuid || audioSource.name) ===
+                                                        String(currentLine.networkHoldMohAudioSourceId),
+                                                );
+                                                return selectedAudioSource ? selectedAudioSource.name : '';
+                                            })()}
+                                            onMouseEnter={loadMohAudioSources}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Calling Line ID Presentation When Diverted</label>
+                                        <Select
+                                            value={currentLine.callingIdPresentationWhenDiverted || ''}
+                                            onValueChange={(value) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    callingIdPresentationWhenDiverted: value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full bg-background">
+                                                <SelectValue placeholder="Select option" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Default">Determined by Last Hop</SelectItem>
+                                                <SelectItem value="Allowed">Allowed</SelectItem>
+                                                <SelectItem value="Restricted">Restricted</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Reject Anonymous Calls</label>
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={currentLine.rejectAnonymousCall === 'true' || currentLine.rejectAnonymousCall === true}
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        rejectAnonymousCall: checked ? 'true' : 'false',
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm text-muted-foreground">
+                                                {currentLine.rejectAnonymousCall === 'true' || currentLine.rejectAnonymousCall === true
+                                                    ? 'Enabled'
+                                                    : 'Disabled'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </SectionCard>
+
+                            {/* External Presentation Information */}
+                            <SectionCard
+                                title="External Presentation Information"
+                                description="How caller information is presented to external parties"
+                            >
+                                <div className="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Anonymous External Presentation</label>
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={
+                                                    currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                    currentLine.externalPresentationInfo?.isAnonymous === true
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        externalPresentationInfo: checked
+                                                            ? { isAnonymous: 't' }
+                                                            : {
+                                                                  presentationInfo: {
+                                                                      externalPresentationNumber: '',
+                                                                      externalPresentationName: '',
+                                                                  },
+                                                              },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm text-muted-foreground">
+                                                {currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                currentLine.externalPresentationInfo?.isAnonymous === true
+                                                    ? 'Enabled'
+                                                    : 'Disabled'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">External Presentation Number</label>
+                                        <input
+                                            type="text"
+                                            className="w-full rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationNumber || ''}
+                                            onChange={(e) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    externalPresentationInfo: {
+                                                        ...currentLine.externalPresentationInfo,
+                                                        presentationInfo: {
+                                                            ...currentLine.externalPresentationInfo?.presentationInfo,
+                                                            externalPresentationNumber: e.target.value,
+                                                        },
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Enter external presentation number"
+                                            disabled={
+                                                currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                currentLine.externalPresentationInfo?.isAnonymous === true
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">External Presentation Name</label>
+                                        <input
+                                            type="text"
+                                            className="w-full rounded-md border bg-background p-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={currentLine.externalPresentationInfo?.presentationInfo?.externalPresentationName || ''}
+                                            onChange={(e) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    externalPresentationInfo: {
+                                                        ...currentLine.externalPresentationInfo,
+                                                        presentationInfo: {
+                                                            ...currentLine.externalPresentationInfo?.presentationInfo,
+                                                            externalPresentationName: e.target.value,
+                                                        },
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Enter external presentation name"
+                                            disabled={
+                                                currentLine.externalPresentationInfo?.isAnonymous === 't' ||
+                                                currentLine.externalPresentationInfo?.isAnonymous === true
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            </SectionCard>
+
+                            {/* Enterprise Alternate Number */}
+                            <SectionCard title="Enterprise Alternate Number" description="Configure enterprise alternate number settings">
+                                {currentLine.useEnterpriseAltNum === 'true' || currentLine.useEnterpriseAltNum === true ? (
+                                    // Show the enterprise alt num form when enabled
+                                    <div className="grid grid-cols-1 gap-6">
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Number Mask</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.enterpriseAltNum?.numMask || ''}
+                                                onChange={(e) => {
+                                                    const mask = e.target.value;
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        enterpriseAltNum: {
+                                                            ...currentLine.enterpriseAltNum,
+                                                            numMask: mask,
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Enter number mask (e.g., 2XXX, +1234)"
+                                            />
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                Use digits 0-9, X for wildcards, or + for E.164. + must be first character.
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Alternate Number</label>
+                                            <div className="w-full rounded-md border bg-muted p-2 text-sm text-muted-foreground">
+                                                {(() => {
+                                                    const mask = currentLine.enterpriseAltNum?.numMask || '';
+                                                    const directoryNumber = currentLine.pattern || '1002';
+
+                                                    if (!mask) return directoryNumber;
+
+                                                    // Handle E.164 format (starts with +)
+                                                    if (mask.startsWith('+')) {
+                                                        return mask;
+                                                    }
+
+                                                    // Validate mask format
+                                                    const validMask = /^[0-9X]+$/.test(mask);
+                                                    if (!validMask) {
+                                                        return <span className="font-medium text-red-500">Invalid mask format</span>;
+                                                    }
+
+                                                    // Apply mask to directory number
+                                                    let result = '';
+                                                    const dirNumStr = directoryNumber.toString();
+
+                                                    // Process each character in the mask
+                                                    for (let i = 0; i < mask.length; i++) {
+                                                        const maskChar = mask[i];
+                                                        const dirNumChar = dirNumStr[i];
+
+                                                        if (maskChar === 'X') {
+                                                            // Keep original digit if available
+                                                            result += dirNumChar || '';
+                                                        } else if (maskChar && /[0-9]/.test(maskChar)) {
+                                                            // Use mask digit
+                                                            result += maskChar;
+                                                        }
+                                                    }
+
+                                                    return result || 'Invalid mask';
+                                                })()}
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Route Partition</label>
+                                                <AsyncCombobox
+                                                    value={currentLine.enterpriseAltNum?.routePartition?.uuid || ''}
+                                                    onValueChange={(value, selectedOption) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            enterpriseAltNum: {
+                                                                ...currentLine.enterpriseAltNum,
+                                                                routePartition: {
+                                                                    _: selectedOption?.label || '',
+                                                                    uuid: value,
+                                                                },
+                                                            },
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                    placeholder="Search for route partition..."
+                                                    searchPlaceholder="Type to search route partitions..."
+                                                    emptyMessage="No route partitions found."
+                                                    loadingMessage="Searching route partitions..."
+                                                    fetchOptions={async (query: string) => {
+                                                        // Filter cached route partitions
+                                                        return routePartitions
+                                                            .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
+                                                            .map((option) => ({
+                                                                value: option.uuid,
+                                                                label: option.name,
+                                                            }));
+                                                    }}
+                                                    displayValue={currentLine.enterpriseAltNum?.routePartition?._ || ''}
+                                                    onMouseEnter={loadRoutePartitions}
+                                                />
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={
+                                                        currentLine.enterpriseAltNum?.isUrgent === 'true' ||
+                                                        currentLine.enterpriseAltNum?.isUrgent === true
+                                                    }
+                                                    onCheckedChange={(checked) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            enterpriseAltNum: {
+                                                                ...currentLine.enterpriseAltNum,
+                                                                isUrgent: checked ? 'true' : 'false',
+                                                            },
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                />
+                                                <span className="text-sm font-medium">Is Urgent</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={
+                                                    currentLine.enterpriseAltNum?.addLocalRoutePartition === 'true' ||
+                                                    currentLine.enterpriseAltNum?.addLocalRoutePartition === true
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        enterpriseAltNum: {
+                                                            ...currentLine.enterpriseAltNum,
+                                                            addLocalRoutePartition: checked ? 'true' : 'false',
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium">Add to Local Route Partition</span>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={
+                                                    currentLine.enterpriseAltNum?.advertiseGloballyIls === 'true' ||
+                                                    currentLine.enterpriseAltNum?.advertiseGloballyIls === true
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        enterpriseAltNum: {
+                                                            ...currentLine.enterpriseAltNum,
+                                                            advertiseGloballyIls: checked ? 'true' : 'false',
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium">Advertise Globally via ILS</span>
+                                        </div>
+                                        <div className="pt-4">
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        useEnterpriseAltNum: 'false',
+                                                        enterpriseAltNum: undefined,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                            >
+                                                Remove Enterprise Alternate Number
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    // Show add button when disabled
+                                    <div>
+                                        <button
+                                            onClick={() => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    useEnterpriseAltNum: 'true',
+                                                    enterpriseAltNum: {
+                                                        numMask: '',
+                                                        isUrgent: 'false',
+                                                        addLocalRoutePartition: 'false',
+                                                        routePartition: { _: '', uuid: '' },
+                                                        advertiseGloballyIls: 'false',
                                                     },
                                                 });
                                                 setHasChanges(true);
                                             }}
                                             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                         >
-                                            Add Row
+                                            Add Enterprise Alternate Number
                                         </button>
                                     </div>
-                                </div>
-                            </div>
+                                )}
+                            </SectionCard>
 
-                            {/* PSTN Failover */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <h2 className="text-lg font-semibold">
-                                        PSTN Failover for Enterprise Alternate Number, +E.164 Alternate Number, and URI Dialing
-                                    </h2>
-                                    <p className="text-sm text-muted-foreground">Configure PSTN failover settings</p>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 gap-6">
+                            {/* +E.164 Alternate Number */}
+                            <SectionCard title="+E.164 Alternate Number" description="Configure +E.164 alternate number settings" defaultOpen={false}>
+                                {currentLine.useE164AltNum === 'true' || currentLine.useE164AltNum === true ? (
+                                    <div className="space-y-6">
                                         <div>
-                                            <label className="mb-1 block text-sm font-medium">Advertised Failover Number</label>
-                                            <Select
-                                                value={(() => {
-                                                    const value = currentLine.pstnFailover;
-                                                    if (!value || value === '') return 'None';
-                                                    if (value === '100') return '100';
-                                                    if (value === '200') return '200';
-                                                    return 'None';
-                                                })()}
-                                                onValueChange={(value) => {
+                                            <label className="mb-1 block text-sm font-medium">Number Mask</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.e164AltNum?.numMask || ''}
+                                                onChange={(e) => {
+                                                    const mask = e.target.value;
                                                     setCurrentLine({
                                                         ...currentLine,
-                                                        pstnFailover: value === 'None' ? '' : value,
+                                                        e164AltNum: {
+                                                            ...currentLine.e164AltNum,
+                                                            numMask: mask,
+                                                        },
                                                     });
                                                     setHasChanges(true);
                                                 }}
+                                                placeholder="Enter number mask (e.g., +1234)"
+                                            />
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                Use digits 0-9, X for wildcards, or + for E.164. + must be first character.
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Alternate Number</label>
+                                            <div className="w-full rounded-md border bg-muted p-2 text-sm text-muted-foreground">
+                                                {(() => {
+                                                    const mask = currentLine.e164AltNum?.numMask || '';
+                                                    const directoryNumber = currentLine.pattern || '1002';
+
+                                                    if (!mask) return directoryNumber;
+
+                                                    // Handle E.164 format (starts with +)
+                                                    if (mask.startsWith('+')) {
+                                                        return mask;
+                                                    }
+
+                                                    // Validate mask format
+                                                    const validMask = /^[0-9X]+$/.test(mask);
+                                                    if (!validMask) {
+                                                        return <span className="font-medium text-red-500">Invalid mask format</span>;
+                                                    }
+
+                                                    // Apply mask to directory number
+                                                    let result = '';
+                                                    const dirNumStr = directoryNumber.toString();
+
+                                                    // Process each character in the mask
+                                                    for (let i = 0; i < mask.length; i++) {
+                                                        const maskChar = mask[i];
+                                                        const dirNumChar = dirNumStr[i];
+
+                                                        if (maskChar === 'X') {
+                                                            // Keep original digit if available
+                                                            result += dirNumChar || '';
+                                                        } else if (maskChar && /[0-9]/.test(maskChar)) {
+                                                            // Use mask digit
+                                                            result += maskChar;
+                                                        }
+                                                    }
+
+                                                    return result || 'Invalid mask';
+                                                })()}
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                            <div>
+                                                <label className="mb-1 block text-sm font-medium">Route Partition</label>
+                                                <AsyncCombobox
+                                                    value={currentLine.e164AltNum?.routePartition?.uuid || ''}
+                                                    onValueChange={(value, selectedOption) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            e164AltNum: {
+                                                                ...currentLine.e164AltNum,
+                                                                routePartition: {
+                                                                    _: selectedOption?.label || '',
+                                                                    uuid: value,
+                                                                },
+                                                            },
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                    placeholder="Search for route partition..."
+                                                    searchPlaceholder="Type to search route partitions..."
+                                                    emptyMessage="No route partitions found."
+                                                    loadingMessage="Searching route partitions..."
+                                                    fetchOptions={async (query: string) => {
+                                                        // Filter cached route partitions
+                                                        return routePartitions
+                                                            .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
+                                                            .map((option) => ({
+                                                                value: option.uuid,
+                                                                label: option.name,
+                                                            }));
+                                                    }}
+                                                    displayValue={currentLine.e164AltNum?.routePartition?._ || ''}
+                                                    onMouseEnter={loadRoutePartitions}
+                                                />
+                                            </div>
+                                            <div className="flex items-center space-x-3">
+                                                <Switch
+                                                    checked={currentLine.e164AltNum?.isUrgent === 'true' || currentLine.e164AltNum?.isUrgent === true}
+                                                    onCheckedChange={(checked) => {
+                                                        setCurrentLine({
+                                                            ...currentLine,
+                                                            e164AltNum: {
+                                                                ...currentLine.e164AltNum,
+                                                                isUrgent: checked ? 'true' : 'false',
+                                                            },
+                                                        });
+                                                        setHasChanges(true);
+                                                    }}
+                                                />
+                                                <span className="text-sm font-medium">Is Urgent</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={
+                                                    currentLine.e164AltNum?.addLocalRoutePartition === 'true' ||
+                                                    currentLine.e164AltNum?.addLocalRoutePartition === true
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        e164AltNum: {
+                                                            ...currentLine.e164AltNum,
+                                                            addLocalRoutePartition: checked ? 'true' : 'false',
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium">Add to Local Route Partition</span>
+                                        </div>
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={
+                                                    currentLine.e164AltNum?.advertiseGloballyIls === 'true' ||
+                                                    currentLine.e164AltNum?.advertiseGloballyIls === true
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        e164AltNum: {
+                                                            ...currentLine.e164AltNum,
+                                                            advertiseGloballyIls: checked ? 'true' : 'false',
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium">Advertise Globally via ILS</span>
+                                        </div>
+                                        <div className="pt-4">
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        useE164AltNum: 'false',
+                                                        e164AltNum: undefined,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                             >
-                                                <SelectTrigger className="w-full bg-background">
-                                                    <SelectValue placeholder="Select failover number" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="None">None</SelectItem>
-                                                    <SelectItem value="100">Enterprise Number</SelectItem>
-                                                    <SelectItem value="200">+E.164 Number</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                Remove +E.164 Alternate Number
+                                            </button>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div>
+                                        <button
+                                            onClick={() => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    useE164AltNum: 'true',
+                                                    e164AltNum: {
+                                                        numMask: '',
+                                                        isUrgent: 'false',
+                                                        addLocalRoutePartition: 'false',
+                                                        routePartition: { _: '', uuid: '' },
+                                                        advertiseGloballyIls: 'false',
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                        >
+                                            Add +E.164 Alternate Number
+                                        </button>
+                                    </div>
+                                )}
+                            </SectionCard>
+
+                            {/* Directory URIs */}
+                            <SectionCard title="Directory URIs" description="Configure directory URI settings">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse border border-border">
+                                        <thead>
+                                            <tr className="bg-muted">
+                                                <th className="border border-border p-2 text-left text-sm font-medium">Primary</th>
+                                                <th className="border border-border p-2 text-left text-sm font-medium">URI</th>
+                                                <th className="border border-border p-2 text-left text-sm font-medium">Partition</th>
+                                                <th className="border border-border p-2 text-left text-sm font-medium">Advertise Globally via ILS</th>
+                                                <th className="border border-border p-2 text-left text-sm font-medium">Remove</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {(currentLine.directoryURIs?.directoryUri || []).map((uri, index) => (
+                                                <tr key={index} className="border-b border-border">
+                                                    <td className="border border-border p-2">
+                                                        <input
+                                                            type="radio"
+                                                            name="primaryUri"
+                                                            checked={uri.isPrimary === 't' || uri.isPrimary === true}
+                                                            onChange={() => {
+                                                                const updatedUris = (currentLine.directoryURIs?.directoryUri || []).map((u, i) => ({
+                                                                    ...u,
+                                                                    isPrimary: i === index ? 't' : 'f',
+                                                                }));
+                                                                setCurrentLine({
+                                                                    ...currentLine,
+                                                                    directoryURIs: {
+                                                                        directoryUri: updatedUris,
+                                                                    },
+                                                                });
+                                                                setHasChanges(true);
+                                                            }}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    </td>
+                                                    <td className="border border-border p-2">
+                                                        <input
+                                                            type="text"
+                                                            value={uri.uri || ''}
+                                                            onChange={(e) => {
+                                                                const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
+                                                                updatedUris[index] = {
+                                                                    ...updatedUris[index],
+                                                                    uri: e.target.value,
+                                                                };
+                                                                setCurrentLine({
+                                                                    ...currentLine,
+                                                                    directoryURIs: {
+                                                                        directoryUri: updatedUris,
+                                                                    },
+                                                                });
+                                                                setHasChanges(true);
+                                                            }}
+                                                            className="w-full rounded border bg-background p-1 text-sm"
+                                                            placeholder="Enter URI"
+                                                        />
+                                                    </td>
+                                                    <td className="border border-border p-2">
+                                                        <AsyncCombobox
+                                                            value={uri.partition?.uuid || ''}
+                                                            onValueChange={(value, selectedOption) => {
+                                                                const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
+                                                                updatedUris[index] = {
+                                                                    ...updatedUris[index],
+                                                                    partition: {
+                                                                        _: selectedOption?.label || '',
+                                                                        uuid: value,
+                                                                    },
+                                                                };
+                                                                setCurrentLine({
+                                                                    ...currentLine,
+                                                                    directoryURIs: {
+                                                                        directoryUri: updatedUris,
+                                                                    },
+                                                                });
+                                                                setHasChanges(true);
+                                                            }}
+                                                            placeholder="Search for partition..."
+                                                            searchPlaceholder="Type to search partitions..."
+                                                            emptyMessage="No partitions found."
+                                                            loadingMessage="Searching partitions..."
+                                                            fetchOptions={async (query: string) => {
+                                                                // Filter cached route partitions
+                                                                return routePartitions
+                                                                    .filter((option) => option.name.toLowerCase().includes(query.toLowerCase()))
+                                                                    .map((option) => ({
+                                                                        value: option.uuid,
+                                                                        label: option.name,
+                                                                    }));
+                                                            }}
+                                                            displayValue={uri.partition?._ || ''}
+                                                            onMouseEnter={loadRoutePartitions}
+                                                        />
+                                                    </td>
+                                                    <td className="border border-border p-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={uri.advertiseGloballyViaIls === 't' || uri.advertiseGloballyViaIls === true}
+                                                            onChange={(e) => {
+                                                                const updatedUris = [...(currentLine.directoryURIs?.directoryUri || [])];
+                                                                updatedUris[index] = {
+                                                                    ...updatedUris[index],
+                                                                    advertiseGloballyViaIls: e.target.checked ? 't' : 'f',
+                                                                };
+                                                                setCurrentLine({
+                                                                    ...currentLine,
+                                                                    directoryURIs: {
+                                                                        directoryUri: updatedUris,
+                                                                    },
+                                                                });
+                                                                setHasChanges(true);
+                                                            }}
+                                                            className="h-4 w-4"
+                                                        />
+                                                    </td>
+                                                    <td className="border border-border p-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                const updatedUris = (currentLine.directoryURIs?.directoryUri || []).filter(
+                                                                    (_, i) => i !== index,
+                                                                );
+                                                                setCurrentLine({
+                                                                    ...currentLine,
+                                                                    directoryURIs: {
+                                                                        directoryUri: updatedUris,
+                                                                    },
+                                                                });
+                                                                setHasChanges(true);
+                                                            }}
+                                                            className="inline-flex items-center justify-center rounded border border-destructive bg-background px-2 py-1 text-xs font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            </div>
+                                <div className="mt-4">
+                                    <button
+                                        onClick={() => {
+                                            const newUri = {
+                                                isPrimary: (currentLine.directoryURIs?.directoryUri || []).length === 0 ? 't' : 'f',
+                                                uri: '',
+                                                partition: { _: '', uuid: '' },
+                                                advertiseGloballyViaIls: 'f',
+                                            };
+                                            const updatedUris = [...(currentLine.directoryURIs?.directoryUri || []), newUri];
+                                            setCurrentLine({
+                                                ...currentLine,
+                                                directoryURIs: {
+                                                    directoryUri: updatedUris,
+                                                },
+                                            });
+                                            setHasChanges(true);
+                                        }}
+                                        className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                                    >
+                                        Add Row
+                                    </button>
+                                </div>
+                            </SectionCard>
+
+                            {/* PSTN Failover */}
+                            <SectionCard
+                                title="PSTN Failover for Enterprise Alternate Number, +E.164 Alternate Number, and URI Dialing"
+                                description="Configure PSTN failover settings"
+                            >
+                                <div className="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Advertised Failover Number</label>
+                                        <Select
+                                            value={(() => {
+                                                const value = currentLine.pstnFailover;
+                                                if (!value || value === '') return 'None';
+                                                if (value === '100') return '100';
+                                                if (value === '200') return '200';
+                                                return 'None';
+                                            })()}
+                                            onValueChange={(value) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    pstnFailover: value === 'None' ? '' : value,
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full bg-background">
+                                                <SelectValue placeholder="Select failover number" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="None">None</SelectItem>
+                                                <SelectItem value="100">Enterprise Number</SelectItem>
+                                                <SelectItem value="200">+E.164 Number</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </SectionCard>
 
                             {/* Call Forward and Call Pickup Settings */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <h2 className="text-lg font-semibold">Call Forward and Call Pickup Settings</h2>
-                                </div>
-                                <div className="space-y-6 p-6">
+                            <SectionCard
+                                title="Call Forward and Call Pickup Settings"
+                                description="Calling Search Space, Voicemail, and reversion timers"
+                            >
+                                <div className="space-y-6">
                                     {/* Calling Search Space Activation Policy */}
                                     <div>
                                         <label className="mb-1 block text-sm font-medium">Calling Search Space Activation Policy</label>
@@ -1915,7 +1879,148 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                         />
                                     </div>
                                 </div>
-                            </div>
+                            </SectionCard>
+
+                            {/* Park Monitoring */}
+                            <SectionCard title="Park Monitoring" description="Configure park monitoring forwarding and reversion timer">
+                                <div className="grid grid-cols-1 gap-6">
+                                    {/* External */}
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={
+                                                    currentLine.parkMonForwardNoRetrieveVmEnabled === 'true' ||
+                                                    currentLine.parkMonForwardNoRetrieveVmEnabled === true
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        parkMonForwardNoRetrieveVmEnabled: checked ? 'true' : 'false',
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium">Voice Mail</span>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">
+                                                Park Monitoring Forward No Retrieve Destination External
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.parkMonForwardNoRetrieveDn || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({ ...currentLine, parkMonForwardNoRetrieveDn: e.target.value });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Destination (external)"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
+                                            <AsyncCombobox
+                                                value={currentLine.parkMonForwardNoRetrieveCssName?.uuid || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        parkMonForwardNoRetrieveCssName: { _: selectedOption?.label || '', uuid: value },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Select CSS"
+                                                searchPlaceholder="Search calling search spaces..."
+                                                emptyMessage="No calling search spaces found."
+                                                loadingMessage="Loading calling search spaces..."
+                                                fetchOptions={async (query: string) =>
+                                                    callingSearchSpaces
+                                                        .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
+                                                        .map((o: any) => ({ value: o.uuid, label: o.name }))
+                                                }
+                                                displayValue={currentLine.parkMonForwardNoRetrieveCssName?._ || ''}
+                                                onMouseEnter={loadCallingSearchSpaces}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Internal */}
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={
+                                                    currentLine.parkMonForwardNoRetrieveIntVmEnabled === 'true' ||
+                                                    currentLine.parkMonForwardNoRetrieveIntVmEnabled === true
+                                                }
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        parkMonForwardNoRetrieveIntVmEnabled: checked ? 'true' : 'false',
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium">Voice Mail</span>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">
+                                                Park Monitoring Forward No Retrieve Destination Internal
+                                            </label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.parkMonForwardNoRetrieveIntDn || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({ ...currentLine, parkMonForwardNoRetrieveIntDn: e.target.value });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Destination (internal)"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">Calling Search Space</label>
+                                            <AsyncCombobox
+                                                value={currentLine.parkMonForwardNoRetrieveIntCssName?.uuid || ''}
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        parkMonForwardNoRetrieveIntCssName: { _: selectedOption?.label || '', uuid: value },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Select CSS"
+                                                searchPlaceholder="Search calling search spaces..."
+                                                emptyMessage="No calling search spaces found."
+                                                loadingMessage="Loading calling search spaces..."
+                                                fetchOptions={async (query: string) =>
+                                                    callingSearchSpaces
+                                                        .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
+                                                        .map((o: any) => ({ value: o.uuid, label: o.name }))
+                                                }
+                                                displayValue={currentLine.parkMonForwardNoRetrieveIntCssName?._ || ''}
+                                                onMouseEnter={loadCallingSearchSpaces}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Reversion Timer */}
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Park Monitoring Reversion Timer</label>
+                                        <input
+                                            type="number"
+                                            className="w-full rounded-md border bg-background p-2"
+                                            value={currentLine.parkMonReversionTimer || ''}
+                                            onChange={(e) => {
+                                                setCurrentLine({ ...currentLine, parkMonReversionTimer: e.target.value });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Seconds"
+                                        />
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            A blank value will use the Park Monitoring Reversion Timer service parameter.
+                                        </p>
+                                    </div>
+                                </div>
+                            </SectionCard>
 
                             {/* Debug Section - Remove this later */}
                             <div className="overflow-hidden rounded-lg border bg-card shadow">

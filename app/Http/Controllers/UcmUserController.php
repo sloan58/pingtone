@@ -38,14 +38,14 @@ class UcmUserController extends Controller
         $logic = strtolower((string)$request->input('logic', 'and')) === 'or' ? 'or' : 'and';
         if (!empty($filters)) {
             $this->applyFilters($query, $filters, $logic, [
-                'name', 'userid', 'firstName', 'lastName', 'mailid', 'department', 'ucm_id'
+                'userid', 'displayName', 'mailid', 'ucm_id'
             ]);
         }
 
         // TanStack Table server-driven paging/sorting (filters to be added later if needed)
-        $sort = (string)$request->input('sort', 'name:asc');
+        $sort = (string)$request->input('sort', 'userid:asc');
         [$sortField, $sortDir] = array_pad(explode(':', $sort, 2), 2, 'asc');
-        $sortField = in_array($sortField, ['name', 'userid', 'firstName', 'lastName', 'mailid', 'department']) ? $sortField : 'name';
+        $sortField = in_array($sortField, ['userid', 'displayName', 'mailid']) ? $sortField : 'userid';
         $sortDir = strtolower($sortDir) === 'desc' ? 'desc' : 'asc';
 
         $perPage = (int)$request->input('perPage', 20);
@@ -62,6 +62,7 @@ class UcmUserController extends Controller
             'tableState' => [
                 'sort' => $sortField . ':' . $sortDir,
                 'perPage' => $perPage,
+                'columnVisibility' => (object) [], // Empty object for initial state
             ],
             'filters' => [
                 'applied' => $filters,

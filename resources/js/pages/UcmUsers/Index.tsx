@@ -3,22 +3,16 @@ import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Head, Link, router } from '@inertiajs/react';
-import { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/data-table';
+import { Head, router } from '@inertiajs/react';
+import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import * as React from 'react';
 
 interface User {
     _id: string;
-    name: string;
     userid: string;
+    displayName?: string;
     mailid?: string;
-    firstName?: string;
-    lastName?: string;
-    department?: string;
-    enableMobility?: boolean;
-    enableExtensionMobility?: boolean;
-    enableMobileVoiceAccess?: boolean;
     ucm: {
         name: string;
     };
@@ -38,27 +32,27 @@ export default function Index({
     users,
     tableState,
     filters,
-}: Props & { tableState?: { sort: string; perPage: number }; filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' } }) {
+}: Props & {
+    tableState?: { sort: string; perPage: number; columnVisibility?: VisibilityState };
+    filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' };
+}) {
     const [sorting, setSorting] = React.useState(() => {
-        const [id, dir] = (tableState?.sort ?? 'name:asc').split(':');
+        const [id, dir] = (tableState?.sort ?? 'userid:asc').split(':');
         return [{ id, desc: dir === 'desc' }];
     });
     const [perPage, setPerPage] = React.useState<number>(tableState?.perPage ?? users.per_page ?? 20);
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(tableState?.columnVisibility ?? {});
 
     const columns: ColumnDef<User & any>[] = [
-        {
-            accessorKey: 'name',
-            header: 'Name',
-            cell: ({ row }) => {
-                const user = row.original as any;
-                const displayName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-';
-                return <div className="font-medium">{displayName}</div>;
-            },
-        },
         {
             accessorKey: 'userid',
             header: 'User ID',
             cell: ({ row }) => <code className="rounded bg-muted px-2 py-1 text-sm">{(row.original as any).userid}</code>,
+        },
+        {
+            accessorKey: 'displayName',
+            header: 'Display Name',
+            cell: ({ row }) => <div className="font-medium">{(row.original as any).displayName || '-'}</div>,
         },
         {
             accessorKey: 'mailid',
@@ -72,6 +66,11 @@ export default function Index({
         },
     ];
 
+    const handleColumnVisibilityChange = (updater: VisibilityState) => {
+        setColumnVisibility(updater);
+        // Column visibility is purely UI state - no need for API calls
+    };
+
     return (
         <AppShell variant="sidebar">
             <Head title="Users" />
@@ -84,15 +83,13 @@ export default function Index({
                 <AppContent variant="sidebar">
                     <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
                         <div className="p-6">
-                            <h2 className="mb-6 text-2xl font-semibold">Users</h2>
+                            <h2 className="mb-6 text-2xl font-semibold">UCM Users</h2>
                             <div className="mb-4">
                                 <AdvancedSearch
                                     fields={[
-                                        { value: 'name', label: 'Name' },
                                         { value: 'userid', label: 'User ID' },
+                                        { value: 'displayName', label: 'Display Name' },
                                         { value: 'mailid', label: 'Email' },
-                                        { value: 'firstName', label: 'First Name' },
-                                        { value: 'lastName', label: 'Last Name' },
                                     ]}
                                     initial={filters}
                                     onApply={(payload) => {
@@ -101,7 +98,7 @@ export default function Index({
                                             filters_json: JSON.stringify(payload.filters),
                                             sort: (sorting as any)[0]
                                                 ? `${(sorting as any)[0].id}:${(sorting as any)[0].desc ? 'desc' : 'asc'}`
-                                                : 'name:asc',
+                                                : 'userid:asc',
                                             page: 1,
                                             perPage,
                                         };
@@ -109,58 +106,104 @@ export default function Index({
                                     }}
                                 />
                             </div>
-                            <div className="rounded-md border">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Name</TableHead>
-                                            <TableHead>User ID</TableHead>
-                                            <TableHead>Email</TableHead>
-                                            <TableHead>UCM</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {users.data.map((user) => (
-                                            <TableRow key={user._id}>
-                                                <TableCell>
-                                                    <div className="font-medium">
-                                                        {user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <code className="rounded bg-muted px-2 py-1 text-sm">{user.userid}</code>
-                                                </TableCell>
-                                                <TableCell>{user.mailid || '-'}</TableCell>
-                                                <TableCell>{user.ucm.name}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                            <DataTable
+                                columns={columns}
+                                data={users.data as any}
+                                sorting={sorting as any}
+                                onSortingChange={(next: any) => {
+                                    setSorting(next);
+                                    const first = next[0];
+                                    if (first) {
+                                        const dir = first.desc ? 'desc' : 'asc';
+                                        router.get(
+                                            '/ucm-users',
+                                            {
+                                                sort: `${first.id}:${dir}`,
+                                                page: users.current_page,
+                                                perPage,
+                                            },
+                                            {
+                                                preserveState: true,
+                                                replace: true,
+                                            },
+                                        );
+                                    }
+                                }}
+                                columnVisibility={columnVisibility}
+                                onColumnVisibilityChange={handleColumnVisibilityChange}
+                            />
 
-                            {/* Pagination */}
-                            {users.last_page > 1 && (
-                                <div className="flex items-center justify-between space-x-2 py-4">
-                                    <div className="text-sm text-muted-foreground">
-                                        Showing {(users.current_page - 1) * users.per_page + 1} to{' '}
-                                        {Math.min(users.current_page * users.per_page, users.total)} of {users.total} results
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        {Array.from({ length: users.last_page }, (_, i) => i + 1).map((page) => (
-                                            <Link
-                                                key={page}
-                                                href={`/ucm-users?page=${page}`}
-                                                className={`rounded-md px-3 py-2 text-sm ${
-                                                    page === users.current_page ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
-                                                }`}
-                                                preserveScroll
-                                            >
-                                                {page}
-                                            </Link>
-                                        ))}
-                                    </div>
+                            <div className="mt-4 flex items-center justify-between gap-4">
+                                <div className="text-sm text-muted-foreground">
+                                    Page {users.current_page} of {users.last_page} • {users.total} total
                                 </div>
-                            )}
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm">Rows:</label>
+                                    <select
+                                        className="rounded-md border bg-background p-1 text-sm"
+                                        value={perPage}
+                                        onChange={(e) => {
+                                            const next = parseInt(e.target.value, 10);
+                                            setPerPage(next);
+                                            const first: any = (sorting as any)[0] ?? { id: 'userid', desc: false };
+                                            const dir = first.desc ? 'desc' : 'asc';
+                                            router.get(
+                                                '/ucm-users',
+                                                {
+                                                    sort: `${first.id}:${dir}`,
+                                                    page: 1,
+                                                    perPage: next,
+                                                },
+                                                { preserveState: true, replace: true },
+                                            );
+                                        }}
+                                    >
+                                        {[10, 25, 50, 100].map((n) => (
+                                            <option key={n} value={n}>
+                                                {n}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        className="rounded-md border px-2 py-1 text-sm disabled:opacity-50"
+                                        disabled={users.current_page <= 1}
+                                        onClick={() => {
+                                            const first: any = (sorting as any)[0] ?? { id: 'userid', desc: false };
+                                            const dir = first.desc ? 'desc' : 'asc';
+                                            router.get(
+                                                '/ucm-users',
+                                                {
+                                                    sort: `${first.id}:${dir}`,
+                                                    page: users.current_page - 1,
+                                                    perPage,
+                                                },
+                                                { preserveState: true, replace: true },
+                                            );
+                                        }}
+                                    >
+                                        Prev
+                                    </button>
+                                    <button
+                                        className="rounded-md border px-2 py-1 text-sm disabled:opacity-50"
+                                        disabled={users.current_page >= users.last_page}
+                                        onClick={() => {
+                                            const first: any = (sorting as any)[0] ?? { id: 'userid', desc: false };
+                                            const dir = first.desc ? 'desc' : 'asc';
+                                            router.get(
+                                                '/ucm-users',
+                                                {
+                                                    sort: `${first.id}:${dir}`,
+                                                    page: users.current_page + 1,
+                                                    perPage,
+                                                },
+                                                { preserveState: true, replace: true },
+                                            );
+                                        }}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </AppContent>
