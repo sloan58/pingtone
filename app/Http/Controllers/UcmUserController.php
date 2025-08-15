@@ -20,7 +20,9 @@ class UcmUserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = UcmUser::query()->with(['ucm']);
+        $query = UcmUser::query()
+            ->with(['ucm'])
+            ->endUsers();
 
         // Filters (AdvancedSearch) via JSON to avoid query parser issues
         $rawFilters = $request->input('filters_json');
@@ -36,14 +38,14 @@ class UcmUserController extends Controller
         $logic = strtolower((string)$request->input('logic', 'and')) === 'or' ? 'or' : 'and';
         if (!empty($filters)) {
             $this->applyFilters($query, $filters, $logic, [
-                'name', 'userid', 'firstName', 'lastName', 'department', 'ucm_id'
+                'name', 'userid', 'firstName', 'lastName', 'mailid', 'department', 'ucm_id'
             ]);
         }
 
         // TanStack Table server-driven paging/sorting (filters to be added later if needed)
         $sort = (string)$request->input('sort', 'name:asc');
         [$sortField, $sortDir] = array_pad(explode(':', $sort, 2), 2, 'asc');
-        $sortField = in_array($sortField, ['name', 'userid', 'firstName', 'lastName', 'department']) ? $sortField : 'name';
+        $sortField = in_array($sortField, ['name', 'userid', 'firstName', 'lastName', 'mailid', 'department']) ? $sortField : 'name';
         $sortDir = strtolower($sortDir) === 'desc' ? 'desc' : 'asc';
 
         $perPage = (int)$request->input('perPage', 20);

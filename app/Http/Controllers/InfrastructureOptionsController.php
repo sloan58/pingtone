@@ -24,6 +24,7 @@ use App\Models\SipDialRules;
 use App\Models\PhoneSecurityProfile;
 use App\Models\SipProfile;
 use App\Models\DeviceProfile;
+use App\Models\CallPickupGroup;
 use App\Models\ExternalCallControlProfile;
 use App\Models\VoicemailProfile;
 use App\Models\RoutePartition;
@@ -392,6 +393,22 @@ class InfrastructureOptionsController extends Controller
     public function voicemailProfiles(Ucm $ucm): JsonResponse
     {
         $options = VoicemailProfile::query()
+            ->where('ucm_id', $ucm->getKey())
+            ->orderBy('name')
+            ->get(['_id', 'uuid', 'name'])
+            ->map(fn ($row) => [
+                'id' => (string) $row->_id,
+                'uuid' => $row->uuid ?? null,
+                'name' => $row->name ?? ($row['name'] ?? null),
+            ])
+            ->values();
+
+        return response()->json($options);
+    }
+
+    public function callPickupGroups(Ucm $ucm): JsonResponse
+    {
+        $options = CallPickupGroup::query()
             ->where('ucm_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])

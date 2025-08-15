@@ -3,7 +3,6 @@ import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Head, Link, router } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
@@ -13,6 +12,7 @@ interface User {
     _id: string;
     name: string;
     userid: string;
+    mailid?: string;
     firstName?: string;
     lastName?: string;
     department?: string;
@@ -51,16 +51,8 @@ export default function Index({
             header: 'Name',
             cell: ({ row }) => {
                 const user = row.original as any;
-                return (
-                    <div>
-                        <div className="font-medium">{user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()}</div>
-                        {user.firstName && user.lastName && (
-                            <div className="text-sm text-muted-foreground">
-                                {user.firstName} {user.lastName}
-                            </div>
-                        )}
-                    </div>
-                );
+                const displayName = user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-';
+                return <div className="font-medium">{displayName}</div>;
             },
         },
         {
@@ -69,40 +61,14 @@ export default function Index({
             cell: ({ row }) => <code className="rounded bg-muted px-2 py-1 text-sm">{(row.original as any).userid}</code>,
         },
         {
-            accessorKey: 'department',
-            header: 'Department',
-            cell: ({ row }) => (row.original as any).department || '-',
+            accessorKey: 'mailid',
+            header: 'Email',
+            cell: ({ row }) => (row.original as any).mailid || '-',
         },
         {
             accessorKey: 'ucm.name',
             header: 'UCM',
             cell: ({ row }) => (row.original as any).ucm?.name || '-',
-        },
-        {
-            accessorKey: 'features',
-            header: 'Features',
-            cell: ({ row }) => {
-                const user = row.original as any;
-                return (
-                    <div className="flex gap-1">
-                        {user.enableMobility && (
-                            <Badge variant="secondary" className="text-xs">
-                                Mobility
-                            </Badge>
-                        )}
-                        {user.enableExtensionMobility && (
-                            <Badge variant="secondary" className="text-xs">
-                                EM
-                            </Badge>
-                        )}
-                        {user.enableMobileVoiceAccess && (
-                            <Badge variant="secondary" className="text-xs">
-                                MVA
-                            </Badge>
-                        )}
-                    </div>
-                );
-            },
         },
     ];
 
@@ -124,9 +90,9 @@ export default function Index({
                                     fields={[
                                         { value: 'name', label: 'Name' },
                                         { value: 'userid', label: 'User ID' },
+                                        { value: 'mailid', label: 'Email' },
                                         { value: 'firstName', label: 'First Name' },
                                         { value: 'lastName', label: 'Last Name' },
-                                        { value: 'department', label: 'Department' },
                                     ]}
                                     initial={filters}
                                     onApply={(payload) => {
@@ -149,50 +115,23 @@ export default function Index({
                                         <TableRow>
                                             <TableHead>Name</TableHead>
                                             <TableHead>User ID</TableHead>
-                                            <TableHead>Department</TableHead>
+                                            <TableHead>Email</TableHead>
                                             <TableHead>UCM</TableHead>
-                                            <TableHead>Features</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {users.data.map((user) => (
                                             <TableRow key={user._id}>
                                                 <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">
-                                                            {user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim()}
-                                                        </div>
-                                                        {user.firstName && user.lastName && (
-                                                            <div className="text-sm text-muted-foreground">
-                                                                {user.firstName} {user.lastName}
-                                                            </div>
-                                                        )}
+                                                    <div className="font-medium">
+                                                        {user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || '-'}
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
                                                     <code className="rounded bg-muted px-2 py-1 text-sm">{user.userid}</code>
                                                 </TableCell>
-                                                <TableCell>{user.department || '-'}</TableCell>
+                                                <TableCell>{user.mailid || '-'}</TableCell>
                                                 <TableCell>{user.ucm.name}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex gap-1">
-                                                        {user.enableMobility && (
-                                                            <Badge variant="secondary" className="text-xs">
-                                                                Mobility
-                                                            </Badge>
-                                                        )}
-                                                        {user.enableExtensionMobility && (
-                                                            <Badge variant="secondary" className="text-xs">
-                                                                EM
-                                                            </Badge>
-                                                        )}
-                                                        {user.enableMobileVoiceAccess && (
-                                                            <Badge variant="secondary" className="text-xs">
-                                                                MVA
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>

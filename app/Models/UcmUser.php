@@ -14,6 +14,16 @@ class UcmUser extends Model
         return $this->belongsTo(Ucm::class);
     }
 
+    public function scopeEndUsers($query)
+    {
+        return $query->where('type', 'enduser');
+    }
+
+    public function scopeAppUsers($query)
+    {
+        return $query->where('type', 'appuser');
+    }
+
     public static function storeUcmDetails(array $user, Ucm $ucm, string $type = 'enduser'): void
     {
         $user['ucm_id'] = $ucm->id;

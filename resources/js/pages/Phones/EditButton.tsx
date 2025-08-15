@@ -88,6 +88,8 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
     const [callingSearchSpaces, setCallingSearchSpaces] = useState<any[]>([]);
     const [mohAudioSources, setMohAudioSources] = useState<any[]>([]);
     const [routePartitions, setRoutePartitions] = useState<any[]>([]);
+    const [aarGroups, setAarGroups] = useState<any[]>([]);
+    const [callPickupGroups, setCallPickupGroups] = useState<any[]>([]);
 
     // State for device dissociation
     const [dissociatingDevices, setDissociatingDevices] = useState<Set<string>>(new Set());
@@ -340,6 +342,30 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
         }
     };
 
+    const loadAarGroups = async () => {
+        if (aarGroups.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${phone.ucm_id}/options/aar-groups`);
+                const responseData = await response.json();
+                setAarGroups(responseData);
+            } catch (error) {
+                console.error('Failed to load AAR groups:', error);
+            }
+        }
+    };
+
+    const loadCallPickupGroups = async () => {
+        if (callPickupGroups.length === 0) {
+            try {
+                const response = await fetch(`/api/ucm/${phone.ucm_id}/options/call-pickup-groups`);
+                const responseData = await response.json();
+                setCallPickupGroups(responseData);
+            } catch (error) {
+                console.error('Failed to load Call Pickup Groups:', error);
+            }
+        }
+    };
+
     const fetchRoutePartitionOptions = async (query: string) => {
         // TODO: Implement API call to search for Route Partitions
         console.log('Searching Route Partitions for:', query);
@@ -588,6 +614,94 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 </span>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* AAR Settings */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <h2 className="text-lg font-semibold">AAR Settings</h2>
+                                </div>
+                                <div className="p-6">
+                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                                        <div className="flex items-center space-x-3">
+                                            <Switch
+                                                checked={currentLine.aarVoiceMailEnabled === 'true' || currentLine.aarVoiceMailEnabled === true}
+                                                onCheckedChange={(checked) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        aarVoiceMailEnabled: checked ? 'true' : 'false',
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                            />
+                                            <span className="text-sm font-medium">Voice Mail</span>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">AAR Destination Mask</label>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-md border bg-background p-2"
+                                                value={currentLine.aarDestinationMask || ''}
+                                                onChange={(e) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        aarDestinationMask: e.target.value,
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Enter AAR destination mask"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-sm font-medium">AAR Group</label>
+                                            <AsyncCombobox
+                                                value={
+                                                    typeof currentLine.aarNeighborhoodName === 'string'
+                                                        ? ''
+                                                        : currentLine.aarNeighborhoodName?.uuid || ''
+                                                }
+                                                onValueChange={(value, selectedOption) => {
+                                                    setCurrentLine({
+                                                        ...currentLine,
+                                                        aarNeighborhoodName: {
+                                                            _: selectedOption?.label || '',
+                                                            uuid: value,
+                                                        },
+                                                    });
+                                                    setHasChanges(true);
+                                                }}
+                                                placeholder="Select AAR group..."
+                                                searchPlaceholder="Search AAR groups..."
+                                                emptyMessage="No AAR groups found."
+                                                loadingMessage="Loading AAR groups..."
+                                                fetchOptions={async (query: string) => {
+                                                    return aarGroups
+                                                        .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
+                                                        .map((o: any) => ({ value: o.uuid, label: o.name }));
+                                                }}
+                                                displayValue={
+                                                    typeof currentLine.aarNeighborhoodName === 'string'
+                                                        ? currentLine.aarNeighborhoodName
+                                                        : currentLine.aarNeighborhoodName?._ || ''
+                                                }
+                                                onMouseEnter={loadAarGroups}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex items-center space-x-3">
+                                        <Switch
+                                            checked={currentLine.aarKeepCallHistory === 'true' || currentLine.aarKeepCallHistory === true}
+                                            onCheckedChange={(checked) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    aarKeepCallHistory: checked ? 'true' : 'false',
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                        />
+                                        <span className="text-sm">Retain this destination in the call forwarding history</span>
                                     </div>
                                 </div>
                             </div>
@@ -1594,6 +1708,211 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Call Forward and Call Pickup Settings */}
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="border-b p-6">
+                                    <h2 className="text-lg font-semibold">Call Forward and Call Pickup Settings</h2>
+                                </div>
+                                <div className="space-y-6 p-6">
+                                    {/* Calling Search Space Activation Policy */}
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Calling Search Space Activation Policy</label>
+                                        <Select
+                                            value={currentLine.callingSearchSpaceActivationPolicy || 'Use System Default'}
+                                            onValueChange={(value) => {
+                                                setCurrentLine({ ...currentLine, callingSearchSpaceActivationPolicy: value });
+                                                setHasChanges(true);
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full bg-background">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Use System Default">Use System Default</SelectItem>
+                                                <SelectItem value="With Configured CSS">With Configured CSS</SelectItem>
+                                                <SelectItem value="With Originating Device CSS">With Originating Device CSS</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* Helper to render a single forward row */}
+                                    {(
+                                        [
+                                            { key: 'callForwardAll', label: 'Forward All', hasDuration: false, hasSecondaryCss: true },
+                                            { key: 'callForwardBusyInt', label: 'Forward Busy Internal', hasDuration: false },
+                                            { key: 'callForwardBusy', label: 'Forward Busy External', hasDuration: false },
+                                            { key: 'callForwardNoAnswerInt', label: 'Forward No Answer Internal', hasDuration: true },
+                                            { key: 'callForwardNoAnswer', label: 'Forward No Answer External', hasDuration: true },
+                                            { key: 'callForwardNoCoverageInt', label: 'Forward No Coverage Internal', hasDuration: false },
+                                            { key: 'callForwardNoCoverage', label: 'Forward No Coverage External', hasDuration: false },
+                                            { key: 'callForwardOnFailure', label: 'Forward on CTI Failure', hasDuration: false },
+                                            { key: 'callForwardNotRegisteredInt', label: 'Forward Unregistered Internal', hasDuration: false },
+                                            { key: 'callForwardNotRegistered', label: 'Forward Unregistered External', hasDuration: false },
+                                        ] as const
+                                    ).map((cfg) => {
+                                        const cf: any = (currentLine as any)[cfg.key] || {};
+                                        return (
+                                            <div key={cfg.key} className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                                <div className="flex items-center space-x-3">
+                                                    <Switch
+                                                        checked={cf.forwardToVoiceMail === 'true' || cf.forwardToVoiceMail === true}
+                                                        onCheckedChange={(checked) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                [cfg.key]: {
+                                                                    ...cf,
+                                                                    forwardToVoiceMail: checked ? 'true' : 'false',
+                                                                },
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                    />
+                                                    <span className="text-sm font-medium">{cfg.label}</span>
+                                                </div>
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        className="w-full rounded-md border bg-background p-2"
+                                                        value={cf.destination || ''}
+                                                        onChange={(e) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                [cfg.key]: { ...cf, destination: e.target.value },
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                        placeholder="Destination"
+                                                    />
+                                                    {cfg.hasDuration && (
+                                                        <input
+                                                            type="number"
+                                                            className="mt-2 w-full rounded-md border bg-background p-2"
+                                                            value={cf.duration || ''}
+                                                            onChange={(e) => {
+                                                                setCurrentLine({
+                                                                    ...currentLine,
+                                                                    [cfg.key]: { ...cf, duration: e.target.value },
+                                                                });
+                                                                setHasChanges(true);
+                                                            }}
+                                                            placeholder="Duration (seconds)"
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <AsyncCombobox
+                                                        value={cf.callingSearchSpaceName?.uuid || ''}
+                                                        onValueChange={(value, selectedOption) => {
+                                                            setCurrentLine({
+                                                                ...currentLine,
+                                                                [cfg.key]: {
+                                                                    ...cf,
+                                                                    callingSearchSpaceName: { _: selectedOption?.label || '', uuid: value },
+                                                                },
+                                                            });
+                                                            setHasChanges(true);
+                                                        }}
+                                                        placeholder="Select CSS"
+                                                        searchPlaceholder="Search calling search spaces..."
+                                                        emptyMessage="No calling search spaces found."
+                                                        loadingMessage="Loading calling search spaces..."
+                                                        fetchOptions={async (query: string) => {
+                                                            return callingSearchSpaces
+                                                                .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
+                                                                .map((o: any) => ({ value: o.uuid, label: o.name }));
+                                                        }}
+                                                        displayValue={cf.callingSearchSpaceName?._ || ''}
+                                                        onMouseEnter={loadCallingSearchSpaces}
+                                                    />
+                                                    {cfg.hasSecondaryCss && (
+                                                        <div className="mt-2">
+                                                            <label className="mb-1 block text-xs text-muted-foreground">
+                                                                Secondary Calling Search Space
+                                                            </label>
+                                                            <AsyncCombobox
+                                                                value={cf.secondaryCallingSearchSpaceName?.uuid || ''}
+                                                                onValueChange={(value, selectedOption) => {
+                                                                    setCurrentLine({
+                                                                        ...currentLine,
+                                                                        [cfg.key]: {
+                                                                            ...cf,
+                                                                            secondaryCallingSearchSpaceName: {
+                                                                                _: selectedOption?.label || '',
+                                                                                uuid: value,
+                                                                            },
+                                                                        },
+                                                                    });
+                                                                    setHasChanges(true);
+                                                                }}
+                                                                placeholder="Select secondary CSS"
+                                                                searchPlaceholder="Search calling search spaces..."
+                                                                emptyMessage="No calling search spaces found."
+                                                                loadingMessage="Loading calling search spaces..."
+                                                                fetchOptions={async (query: string) => {
+                                                                    return callingSearchSpaces
+                                                                        .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
+                                                                        .map((o: any) => ({ value: o.uuid, label: o.name }));
+                                                                }}
+                                                                displayValue={cf.secondaryCallingSearchSpaceName?._ || ''}
+                                                                onMouseEnter={loadCallingSearchSpaces}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* No Answer Ring Duration */}
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">No Answer Ring Duration (seconds)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full rounded-md border bg-background p-2"
+                                            value={currentLine.callForwardNoAnswer?.duration || ''}
+                                            onChange={(e) => {
+                                                const v = e.target.value;
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    callForwardNoAnswer: {
+                                                        ...(currentLine as any).callForwardNoAnswer,
+                                                        duration: v,
+                                                    },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Duration (seconds)"
+                                        />
+                                    </div>
+
+                                    {/* Call Pickup Group */}
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Call Pickup Group</label>
+                                        <AsyncCombobox
+                                            value={currentLine.callPickupGroupName?.uuid || ''}
+                                            onValueChange={(value, selectedOption) => {
+                                                setCurrentLine({
+                                                    ...currentLine,
+                                                    callPickupGroupName: { _: selectedOption?.label || '', uuid: value },
+                                                });
+                                                setHasChanges(true);
+                                            }}
+                                            placeholder="Select call pickup group"
+                                            searchPlaceholder="Search call pickup groups..."
+                                            emptyMessage="No call pickup groups found."
+                                            loadingMessage="Loading call pickup groups..."
+                                            fetchOptions={async (query: string) => {
+                                                return callPickupGroups
+                                                    .filter((o: any) => o.name.toLowerCase().includes(query.toLowerCase()))
+                                                    .map((o: any) => ({ value: o.uuid, label: o.name }));
+                                            }}
+                                            displayValue={currentLine.callPickupGroupName?._ || ''}
+                                            onMouseEnter={loadCallPickupGroups}
+                                        />
                                     </div>
                                 </div>
                             </div>
