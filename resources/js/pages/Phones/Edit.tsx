@@ -11,8 +11,8 @@ import { Combobox } from '@/components/ui/combobox';
 import { FormSection } from '@/components/ui/form-section';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { ChevronRight, Phone, Settings } from 'lucide-react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { ChevronRight, MapPin, Phone, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -817,6 +817,56 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
                                                         handleButtonReorder(reorderedButtons);
                                                     }}
                                                 />
+                                            </div>
+                                        </div>
+
+                                        {/* Service Areas Card */}
+                                        <div className="mt-6 overflow-hidden rounded-lg border bg-card shadow">
+                                            <div className="p-6">
+                                                <div className="mb-4 flex items-center gap-2">
+                                                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                                                    <h3 className="text-lg font-semibold">Service Areas</h3>
+                                                </div>
+
+                                                {(phone as any).service_areas && (phone as any).service_areas.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                        {(phone as any).service_areas.map((serviceArea: any) => (
+                                                            <div
+                                                                key={serviceArea.id}
+                                                                className="flex items-center justify-between rounded-lg border bg-muted/50 p-3"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                                                                        <MapPin className="h-4 w-4 text-primary" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Link
+                                                                            href={`/service-areas/${serviceArea.id}/edit`}
+                                                                            className="text-sm font-medium text-primary hover:underline"
+                                                                        >
+                                                                            {serviceArea.name}
+                                                                        </Link>
+                                                                        {serviceArea.userFilter && serviceArea.userFilter.field && (
+                                                                            <p className="text-xs text-muted-foreground">
+                                                                                User Filter:{' '}
+                                                                                {serviceArea.userFilter.field === 'mailid' ? 'Email' : 'Phone'} -{' '}
+                                                                                {serviceArea.userFilter.regex}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="py-8 text-center">
+                                                        <MapPin className="mx-auto mb-3 h-12 w-12 text-muted-foreground/50" />
+                                                        <p className="text-sm text-muted-foreground">No service areas assigned</p>
+                                                        <p className="mt-1 text-xs text-muted-foreground">
+                                                            This device will be assigned to service areas based on user associations
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
