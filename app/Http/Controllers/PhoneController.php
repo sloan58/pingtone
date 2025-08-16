@@ -8,12 +8,12 @@ use SoapFault;
 use Inertia\Inertia;
 use App\Models\Line;
 use App\Models\Phone;
-use App\Services\Axl;
 use App\Models\PhoneStatus;
 use Illuminate\Http\Request;
 use App\Models\MohAudioSource;
 use App\Models\PhoneScreenCapture;
 use App\Models\PhoneButtonTemplate;
+use App\Models\ServiceAreaDeviceLink;
 use App\Services\PhoneScreenCaptureService;
 use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
@@ -34,6 +34,14 @@ class PhoneController extends Controller
     public function index(Request $request)
     {
         $query = Phone::query()->with(['ucm']);
+
+        // Filter by service area if provided
+        if ($serviceAreaId = $request->get('service_area_id')) {
+            $phoneIds = ServiceAreaDeviceLink::where('service_area_id', $serviceAreaId)
+                ->where('device_type', 'Phone')
+                ->pluck('device_id');
+            $query->whereIn('_id', $phoneIds);
+        }
 
         // Filters (AdvancedSearch) via JSON to avoid query parser issues
         $rawFilters = $request->input('filters_json');
@@ -140,6 +148,8 @@ class PhoneController extends Controller
     public function edit(Phone $phone)
     {
         $phone->load('ucm');
+        // Load service areas using custom relationship
+        $phone->service_areas = $phone->serviceAreas()->get();
 
         // Get the latest RisPort status for this phone
         $latestStatus = PhoneStatus::where('phone_name', $phone->name)
@@ -218,30 +228,12 @@ class PhoneController extends Controller
     public function update(Request $request, Phone $phone)
     {
         try {
-            // Step 1: Transform boolean values back to UCM-compatible string format
             $updateData = $request->all();
 
-            // Debug: Log what we received for digestUser
-            Log::info('Phone update - digestUser field:', [
-                'digestUser' => $updateData['digestUser'] ?? 'NOT_SET',
-                'has_digestUser' => isset($updateData['digestUser']),
-            ]);
+            $phone->updateAndSync($updateData);
 
-            // Step 2: Update the phone in UCM via AXL API
-            $axlApi = new Axl($phone->ucm);
-
-            // Send the transformed data to UCM
-            $axlApi->updatePhone($updateData);
-
-            // Step 3: If UCM update succeeds, update our local database with fresh UCM data
-            $freshUcmData = $axlApi->getPhoneByName($phone->name);
-            $phone->update($freshUcmData);
-
-            // Step 4: Refresh the phone model to ensure we have the latest data
             $phone->refresh();
 
-            // Step 5: Redirect to edit page with fresh data to ensure UI reflects current UCM state
-            // Use the phone ID to force a fresh database query instead of using the cached model instance
             return redirect()->route('phones.edit', $phone)->with('toast', [
                 'type' => 'success',
                 'title' => 'Phone updated',
@@ -374,7 +366,7 @@ class PhoneController extends Controller
             'buttonIndex' => $buttonIndex,
             'buttonType' => $type,
             'buttonConfig' => $buttonConfig,
-            'line' => $line->append('patternAndPartition'),
+            'line' => $line->append('patternAndPartition')->toArray(),
             'associatedDevices' => $associatedDevices,
         ]);
     }
@@ -411,6 +403,87 @@ class PhoneController extends Controller
             // UCM update failed - return error
             return response()->json([
                 'error' => 'Failed to update line in UCM: ' . $e->getMessage()
+            ], 500);
+
+        } catch (Exception $e) {
+            // Unexpected error
+            return response()->json([
+                'error' => 'An unexpected error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Dissociate a line from a device (Phone, DeviceProfile, or RemoteDestinationProfile)
+     */
+    public function dissociateLine(string $device_id, string $line_id)
+    {
+        try {
+            // Find the device by MongoDB ID - check all device types
+            $device = Phone::withoutGlobalScope('device_class')->find($device_id);
+            
+            if (!$device) {
+                return response()->json([
+                    'error' => 'Device not found'
+                ], 404);
+            }
+
+            // Find the line by MongoDB ID to get its UUID for filtering
+            $line = Line::find($line_id);
+            
+            if (!$line) {
+                return response()->json([
+                    'error' => 'Line not found'
+                ], 404);
+            }
+
+            // Get the current device data
+            $deviceData = $device->toArray();
+            
+            // Check if the device has lines and filter out the specified line
+            if (!isset($deviceData['lines']['line']) || !is_array($deviceData['lines']['line'])) {
+                return response()->json([
+                    'error' => 'Device has no lines configured'
+                ], 400);
+            }
+
+            // Filter out the line with the matching UUID
+            $originalLines = $deviceData['lines']['line'];
+            $filteredLines = array_filter($originalLines, function($deviceLine) use ($line) {
+                return isset($deviceLine['dirn']['uuid']) && $deviceLine['dirn']['uuid'] !== $line->uuid;
+            });
+
+            // Check if any line was actually removed
+            if (count($filteredLines) === count($originalLines)) {
+                return response()->json([
+                    'error' => 'Line not found on this device'
+                ], 400);
+            }
+
+            // Prepare update data - reindex the array to ensure proper indexing
+            $updateData = [
+                'name' => $device->name,
+                'lines' => [
+                    'line' => array_values($filteredLines)
+                ]
+            ];
+
+            // Update the device using updateAndSync (works for all device types)
+            $device->updateAndSync($updateData);
+
+            // Return updated associated devices
+            $associatedDevices = $line->getAssociatedDevices();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Line dissociated successfully',
+                'associatedDevices' => $associatedDevices
+            ]);
+
+        } catch (SoapFault $e) {
+            // UCM update failed
+            return response()->json([
+                'error' => 'Failed to dissociate line in UCM: ' . $e->getMessage()
             ], 500);
 
         } catch (Exception $e) {

@@ -738,6 +738,30 @@ class Axl extends SoapClient
     }
 
     /**
+     * Update a device profile in UCM
+     *
+     * @param array $updateObject
+     * @return array
+     * @throws SoapFault
+     */
+    public function updateDeviceProfile(array $updateObject): array
+    {
+        return $this->__soapCall('updateDeviceProfile', [$updateObject]);
+    }
+
+    /**
+     * Update a remote destination profile in UCM
+     *
+     * @param array $updateObject
+     * @return array
+     * @throws SoapFault
+     */
+    public function updateRemoteDestinationProfile(array $updateObject): array
+    {
+        return $this->__soapCall('updateRemoteDestinationProfile', [$updateObject]);
+    }
+
+    /**
      * Get debug information for troubleshooting
      */
     public function getDebugInfo(): array

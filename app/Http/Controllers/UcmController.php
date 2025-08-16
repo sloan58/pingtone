@@ -120,8 +120,17 @@ class UcmController extends Controller
             ->limit(10)
             ->get();
 
+        // Include password and SSH credentials for terminal functionality
+        $ucmWithPassword = $ucm->toArray();
+        $ucmWithPassword['password'] = $ucm->password;
+        
+        // Add SSH configuration (hardcoded for now)
+        $ucmWithPassword['ssh_username'] = 'your-ssh-username';  // Replace with actual username
+        $ucmWithPassword['ssh_password'] = 'your-ssh-password';  // Replace with actual password
+        $ucmWithPassword['ssh_port'] = 22;
+
         return Inertia::render('Ucm/Edit', [
-            'ucm' => $ucm,
+            'ucm' => $ucmWithPassword,
             'apiVersions' => Ucm::getApiVersions(),
             'syncHistory' => $syncHistory,
         ]);

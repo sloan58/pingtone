@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Ucm;
 use App\Models\User;
+use App\Models\ServiceArea;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -18,6 +18,14 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin',
             'password' => bcrypt('password'),
         ]);
+
+        ServiceArea::updateOrCreate(
+            ['name' => 'Headquarters'],
+            ['userFilter' => [
+                'field' => 'mailid',
+                'regex' => '.*@karmatek\.io',
+            ]]
+        );
 
         $this->call([
             UcmSeeder::class,

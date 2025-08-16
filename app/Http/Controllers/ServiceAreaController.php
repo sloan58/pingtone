@@ -39,21 +39,21 @@ class ServiceAreaController extends Controller
                         $method = $index === 0 ? 'where' : ($logic === 'or' ? 'orWhere' : 'where');
                         $operator = $filter['operator'] ?? 'contains';
 
-                        // Handle nested fields for userFilters
-                        if (str_starts_with($filter['field'], 'userFilters.')) {
-                            $nestedField = str_replace('userFilters.', '', $filter['field']);
+                        // Handle nested fields for userFilter
+                        if (str_starts_with($filter['field'], 'userFilter.')) {
+                            $nestedField = str_replace('userFilter.', '', $filter['field']);
                             switch ($operator) {
                                 case 'contains':
-                                    $q->$method("userFilters.$nestedField", 'like', '%' . $filter['value'] . '%');
+                                    $q->$method("userFilter.$nestedField", 'like', '%' . $filter['value'] . '%');
                                     break;
                                 case 'equals':
-                                    $q->$method("userFilters.$nestedField", $filter['value']);
+                                    $q->$method("userFilter.$nestedField", $filter['value']);
                                     break;
                                 case 'starts_with':
-                                    $q->$method("userFilters.$nestedField", 'like', $filter['value'] . '%');
+                                    $q->$method("userFilter.$nestedField", 'like', $filter['value'] . '%');
                                     break;
                                 case 'ends_with':
-                                    $q->$method("userFilters.$nestedField", 'like', '%' . $filter['value']);
+                                    $q->$method("userFilter.$nestedField", 'like', '%' . $filter['value']);
                                     break;
                             }
                         } else {
@@ -79,10 +79,10 @@ class ServiceAreaController extends Controller
 
         $perPage = $request->get('perPage', 20);
         $serviceAreas = $query->paginate($perPage);
-        
-        // Add user count manually for MongoDB compatibility
+
+        // Add user count using embedded field count (MongoDB Laravel uses embedded arrays)
         $serviceAreas->getCollection()->transform(function ($serviceArea) {
-            $serviceArea->ucm_users_count = $serviceArea->ucmUsers()->count();
+            $serviceArea->ucm_users_count = count($serviceArea->ucm_user_ids ?? []);
             return $serviceArea;
         });
 
@@ -115,14 +115,14 @@ class ServiceAreaController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:service_areas',
-                'userFilters' => 'nullable|array',
-                'userFilters.field' => 'nullable|string|in:mailid,telephoneNumber',
-                'userFilters.regex' => 'nullable|string|max:500',
+                'userFilter' => 'nullable|array',
+                'userFilter.field' => 'nullable|string|in:mailid,telephoneNumber',
+                'userFilter.regex' => 'nullable|string|max:500',
             ]);
 
-            ServiceArea::create($validated);
+            $serviceArea = ServiceArea::create($validated);
 
-            return redirect()->route('service-areas.index')
+            return redirect()->route('service-areas.edit', $serviceArea)
                 ->with('toast', [
                     'type' => 'success',
                     'title' => 'Service Area Created',
@@ -147,10 +147,12 @@ class ServiceAreaController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(ServiceArea $serviceArea): Response
+    public function edit(Request $request, ServiceArea $serviceArea): Response
     {
-        $serviceArea->load('ucmUsers');
-        
+        // Load counts for the details view metadata
+        $serviceArea->ucm_users_count = $serviceArea->ucmUsers()->count();
+        $serviceArea->phones_count = $serviceArea->phones()->count();
+
         return Inertia::render('ServiceAreas/Edit', [
             'serviceArea' => $serviceArea,
         ]);
@@ -164,9 +166,9 @@ class ServiceAreaController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255|unique:service_areas,name,' . $serviceArea->id,
-                'userFilters' => 'nullable|array',
-                'userFilters.field' => 'nullable|string|in:mailid,telephoneNumber',
-                'userFilters.regex' => 'nullable|string|max:500',
+                'userFilter' => 'nullable|array',
+                'userFilter.field' => 'nullable|string|in:mailid,telephoneNumber',
+                'userFilter.regex' => 'nullable|string|max:500',
             ]);
 
             $serviceArea->update($validated);

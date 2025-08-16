@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('ucm', UcmController::class)->except(['show']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
+    Route::resource('lines', LineController::class)->only(['index', 'edit', 'update']);
     Route::resource('ucm-users', UcmUserController::class)->only(['index']);
     Route::resource('service-areas', ServiceAreaController::class)->except(['show']);
     Route::post('/service-areas/trigger-assignment', [ServiceAreaController::class, 'triggerAssignment'])->name('service-areas.trigger-assignment');
@@ -85,6 +86,12 @@ Route::middleware('auth')->prefix('api')->group(function () {
     // Line search and details for async select
     Route::get('/lines/search', [LineController::class, 'search'])->name('lines.search');
     Route::get('/lines/{uuid}', [LineController::class, 'show'])->name('lines.show');
+    
+    // Line update API routes
+    Route::put('/lines/{uuid}', [LineController::class, 'update'])->name('lines.api.update');
+    
+    // Device dissociation from line (supports Phone, DeviceProfile, RemoteDestinationProfile)
+    Route::post('/devices/{device_id}/dissociate-line/{line_id}', [PhoneController::class, 'dissociateLine'])->name('devices.dissociate-line');
 });
 
 Route::get('/test-toast', function () {

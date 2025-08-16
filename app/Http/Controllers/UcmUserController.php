@@ -24,6 +24,13 @@ class UcmUserController extends Controller
             ->with(['ucm'])
             ->endUsers();
 
+        // Filter by service area if provided
+        if ($serviceAreaId = $request->get('service_area_id')) {
+            $userIds = \App\Models\ServiceAreaUcmUserLink::where('service_area_id', $serviceAreaId)
+                ->pluck('ucm_user_id');
+            $query->whereIn('_id', $userIds);
+        }
+
         // Filters (AdvancedSearch) via JSON to avoid query parser issues
         $rawFilters = $request->input('filters_json');
         $filters = [];

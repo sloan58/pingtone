@@ -57,6 +57,7 @@ class Phone extends Device
         return $this->callingSearchSpaceName['_'] ?? null;
     }
 
+
     /**
      * Get the current IP address from the latest status record.
      */

@@ -14,7 +14,7 @@ import * as React from 'react';
 interface ServiceArea {
     id: number;
     name: string;
-    userFilters?: {
+    userFilter?: {
         field: string;
         regex: string;
     } | null;
@@ -67,10 +67,10 @@ export default function ServiceAreasIndex({
             ),
         },
         {
-            accessorKey: 'userFilters',
-            header: 'User Filters',
+            accessorKey: 'userFilter',
+            header: 'User Filter',
             cell: ({ row }) => {
-                const filters = (row.original as any).userFilters;
+                const filters = (row.original as any).userFilter;
                 if (!filters || !filters.field || !filters.regex) {
                     return <span className="text-sm text-muted-foreground">No filters</span>;
                 }
@@ -174,8 +174,8 @@ export default function ServiceAreasIndex({
                                     <AdvancedSearch
                                         fields={[
                                             { value: 'name', label: 'Name' },
-                                            { value: 'userFilters.field', label: 'Filter Field' },
-                                            { value: 'userFilters.regex', label: 'Filter Pattern' },
+                                            { value: 'userFilter.field', label: 'Filter Field' },
+                                            { value: 'userFilter.regex', label: 'Filter Pattern' },
                                         ]}
                                         initial={filters}
                                         onApply={(payload) => {

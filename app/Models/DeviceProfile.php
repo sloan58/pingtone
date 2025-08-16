@@ -19,6 +19,8 @@ class DeviceProfile extends Device
         return $this->belongsTo(Ucm::class);
     }
 
+
+
     public static function storeUcmDetails(array $profile, Ucm $ucm): void
     {
         $profile['ucm_id'] = $ucm->id;

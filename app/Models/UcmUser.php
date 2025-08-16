@@ -4,7 +4,6 @@ namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
-use MongoDB\Laravel\Relations\BelongsToMany;
 
 class UcmUser extends Model
 {
@@ -15,9 +14,25 @@ class UcmUser extends Model
         return $this->belongsTo(Ucm::class);
     }
 
-    public function serviceAreas(): BelongsToMany
+    /**
+     * Get service areas relationship (Laravel expects this to return a Relation)
+     */
+    public function serviceAreas(): \MongoDB\Laravel\Relations\BelongsToMany
     {
-        return $this->belongsToMany(ServiceArea::class);
+        // Return a dummy belongsToMany relationship for Laravel compatibility
+        return $this->belongsToMany(ServiceArea::class, null, 'ucm_user_id', 'service_area_id');
+    }
+
+    /**
+     * Get service areas using custom link table query
+     * Use this method for actual data retrieval
+     */
+    public function getServiceAreas()
+    {
+        $serviceAreaIds = \App\Models\ServiceAreaUcmUserLink::where('ucm_user_id', $this->id)
+            ->pluck('service_area_id');
+            
+        return \App\Models\ServiceArea::whereIn('id', $serviceAreaIds);
     }
 
     public function scopeEndUsers($query)

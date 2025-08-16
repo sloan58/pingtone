@@ -1,0 +1,17 @@
+{
+  "name": "ssh-websocket-proxy",
+  "version": "1.0.0",
+  "description": "SSH WebSocket proxy for browser-based terminal",
+  "main": "ssh-proxy.js",
+  "scripts": {
+    "start": "node ssh-proxy.js",
+    "dev": "nodemon ssh-proxy.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.2",
+    "ssh2": "^1.15.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+} 

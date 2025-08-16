@@ -25,7 +25,7 @@ export default function ServiceAreaCreate() {
 
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        userFilters: {
+        userFilter: {
             field: '',
             regex: '',
         },
@@ -76,20 +76,20 @@ export default function ServiceAreaCreate() {
                                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                             </div>
 
-                            {/* User Filters */}
+                            {/* User Filter */}
                             <div className="space-y-4">
                                 <div>
-                                    <Label className="text-base font-medium">User Filters</Label>
+                                    <Label className="text-base font-medium">User Filter</Label>
                                     <p className="text-sm text-muted-foreground">Define criteria to group UCM users in this service area</p>
                                 </div>
 
                                 <div className="grid gap-4 md:grid-cols-2">
                                     {/* Field Selection */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="userFilters.field">Field</Label>
+                                        <Label htmlFor="userFilter.field">Field</Label>
                                         <Select
-                                            value={data.userFilters.field}
-                                            onValueChange={(value) => setData('userFilters', { ...data.userFilters, field: value })}
+                                            value={data.userFilter.field}
+                                            onValueChange={(value) => setData('userFilter', { ...data.userFilter, field: value })}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select field to filter by" />
@@ -99,19 +99,19 @@ export default function ServiceAreaCreate() {
                                                 <SelectItem value="telephoneNumber">Telephone Number</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        {errors['userFilters.field'] && <p className="text-sm text-destructive">{errors['userFilters.field']}</p>}
+                                        {errors['userFilter.field'] && <p className="text-sm text-destructive">{errors['userFilter.field']}</p>}
                                     </div>
 
                                     {/* Regex Pattern */}
                                     <div className="space-y-2">
-                                        <Label htmlFor="userFilters.regex">Regex Pattern</Label>
+                                        <Label htmlFor="userFilter.regex">Regex Pattern</Label>
                                         <Input
-                                            id="userFilters.regex"
-                                            value={data.userFilters.regex}
-                                            onChange={(e) => setData('userFilters', { ...data.userFilters, regex: e.target.value })}
+                                            id="userFilter.regex"
+                                            value={data.userFilter.regex}
+                                            onChange={(e) => setData('userFilter', { ...data.userFilter, regex: e.target.value })}
                                             placeholder="e.g., .*@company\.com$ or ^555.*"
                                         />
-                                        {errors['userFilters.regex'] && <p className="text-sm text-destructive">{errors['userFilters.regex']}</p>}
+                                        {errors['userFilter.regex'] && <p className="text-sm text-destructive">{errors['userFilter.regex']}</p>}
                                     </div>
                                 </div>
 

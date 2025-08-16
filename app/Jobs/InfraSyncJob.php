@@ -277,10 +277,9 @@ class InfraSyncJob implements ShouldQueue
                     }
                 }
                 $this->ucm->ucmUsers()->where('updated_at', '<', $start)->delete();
-                
-                // Dispatch job to assign users to service areas based on filters
-                dispatch(new \App\Jobs\AssignServiceAreasJob());
-                
+
+                // Service area assignment jobs are now handled by the batch system in ServicesSyncJob
+
                 break;
 
             case 'phone_button_templates':

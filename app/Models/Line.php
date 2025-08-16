@@ -45,9 +45,9 @@ class Line extends Model
     {
         $axlApi = new Axl($this->ucm);
 
-        $freshLineData = $axlApi->getLineByUuid($this->uuid);
+        $freshData = $axlApi->getLineByUuid($this->uuid);
 
-        $this->update($freshLineData);
+        $this->update($freshData);
     }
 
     /**
@@ -79,6 +79,48 @@ class Line extends Model
      */
     public function getDeviceCountAttribute(): int
     {
+        return Phone::raw()->countDocuments([
+            'lines.line' => [
+                '$elemMatch' => [
+                    'dirn.uuid' => $this->uuid
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * Get associated devices for a line
+     */
+    public function getAssociatedDevices(): array
+    {
+        // Get phones that have this line in their lines.line array
+        $phones = Phone::raw()->find([
+            'lines.line' => [
+                '$elemMatch' => [
+                    'dirn.uuid' => $this->uuid
+                ]
+            ]
+        ], [
+            '_id' => 1,
+            'name' => 1,
+            'class' => 1
+        ]);
+
+        return collect($phones)->map(function ($phone) {
+            return [
+                'id' => (string) $phone['_id'],
+                'name' => $phone['name'],
+                'class' => $phone['class'] ?? 'Phone',
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Get count of associated devices for a line
+     */
+    public function getAssociatedDevicesCount(): int
+    {
+        // Use the same query as in the Line model
         return Phone::raw()->countDocuments([
             'lines.line' => [
                 '$elemMatch' => [
