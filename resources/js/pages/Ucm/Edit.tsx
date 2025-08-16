@@ -23,6 +23,8 @@ interface Ucm {
     schema_version: string | null;
     version: string | null;
     last_sync_at: string | null;
+    ssh_username?: string;
+    ssh_password?: string;
 }
 
 interface SyncHistoryEntry {
@@ -66,6 +68,8 @@ export default function UcmEdit({ ucm, apiVersions, syncHistory }: Props) {
         username: ucm.username,
         password: '',
         schema_version: ucm.schema_version || '',
+        ssh_username: ucm.ssh_username || '',
+        ssh_password: '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -214,6 +218,31 @@ export default function UcmEdit({ ucm, apiVersions, syncHistory }: Props) {
                                                 </SelectContent>
                                             </Select>
                                             {errors.schema_version && <p className="text-sm text-destructive">{errors.schema_version}</p>}
+                                        </div>
+
+                                        {/* SSH Username */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="ssh_username">SSH Username (Optional)</Label>
+                                            <Input
+                                                id="ssh_username"
+                                                value={data.ssh_username}
+                                                onChange={(e) => setData('ssh_username', e.target.value)}
+                                                placeholder="Leave blank to use UCM username"
+                                            />
+                                            {errors.ssh_username && <p className="text-sm text-destructive">{errors.ssh_username}</p>}
+                                        </div>
+
+                                        {/* SSH Password */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="ssh_password">SSH Password (Optional)</Label>
+                                            <Input
+                                                id="ssh_password"
+                                                type="password"
+                                                value={data.ssh_password}
+                                                onChange={(e) => setData('ssh_password', e.target.value)}
+                                                placeholder="Leave blank to use UCM password"
+                                            />
+                                            {errors.ssh_password && <p className="text-sm text-destructive">{errors.ssh_password}</p>}
                                         </div>
                                     </div>
 

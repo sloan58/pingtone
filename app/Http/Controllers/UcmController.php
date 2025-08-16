@@ -49,6 +49,8 @@ class UcmController extends Controller
                 'username' => 'required|string|max:255',
                 'password' => 'required|string',
                 'schema_version' => 'required|string|max:50',
+                'ssh_username' => 'nullable|string|max:255',
+                'ssh_password' => 'nullable|string',
             ]);
 
             // Debug: Log the validated data
@@ -124,9 +126,9 @@ class UcmController extends Controller
         $ucmWithPassword = $ucm->toArray();
         $ucmWithPassword['password'] = $ucm->password;
         
-        // Add SSH configuration (hardcoded for now)
-        $ucmWithPassword['ssh_username'] = 'your-ssh-username';  // Replace with actual username
-        $ucmWithPassword['ssh_password'] = 'your-ssh-password';  // Replace with actual password
+        // Add SSH configuration from database or fallback to UCM credentials
+        $ucmWithPassword['ssh_username'] = $ucm->ssh_username ?: $ucm->username;
+        $ucmWithPassword['ssh_password'] = $ucm->ssh_password ?: $ucm->password;
         $ucmWithPassword['ssh_port'] = 22;
 
         return Inertia::render('Ucm/Edit', [
@@ -148,11 +150,18 @@ class UcmController extends Controller
                 'username' => 'required|string|max:255',
                 'password' => 'nullable|string',
                 'schema_version' => 'required|string|max:50',
+                'ssh_username' => 'nullable|string|max:255',
+                'ssh_password' => 'nullable|string',
             ]);
 
             // Only update password if provided
             if (empty($validated['password'])) {
                 unset($validated['password']);
+            }
+
+            // Only update SSH password if provided
+            if (empty($validated['ssh_password'])) {
+                unset($validated['ssh_password']);
             }
 
             $ucm->update($validated);

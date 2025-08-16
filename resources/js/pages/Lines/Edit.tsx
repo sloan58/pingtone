@@ -113,8 +113,23 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
             return;
         }
 
+        // Debug: Log the line object to see what's available
+        console.log('Line object:', line);
+        console.log('Line _id:', line._id);
+        console.log('Line id:', (line as any).id);
+
         try {
-            const response = await axios.post(`/api/devices/${deviceId}/dissociate-line/${line._id}`);
+            // Try multiple ways to get the line ID
+            const lineId = line._id || (line as any).id || line.uuid;
+            if (!lineId) {
+                console.error('No line ID found in line object:', line);
+                toast.error('Line ID not found');
+                return;
+            }
+
+            console.log('Using line ID:', lineId);
+
+            const response = await axios.post(`/api/devices/${deviceId}/dissociate-line/${lineId}`);
             toast.success(`Device "${deviceName}" dissociated successfully`);
 
             // Refresh the page to update associated devices

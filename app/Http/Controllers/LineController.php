@@ -75,7 +75,7 @@ class LineController extends Controller
         }
 
         return Inertia::render('Lines/Edit', [
-            'line' => $line->toArray(),
+            'line' => array_merge($line->toArray(), ['_id' => (string) $line->_id]),
             'associatedDevices' => $line->getAssociatedDevices(),
         ]);
     }

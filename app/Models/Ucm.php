@@ -25,6 +25,7 @@ class Ucm extends Model
     protected $casts = [
         'last_sync_at' => 'datetime',
         'password' => 'encrypted',
+        'ssh_password' => 'encrypted',
     ];
 
     /**
@@ -32,6 +33,7 @@ class Ucm extends Model
      */
     protected $hidden = [
         'password',
+        'ssh_password',
     ];
 
     /**
