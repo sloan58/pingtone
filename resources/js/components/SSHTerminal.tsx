@@ -280,7 +280,8 @@ export default function SSHTerminalComponent({
                     background: '#000', 
                     borderRadius: 8, 
                     border: '1px solid hsl(var(--primary) / 0.2)',
-                    transition: 'height 0.3s ease'
+                    transition: 'height 0.3s ease',
+                    padding: '12px'
                 }}>
                     <div ref={terminalRef} style={{ width: '100%', height: '100%' }} />
                 </div>
