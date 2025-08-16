@@ -114,9 +114,9 @@ export default function UcmCreate({ apiVersions }: Props) {
                                     {errors.hostname && <p className="text-sm text-destructive">{errors.hostname}</p>}
                                 </div>
 
-                                {/* Username */}
+                                {/* API Username */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="username">Username</Label>
+                                    <Label htmlFor="username">API Username</Label>
                                     <Input
                                         id="username"
                                         value={data.username}
@@ -126,9 +126,9 @@ export default function UcmCreate({ apiVersions }: Props) {
                                     {errors.username && <p className="text-sm text-destructive">{errors.username}</p>}
                                 </div>
 
-                                {/* Password */}
+                                {/* API Password */}
                                 <div className="space-y-2">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label htmlFor="password">API Password</Label>
                                     <Input
                                         id="password"
                                         type="password"
@@ -139,7 +139,32 @@ export default function UcmCreate({ apiVersions }: Props) {
                                     {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                                 </div>
 
-                                {/* Schema Version */}
+                                {/* SSH Username */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="ssh_username">SSH Username (Optional)</Label>
+                                    <Input
+                                        id="ssh_username"
+                                        value={data.ssh_username}
+                                        onChange={(e) => setData('ssh_username', e.target.value)}
+                                        placeholder="Leave blank to use API username"
+                                    />
+                                    {errors.ssh_username && <p className="text-sm text-destructive">{errors.ssh_username}</p>}
+                                </div>
+
+                                {/* SSH Password */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="ssh_password">SSH Password (Optional)</Label>
+                                    <Input
+                                        id="ssh_password"
+                                        type="password"
+                                        value={data.ssh_password}
+                                        onChange={(e) => setData('ssh_password', e.target.value)}
+                                        placeholder="Leave blank to use API password"
+                                    />
+                                    {errors.ssh_password && <p className="text-sm text-destructive">{errors.ssh_password}</p>}
+                                </div>
+
+                                {/* API Version */}
                                 <div className="space-y-2">
                                     <Label htmlFor="schema_version">API Version</Label>
                                     <Select value={data.schema_version} onValueChange={(value) => setData('schema_version', value)}>
@@ -155,31 +180,6 @@ export default function UcmCreate({ apiVersions }: Props) {
                                         </SelectContent>
                                     </Select>
                                     {errors.schema_version && <p className="text-sm text-destructive">{errors.schema_version}</p>}
-                                </div>
-
-                                {/* SSH Username */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="ssh_username">SSH Username (Optional)</Label>
-                                    <Input
-                                        id="ssh_username"
-                                        value={data.ssh_username}
-                                        onChange={(e) => setData('ssh_username', e.target.value)}
-                                        placeholder="Leave blank to use UCM username"
-                                    />
-                                    {errors.ssh_username && <p className="text-sm text-destructive">{errors.ssh_username}</p>}
-                                </div>
-
-                                {/* SSH Password */}
-                                <div className="space-y-2">
-                                    <Label htmlFor="ssh_password">SSH Password (Optional)</Label>
-                                    <Input
-                                        id="ssh_password"
-                                        type="password"
-                                        value={data.ssh_password}
-                                        onChange={(e) => setData('ssh_password', e.target.value)}
-                                        placeholder="Leave blank to use UCM password"
-                                    />
-                                    {errors.ssh_password && <p className="text-sm text-destructive">{errors.ssh_password}</p>}
                                 </div>
                             </div>
 
