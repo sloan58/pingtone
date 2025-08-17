@@ -7,6 +7,7 @@ import { Edit, Phone, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
 
 interface Line {
+    _id: string;
     uuid: string;
     pattern: string;
     description?: string;
@@ -165,7 +166,7 @@ export default function LinesIndex({ lines, searchQuery = '' }: Props) {
                                                     <td className="p-4 align-middle">
                                                         <div className="flex items-center gap-2">
                                                             <Link
-                                                                href={`/lines/${line.uuid}/edit`}
+                                                                href={`/lines/${line._id}/edit`}
                                                                 className="inline-flex items-center justify-center rounded-md border border-input bg-background p-2 shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                                                 title="Edit line"
                                                             >

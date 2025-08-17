@@ -106,7 +106,7 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            await axios.put(`/api/lines/${line.uuid}`, currentLine);
+            await axios.put(`/api/lines/${line._id}`, currentLine);
             toast.success('Line configuration saved successfully');
             setHasChanges(false);
 

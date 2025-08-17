@@ -36,6 +36,7 @@ class LineController extends Controller
                 $associatedDevicesCount = $line->getAssociatedDevicesCount();
 
                 return [
+                    '_id' => (string) $line->_id,
                     'uuid' => $line->uuid,
                     'pattern' => $line->pattern,
                     'description' => $line->description,
@@ -65,10 +66,10 @@ class LineController extends Controller
     /**
      * Show the form for editing the specified line
      */
-    public function edit(string $uuid)
+    public function edit(string $id)
     {
-        // Get line from database
-        $line = Line::where('uuid', $uuid)->first();
+        // Get line from database by MongoDB ID
+        $line = Line::find($id);
 
         if (!$line) {
             abort(404, 'Line not found');
@@ -83,10 +84,10 @@ class LineController extends Controller
     /**
      * Update the specified line in UCM
      */
-    public function update(Request $request, string $uuid)
+    public function update(Request $request, string $id)
     {
-        // Get line from database to access UCM relationship
-        $line = Line::where('uuid', $uuid)->first();
+        // Get line from database by MongoDB ID to access UCM relationship
+        $line = Line::find($id);
 
         if (!$line) {
             return response()->json(['message' => 'Line not found'], 404);
