@@ -3,7 +3,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import axios from 'axios';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Phone } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
 // Reusable collapsible card section
@@ -324,10 +324,11 @@ export default function LineConfigurationForm({
             </SectionCard>
 
             {/* Associated Devices */}
-            {showAssociatedDevices && associatedDevices && associatedDevices.length > 0 && (
+            {showAssociatedDevices && (
                 <SectionCard title="Associated Devices" description="Other devices using this line" storageKey="line-config-associated-devices">
                     <div className="space-y-4">
-                        {associatedDevices.map((device) => (
+                        {associatedDevices && associatedDevices.length > 0 ? (
+                            associatedDevices.map((device) => (
                             <div
                                 key={device.id}
                                 className={`flex items-center justify-between rounded-lg border p-4 ${
@@ -379,15 +380,31 @@ export default function LineConfigurationForm({
                                     )}
                                 </div>
                             </div>
-                        ))}
-                        <div className="mt-4 rounded-lg border border-dashed border-muted-foreground/25 p-4">
-                            <div className="text-center">
-                                <p className="text-sm text-muted-foreground">
-                                    Line sharing allows multiple devices to use the same directory number. Each device can have different settings for
-                                    how the line behaves.
-                                </p>
+                        ))
+                        ) : (
+                            <div className="rounded-lg border border-dashed border-muted-foreground/25 p-8">
+                                <div className="text-center">
+                                    <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted/20">
+                                        <Phone className="h-6 w-6 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="mb-2 text-sm font-medium text-foreground">No Associated Devices</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        This line is not currently assigned to any devices. Assign it to a phone, device profile, or remote destination profile to use it.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+                        )}
+                        
+                        {associatedDevices && associatedDevices.length > 0 && (
+                            <div className="mt-4 rounded-lg border border-dashed border-muted-foreground/25 p-4">
+                                <div className="text-center">
+                                    <p className="text-sm text-muted-foreground">
+                                        Line sharing allows multiple devices to use the same directory number. Each device can have different settings for
+                                        how the line behaves.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </SectionCard>
             )}
