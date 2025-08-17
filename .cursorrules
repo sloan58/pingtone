@@ -95,6 +95,13 @@ pingtone/
 - This ensures consistent styling, accessibility, and user experience
 - Example: Use `<Select>`, `<SelectTrigger>`, `<SelectContent>`, `<SelectItem>` instead of `<select>` and `<option>`
 
+### Confirmation Dialogs
+- **NEVER use browser alert() or confirm() functions**
+- Always use the custom ConfirmDialog component from `@/components/ui/confirm-dialog`
+- This provides a consistent, accessible, and branded user experience
+- Example: Use `<ConfirmDialog open={open} onConfirm={handleConfirm} title="Delete Item" description="Are you sure?" variant="destructive" />` instead of `confirm("Are you sure?")`
+- The ConfirmDialog supports loading states, custom styling, and proper accessibility
+
 ## MCP Server Configuration
 
 The shadcn-ui MCP server is configured to provide access to the complete shadcn/ui component library:

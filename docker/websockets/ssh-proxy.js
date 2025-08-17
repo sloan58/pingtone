@@ -67,10 +67,8 @@ wss.on('connection', (ws) => {
                 sshClient.connect({
                     host: data.host,
                     port: data.port || 22,
-                    // username: data.username,
-                    // password: data.password
-                    username: 'Administrator',
-                    password: 'A$h8urn!'
+                    username: data.username,
+                    password: data.password
                 });
 
             } else if (data.type === 'data' && sshClient) {

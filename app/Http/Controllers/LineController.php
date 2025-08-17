@@ -33,7 +33,7 @@ class LineController extends Controller
             ->get()
             ->map(function ($line) {
                 // Get associated devices count
-                $associatedDevicesCount = $this->getAssociatedDevicesCount($line->uuid);
+                $associatedDevicesCount = $line->getAssociatedDevicesCount();
 
                 return [
                     'uuid' => $line->uuid,

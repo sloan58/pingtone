@@ -746,7 +746,27 @@ class Axl extends SoapClient
      */
     public function updateDeviceProfile(array $updateObject): array
     {
-        return $this->__soapCall('updateDeviceProfile', [$updateObject]);
+        try {
+            $res = $this->__soapCall('updateDeviceProfile', [$updateObject]);
+
+            Log::info("Successfully updated device profile in UCM", [
+                'ucm' => $this->ucm->name,
+                'device_profile_name' => $updateObject['name'] ?? 'unknown',
+            ]);
+
+            return json_decode(json_encode($res), true);
+
+        } catch (SoapFault|Exception $e) {
+            Log::error("Failed to update device profile in UCM", [
+                'ucm' => $this->ucm->name,
+                'device_profile_name' => $updateObject['name'] ?? 'unknown',
+                'faultcode' => $e->faultcode ?? '',
+                'faultstring' => $e->faultstring ?? '',
+                'debug_info' => $this->getDebugInfo(),
+            ]);
+
+            throw $e;
+        }
     }
 
     /**
@@ -758,7 +778,27 @@ class Axl extends SoapClient
      */
     public function updateRemoteDestinationProfile(array $updateObject): array
     {
-        return $this->__soapCall('updateRemoteDestinationProfile', [$updateObject]);
+        try {
+            $res = $this->__soapCall('updateRemoteDestinationProfile', [$updateObject]);
+
+            Log::info("Successfully updated remote destination profile in UCM", [
+                'ucm' => $this->ucm->name,
+                'rdp_name' => $updateObject['name'] ?? 'unknown',
+            ]);
+
+            return json_decode(json_encode($res), true);
+
+        } catch (SoapFault|Exception $e) {
+            Log::error("Failed to update remote destination profile in UCM", [
+                'ucm' => $this->ucm->name,
+                'rdp_name' => $updateObject['name'] ?? 'unknown',
+                'faultcode' => $e->faultcode ?? '',
+                'faultstring' => $e->faultstring ?? '',
+                'debug_info' => $this->getDebugInfo(),
+            ]);
+
+            throw $e;
+        }
     }
 
     /**

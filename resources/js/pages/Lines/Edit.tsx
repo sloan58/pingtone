@@ -3,6 +3,8 @@ import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import LineConfigurationForm from '@/components/LineConfigurationForm';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ChevronRight, Loader2, Phone, Save } from 'lucide-react';
@@ -90,6 +92,16 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
     const [currentLine, setCurrentLine] = useState<Line>(line);
     const [hasChanges, setHasChanges] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [dissociatingDevices, setDissociatingDevices] = useState<Set<string>>(new Set());
+    const [confirmDialog, setConfirmDialog] = useState<{ 
+        open: boolean; 
+        deviceId: string | null; 
+        deviceName: string; 
+    }>({
+        open: false,
+        deviceId: null,
+        deviceName: '',
+    });
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -108,10 +120,20 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
         }
     };
 
-    const handleDissociateDevice = async (deviceId: string, deviceName: string) => {
-        if (!confirm(`Are you sure you want to dissociate "${deviceName}" from this line?`)) {
-            return;
-        }
+        const handleDissociateDevice = (deviceId: string, deviceName: string) => {
+        setConfirmDialog({
+            open: true,
+            deviceId,
+            deviceName,
+        });
+    };
+
+    const confirmDissociateDevice = async () => {
+        const { deviceId, deviceName } = confirmDialog;
+        if (!deviceId) return;
+
+        // Add device to dissociating set for loading state
+        setDissociatingDevices((prev) => new Set(prev).add(deviceId));
 
         // Debug: Log the line object to see what's available
         console.log('Line object:', line);
@@ -126,7 +148,7 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
                 toast.error('Line ID not found');
                 return;
             }
-
+            
             console.log('Using line ID:', lineId);
 
             const response = await axios.post(`/api/devices/${deviceId}/dissociate-line/${lineId}`);
@@ -137,6 +159,13 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
         } catch (error: any) {
             console.error('Dissociation failed:', error);
             toast.error(error.response?.data?.error || 'Failed to dissociate device');
+        } finally {
+            // Remove device from dissociating set
+            setDissociatingDevices((prev) => {
+                const newSet = new Set(prev);
+                newSet.delete(deviceId);
+                return newSet;
+            });
         }
     };
 
@@ -206,7 +235,7 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
                                 onHasChanges={setHasChanges}
                                 associatedDevices={associatedDevices}
                                 onDissociateDevice={handleDissociateDevice}
-                                dissociatingDevices={new Set()}
+                                dissociatingDevices={dissociatingDevices}
                                 showDirectoryNumberField={false} // Don't show directory number field in line edit
                                 showAssociatedDevices={true} // Show associated devices
                             />
@@ -243,6 +272,17 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
                     </div>
                 </AppContent>
             </div>
+
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+                title="Dissociate Device"
+                description={`Are you sure you want to dissociate "${confirmDialog.deviceName}" from this line? This will remove the line from the device.`}
+                confirmText="Dissociate"
+                cancelText="Cancel"
+                variant="destructive"
+                onConfirm={confirmDissociateDevice}
+            />
         </AppShell>
     );
 }

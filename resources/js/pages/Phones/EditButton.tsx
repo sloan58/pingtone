@@ -5,6 +5,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import LineConfigurationForm from '@/components/LineConfigurationForm';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ChevronRight, Loader2, Phone, Settings } from 'lucide-react';
@@ -130,6 +131,15 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
 
     // State for device dissociation
     const [dissociatingDevices, setDissociatingDevices] = useState<Set<string>>(new Set());
+    const [confirmDialog, setConfirmDialog] = useState<{ 
+        open: boolean; 
+        deviceId: string | null; 
+        deviceName: string; 
+    }>({
+        open: false,
+        deviceId: null,
+        deviceName: '',
+    });
 
     // Function to fetch line options for the async combobox
     const fetchLineOptions = async (query: string): Promise<{ value: string; label: string }[]> => {
@@ -253,8 +263,17 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
     };
 
     // Function to handle device dissociation
-    const handleDissociateDevice = async (deviceId: string, deviceName: string) => {
-        if (dissociatingDevices.has(deviceId)) return;
+    const handleDissociateDevice = (deviceId: string, deviceName: string) => {
+        setConfirmDialog({
+            open: true,
+            deviceId,
+            deviceName,
+        });
+    };
+
+    const confirmDissociateDevice = async () => {
+        const { deviceId, deviceName } = confirmDialog;
+        if (!deviceId || dissociatingDevices.has(deviceId)) return;
 
         setDissociatingDevices((prev) => new Set(prev).add(deviceId));
 
@@ -385,6 +404,17 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                     </div>
                 </AppContent>
             </div>
+
+            <ConfirmDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => setConfirmDialog((prev) => ({ ...prev, open }))}
+                title="Dissociate Device"
+                description={`Are you sure you want to dissociate "${confirmDialog.deviceName}" from this line? This will remove the line from the device.`}
+                confirmText="Dissociate"
+                cancelText="Cancel"
+                variant="destructive"
+                onConfirm={confirmDissociateDevice}
+            />
         </AppShell>
     );
 }
