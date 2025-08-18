@@ -154,12 +154,15 @@ export function PhoneButtonLayout({ buttons = [], onButtonClick, onAddButton, on
             const buttonInNewArray = sameTypeButtonsInNewArray[sequenceIndex];
             if (buttonInNewArray) {
                 // Create a completely new button object to avoid circular references
+                // Preserve all properties from the original button
                 const newButton = {
                     index: templatePositions[sequenceIndex],
                     label: button.label,
                     target: button.target,
                     feature: button.feature,
                     type: button.type,
+                    subtitle: button.subtitle, // Preserve subtitle (route partition + description)
+                    isShared: button.isShared, // Preserve shared status
                 };
 
                 // Replace the button in the array
