@@ -26,6 +26,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('ucm', UcmController::class)->except(['show']);
+    Route::get('/ucm/wizard', [UcmController::class, 'wizard'])->name('ucm.wizard');
+    Route::post('/ucm/discover', [UcmController::class, 'discover'])->name('ucm.discover');
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
     Route::resource('lines', LineController::class)->only(['index', 'edit', 'update']);
     Route::resource('ucm-users', UcmUserController::class)->only(['index']);
@@ -45,6 +47,9 @@ Route::middleware('auth')->group(function () {
 
     // UCM API test route
     Route::post('/ucm/{ucm}/test-connection', [UcmController::class, 'testConnection'])->name('ucm.test-connection');
+    
+    // UCM SQL query route
+    Route::post('/ucm/{ucm}/sql-query', [UcmController::class, 'executeSqlQuery'])->name('ucm.sql-query');
 
     // Sync History routes
     Route::get('/ucm/{ucm}/sync-history', [SyncHistoryController::class, 'index'])->name('ucm.sync-history');

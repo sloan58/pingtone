@@ -22,10 +22,12 @@ import { CheckCircle, Edit, History, Loader2, MoreHorizontal, RefreshCw, Server,
 interface Ucm {
     id: number;
     name: string;
+    cluster_name: string | null;
     hostname: string;
     username: string;
     schema_version: string;
     version: string | null;
+    node_role: string | null;
     last_sync_at: string | null;
     sync_status: string;
     latest_sync_status: string | null;
@@ -86,9 +88,14 @@ export default function UcmIndex({ ucms }: Props) {
                         <h1 className="text-3xl font-bold tracking-tight">UCM Servers</h1>
                         <p className="text-muted-foreground">Manage your Cisco Unified Communications Manager servers.</p>
                     </div>
-                    <Button asChild>
-                        <Link href="/ucm/create">Add UCM Server</Link>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href="/ucm/create">Add Single UCM</Link>
+                        </Button>
+                        <Button asChild>
+                            <Link href="/ucm/wizard">UCM Onboarding Wizard</Link>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Stats Cards */}
@@ -151,6 +158,7 @@ export default function UcmIndex({ ucms }: Props) {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Name</TableHead>
+                                    <TableHead>Cluster</TableHead>
                                     <TableHead>Hostname</TableHead>
                                     <TableHead>Schema Version</TableHead>
                                     <TableHead>Detected Version</TableHead>
@@ -166,6 +174,13 @@ export default function UcmIndex({ ucms }: Props) {
                                             <Link href={`/ucm/${ucm.id}/edit`} className="text-primary hover:underline">
                                                 {ucm.name}
                                             </Link>
+                                        </TableCell>
+                                        <TableCell>
+                                            {ucm.cluster_name ? (
+                                                <Badge variant="secondary">{ucm.cluster_name}</Badge>
+                                            ) : (
+                                                <span className="text-sm text-muted-foreground">-</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>{ucm.hostname}</TableCell>
                                         <TableCell>

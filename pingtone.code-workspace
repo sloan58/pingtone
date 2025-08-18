@@ -1,14 +1,17 @@
 {
-  "folders": [
-	{
-		"path": "../../php/ndm"
-	},
-	{
-		"path": "."
-	},
-	{
-		"path": "../../php/sherlock"
-	}
-],
-  "settings": {}
+    "folders": [
+        {
+            "path": "../../php/ndm",
+        },
+        {
+            "path": ".",
+        },
+        {
+            "path": "../../php/sherlock",
+        },
+        {
+            "path": "../../js/cursor-axlrows/axlrows",
+        },
+    ],
+    "settings": {},
 }

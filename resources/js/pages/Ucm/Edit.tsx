@@ -1,3 +1,4 @@
+import SqlQueryInterface from '@/components/SqlQueryInterface';
 import SSHTerminalComponent from '@/components/SSHTerminal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle, History, Loader2, RefreshCw, Save, Settings, Terminal, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Database, History, Loader2, RefreshCw, Save, Settings, Terminal, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface Ucm {
@@ -132,7 +133,7 @@ export default function UcmEdit({ ucm, apiVersions, syncHistory }: Props) {
 
                 {/* Main Content with Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="server-details" className="flex items-center gap-2">
                             <Settings className="h-4 w-4" />
                             Server Details
@@ -140,6 +141,10 @@ export default function UcmEdit({ ucm, apiVersions, syncHistory }: Props) {
                         <TabsTrigger value="remote-connection" className="flex items-center gap-2">
                             <Terminal className="h-4 w-4" />
                             Remote Connection
+                        </TabsTrigger>
+                        <TabsTrigger value="sql-queries" className="flex items-center gap-2">
+                            <Database className="h-4 w-4" />
+                            SQL Queries
                         </TabsTrigger>
                     </TabsList>
 
@@ -370,6 +375,10 @@ export default function UcmEdit({ ucm, apiVersions, syncHistory }: Props) {
                             ucmPassword={ucm.ssh_password || ucm.password || ''}
                             ucmPort={ucm.ssh_port || 22}
                         />
+                    </TabsContent>
+
+                    <TabsContent value="sql-queries">
+                        <SqlQueryInterface ucmId={ucm.id} />
                     </TabsContent>
                 </Tabs>
             </div>
