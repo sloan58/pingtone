@@ -112,9 +112,94 @@ export default function LineConfigurationForm({
         onHasChanges?.(true);
     };
 
-    // Note: Load functions removed - data arrays will remain empty until proper API endpoints are implemented
+    // Load functions for onMouseEnter hover functionality
+    const loadExternalCallControlProfiles = async () => {
+        if (externalCallControlProfiles.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/external-call-control-profiles`);
+                setExternalCallControlProfiles(response.data);
+            } catch (error) {
+                console.error('Failed to load external call control profiles:', error);
+            }
+        }
+    };
 
-    // Note: Data arrays start empty and will be populated when needed via API calls
+    const loadVoicemailProfiles = async () => {
+        if (voicemailProfiles.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/voicemail-profiles`);
+                setVoicemailProfiles(response.data);
+            } catch (error) {
+                console.error('Failed to load voicemail profiles:', error);
+            }
+        }
+    };
+
+    const loadCallingSearchSpaces = async () => {
+        if (callingSearchSpaces.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/calling-search-spaces`);
+                setCallingSearchSpaces(response.data);
+            } catch (error) {
+                console.error('Failed to load calling search spaces:', error);
+            }
+        }
+    };
+
+    const loadPresenceGroups = async () => {
+        if (presenceGroups.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/presence-groups`);
+                setPresenceGroups(response.data);
+            } catch (error) {
+                console.error('Failed to load presence groups:', error);
+            }
+        }
+    };
+
+    const loadMohAudioSources = async () => {
+        if (mohAudioSources.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/moh-audio-sources`);
+                setMohAudioSources(response.data);
+            } catch (error) {
+                console.error('Failed to load MOH audio sources:', error);
+            }
+        }
+    };
+
+    const loadRoutePartitions = async () => {
+        if (routePartitions.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/route-partitions`);
+                setRoutePartitions(response.data);
+            } catch (error) {
+                console.error('Failed to load route partitions:', error);
+            }
+        }
+    };
+
+    const loadAarGroups = async () => {
+        if (aarGroups.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/aar-groups`);
+                setAarGroups(response.data);
+            } catch (error) {
+                console.error('Failed to load AAR groups:', error);
+            }
+        }
+    };
+
+    const loadCallPickupGroups = async () => {
+        if (callPickupGroups.length === 0 && phone?.ucm_id) {
+            try {
+                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/call-pickup-groups`);
+                setCallPickupGroups(response.data);
+            } catch (error) {
+                console.error('Failed to load call pickup groups:', error);
+            }
+        }
+    };
 
     // Cache to prevent repeated API calls with same query - using useRef to avoid dependency issues
     const queryCacheRef = useRef<Record<string, any[]>>({});
@@ -151,53 +236,77 @@ export default function LineConfigurationForm({
         }
     }, []);
 
-    const fetchExternalCallControlProfileOptions = useCallback(async (query: string) => {
-        return externalCallControlProfiles
-            .filter((profile) => profile.name.toLowerCase().includes(query.toLowerCase()))
-            .map((profile) => ({ value: profile.uuid, label: profile.name }));
-    }, []);
+    const fetchExternalCallControlProfileOptions = useCallback(
+        async (query: string) => {
+            return externalCallControlProfiles
+                .filter((profile) => profile.name.toLowerCase().includes(query.toLowerCase()))
+                .map((profile) => ({ value: profile.uuid, label: profile.name }));
+        },
+        [externalCallControlProfiles],
+    );
 
-    const fetchVoiceMailProfileOptions = useCallback(async (query: string) => {
-        return voicemailProfiles
-            .filter((profile) => profile.name.toLowerCase().includes(query.toLowerCase()))
-            .map((profile) => ({ value: profile.uuid, label: profile.name }));
-    }, []);
+    const fetchVoiceMailProfileOptions = useCallback(
+        async (query: string) => {
+            return voicemailProfiles
+                .filter((profile) => profile.name.toLowerCase().includes(query.toLowerCase()))
+                .map((profile) => ({ value: profile.uuid, label: profile.name }));
+        },
+        [voicemailProfiles],
+    );
 
-    const fetchCallingSearchSpaceOptions = useCallback(async (query: string) => {
-        return callingSearchSpaces
-            .filter((css) => css.name.toLowerCase().includes(query.toLowerCase()))
-            .map((css) => ({ value: css.uuid, label: css.name }));
-    }, []);
+    const fetchCallingSearchSpaceOptions = useCallback(
+        async (query: string) => {
+            return callingSearchSpaces
+                .filter((css) => css.name.toLowerCase().includes(query.toLowerCase()))
+                .map((css) => ({ value: css.uuid, label: css.name }));
+        },
+        [callingSearchSpaces],
+    );
 
-    const fetchPresenceGroupOptions = useCallback(async (query: string) => {
-        return presenceGroups
-            .filter((group) => group.name.toLowerCase().includes(query.toLowerCase()))
-            .map((group) => ({ value: group.uuid, label: group.name }));
-    }, []);
+    const fetchPresenceGroupOptions = useCallback(
+        async (query: string) => {
+            return presenceGroups
+                .filter((group) => group.name.toLowerCase().includes(query.toLowerCase()))
+                .map((group) => ({ value: group.uuid, label: group.name }));
+        },
+        [presenceGroups],
+    );
 
-    const fetchMohAudioSourceOptions = useCallback(async (query: string) => {
-        return mohAudioSources
-            .filter((source) => source.name.toLowerCase().includes(query.toLowerCase()))
-            .map((source) => ({ value: source.sourceId || source.uuid || source.name, label: source.name }));
-    }, []);
+    const fetchMohAudioSourceOptions = useCallback(
+        async (query: string) => {
+            return mohAudioSources
+                .filter((source) => source.name.toLowerCase().includes(query.toLowerCase()))
+                .map((source) => ({ value: source.sourceId || source.uuid || source.name, label: source.name }));
+        },
+        [mohAudioSources],
+    );
 
-    const fetchRoutePartitionOptions = useCallback(async (query: string) => {
-        return routePartitions
-            .filter((partition) => partition.name.toLowerCase().includes(query.toLowerCase()))
-            .map((partition) => ({ value: partition.uuid, label: partition.name }));
-    }, []);
+    const fetchRoutePartitionOptions = useCallback(
+        async (query: string) => {
+            return routePartitions
+                .filter((partition) => partition.name.toLowerCase().includes(query.toLowerCase()))
+                .map((partition) => ({ value: partition.uuid, label: partition.name }));
+        },
+        [routePartitions],
+    );
 
-    const fetchAarGroupOptions = useCallback(async (query: string) => {
-        return aarGroups
-            .filter((group) => group.name.toLowerCase().includes(query.toLowerCase()))
-            .map((group) => ({ value: group.uuid, label: group.name }));
-    }, []);
+    const fetchAarGroupOptions = useCallback(
+        async (query: string) => {
+            return aarGroups
+                .filter((group) => group.name.toLowerCase().includes(query.toLowerCase()))
+                .map((group) => ({ value: group.uuid, label: group.name }));
+        },
+        [aarGroups],
+    );
 
-    const fetchCallPickupGroupOptions = useCallback(async (query: string) => {
-        return callPickupGroups
-            .filter((group) => group.name.toLowerCase().includes(query.toLowerCase()))
-            .map((group) => ({ value: group.uuid, label: group.name }));
-    }, []);
+    const fetchCallPickupGroupOptions = useCallback(
+        async (query: string) => {
+            return callPickupGroups
+                .filter((group) => group.name.toLowerCase().includes(query.toLowerCase()))
+                .map((group) => ({ value: group.uuid, label: group.name }));
+        },
+        [callPickupGroups],
+    );
 
     // Create a stable display value using useCallback to prevent re-renders
     const currentLineDisplayValue = useCallback(() => {
@@ -301,6 +410,7 @@ export default function LineConfigurationForm({
                             loadingMessage="Searching profiles..."
                             fetchOptions={fetchExternalCallControlProfileOptions}
                             displayValue={line.externalCallControlProfileName?._ || ''}
+                            onMouseEnter={loadExternalCallControlProfiles}
                         />
                     </div>
                     <div>
@@ -329,58 +439,62 @@ export default function LineConfigurationForm({
                     <div className="space-y-4">
                         {associatedDevices && associatedDevices.length > 0 ? (
                             associatedDevices.map((device) => (
-                            <div
-                                key={device.id}
-                                className={`flex items-center justify-between rounded-lg border p-4 ${
-                                    device.id === phone?.id ? 'border-primary bg-primary/5' : 'border-border bg-background'
-                                }`}
-                            >
-                                <div className="flex items-center space-x-3">
-                                    <div className={`h-3 w-3 rounded-full ${device.id === phone?.id ? 'bg-primary' : 'bg-muted-foreground/20'}`} />
-                                    <div>
-                                        <h3 className="font-medium">{device.name}</h3>
-                                        <p className="text-sm text-muted-foreground capitalize">{device.class}</p>
+                                <div
+                                    key={device.id}
+                                    className={`flex items-center justify-between rounded-lg border p-4 ${
+                                        device.id === phone?.id ? 'border-primary bg-primary/5' : 'border-border bg-background'
+                                    }`}
+                                >
+                                    <div className="flex items-center space-x-3">
+                                        <div
+                                            className={`h-3 w-3 rounded-full ${device.id === phone?.id ? 'bg-primary' : 'bg-muted-foreground/20'}`}
+                                        />
+                                        <div>
+                                            <h3 className="font-medium">{device.name}</h3>
+                                            <p className="text-sm text-muted-foreground capitalize">{device.class}</p>
+                                        </div>
+                                        {device.id === phone?.id && (
+                                            <span className="rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
+                                                Current Device
+                                            </span>
+                                        )}
                                     </div>
-                                    {device.id === phone?.id && (
-                                        <span className="rounded-full bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">
-                                            Current Device
-                                        </span>
-                                    )}
+                                    <div className="flex items-center space-x-2">
+                                        {device.id !== phone?.id && onDissociateDevice && (
+                                            <>
+                                                <button
+                                                    onClick={() => (window.location.href = `/phones/${device.id}/edit`)}
+                                                    className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                >
+                                                    Edit Device
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        (window.location.href = `/phones/${device.id}/edit/button/${buttonIndex}?type=line`)
+                                                    }
+                                                    className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                >
+                                                    Edit Line
+                                                </button>
+                                                <button
+                                                    onClick={() => onDissociateDevice(device.id, device.name)}
+                                                    disabled={dissociatingDevices.has(device.id)}
+                                                    className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                                >
+                                                    {dissociatingDevices.has(device.id) ? (
+                                                        <>
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                            Dissociating...
+                                                        </>
+                                                    ) : (
+                                                        'Dissociate'
+                                                    )}
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="flex items-center space-x-2">
-                                    {device.id !== phone?.id && onDissociateDevice && (
-                                        <>
-                                            <button
-                                                onClick={() => (window.location.href = `/phones/${device.id}/edit`)}
-                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                            >
-                                                Edit Device
-                                            </button>
-                                            <button
-                                                onClick={() => (window.location.href = `/phones/${device.id}/edit/button/${buttonIndex}?type=line`)}
-                                                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                            >
-                                                Edit Line
-                                            </button>
-                                            <button
-                                                onClick={() => onDissociateDevice(device.id, device.name)}
-                                                disabled={dissociatingDevices.has(device.id)}
-                                                className="inline-flex items-center justify-center rounded-md border border-destructive bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                            >
-                                                {dissociatingDevices.has(device.id) ? (
-                                                    <>
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                        Dissociating...
-                                                    </>
-                                                ) : (
-                                                    'Dissociate'
-                                                )}
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        ))
+                            ))
                         ) : (
                             <div className="rounded-lg border border-dashed border-muted-foreground/25 p-8">
                                 <div className="text-center">
@@ -389,18 +503,19 @@ export default function LineConfigurationForm({
                                     </div>
                                     <h3 className="mb-2 text-sm font-medium text-foreground">No Associated Devices</h3>
                                     <p className="text-sm text-muted-foreground">
-                                        This line is not currently assigned to any devices. Assign it to a phone, device profile, or remote destination profile to use it.
+                                        This line is not currently assigned to any devices. Assign it to a phone, device profile, or remote
+                                        destination profile to use it.
                                     </p>
                                 </div>
                             </div>
                         )}
-                        
+
                         {associatedDevices && associatedDevices.length > 0 && (
                             <div className="mt-4 rounded-lg border border-dashed border-muted-foreground/25 p-4">
                                 <div className="text-center">
                                     <p className="text-sm text-muted-foreground">
-                                        Line sharing allows multiple devices to use the same directory number. Each device can have different settings for
-                                        how the line behaves.
+                                        Line sharing allows multiple devices to use the same directory number. Each device can have different settings
+                                        for how the line behaves.
                                     </p>
                                 </div>
                             </div>
@@ -435,6 +550,7 @@ export default function LineConfigurationForm({
                             loadingMessage="Searching voice mail profiles..."
                             fetchOptions={fetchVoiceMailProfileOptions}
                             displayValue={line.voiceMailProfileName?._ || ''}
+                            onMouseEnter={loadVoicemailProfiles}
                         />
                     </div>
                     <div>
@@ -456,6 +572,7 @@ export default function LineConfigurationForm({
                             loadingMessage="Searching calling search spaces..."
                             fetchOptions={fetchCallingSearchSpaceOptions}
                             displayValue={line.shareLineAppearanceCssName?._ || ''}
+                            onMouseEnter={loadCallingSearchSpaces}
                         />
                     </div>
                     <div>
@@ -477,6 +594,7 @@ export default function LineConfigurationForm({
                             loadingMessage="Searching presence groups..."
                             fetchOptions={fetchPresenceGroupOptions}
                             displayValue={line.presenceGroupName?._ || ''}
+                            onMouseEnter={loadPresenceGroups}
                         />
                     </div>
                     <div>
@@ -502,6 +620,7 @@ export default function LineConfigurationForm({
                                 );
                                 return selectedAudioSource ? selectedAudioSource.name : '';
                             })()}
+                            onMouseEnter={loadMohAudioSources}
                         />
                     </div>
                     <div>
@@ -527,6 +646,7 @@ export default function LineConfigurationForm({
                                 );
                                 return selectedAudioSource ? selectedAudioSource.name : '';
                             })()}
+                            onMouseEnter={loadMohAudioSources}
                         />
                     </div>
                     <div>
@@ -746,6 +866,7 @@ export default function LineConfigurationForm({
                                     loadingMessage="Searching route partitions..."
                                     fetchOptions={fetchRoutePartitionOptions}
                                     displayValue={line.enterpriseAltNum?.routePartition?._ || ''}
+                                    onMouseEnter={loadRoutePartitions}
                                 />
                             </div>
                             <div className="flex items-center space-x-3">
@@ -934,6 +1055,7 @@ export default function LineConfigurationForm({
                                     loadingMessage="Searching route partitions..."
                                     fetchOptions={fetchRoutePartitionOptions}
                                     displayValue={line.e164AltNum?.routePartition?._ || ''}
+                                    onMouseEnter={loadRoutePartitions}
                                 />
                             </div>
                             <div className="flex items-center space-x-3">
@@ -1035,7 +1157,7 @@ export default function LineConfigurationForm({
                             </tr>
                         </thead>
                         <tbody>
-                            {(line.directoryURIs?.directoryUri || []).map((uri, index) => (
+                            {(line.directoryURIs?.directoryUri || []).map((uri: any, index: number) => (
                                 <tr key={index} className="border-b border-border">
                                     <td className="border border-border p-2">
                                         <input
@@ -1043,7 +1165,7 @@ export default function LineConfigurationForm({
                                             name="primaryUri"
                                             checked={uri.isPrimary === 't' || uri.isPrimary === true}
                                             onChange={() => {
-                                                const updatedUris = (line.directoryURIs?.directoryUri || []).map((u, i) => ({
+                                                const updatedUris = (line.directoryURIs?.directoryUri || []).map((u: any, i: number) => ({
                                                     ...u,
                                                     isPrimary: i === index ? 't' : 'f',
                                                 }));
@@ -1111,6 +1233,7 @@ export default function LineConfigurationForm({
                                                     }));
                                             }}
                                             displayValue={uri.partition?._ || ''}
+                                            onMouseEnter={loadRoutePartitions}
                                         />
                                     </td>
                                     <td className="border border-border p-2">
@@ -1136,7 +1259,9 @@ export default function LineConfigurationForm({
                                     <td className="border border-border p-2">
                                         <button
                                             onClick={() => {
-                                                const updatedUris = (line.directoryURIs?.directoryUri || []).filter((_, i) => i !== index);
+                                                const updatedUris = (line.directoryURIs?.directoryUri || []).filter(
+                                                    (_: any, i: number) => i !== index,
+                                                );
                                                 handleLineChange({
                                                     ...line,
                                                     directoryURIs: {
@@ -1264,6 +1389,7 @@ export default function LineConfigurationForm({
                             loadingMessage="Loading AAR groups..."
                             fetchOptions={fetchAarGroupOptions}
                             displayValue={typeof line.aarNeighborhoodName === 'string' ? line.aarNeighborhoodName : line.aarNeighborhoodName?._ || ''}
+                            onMouseEnter={loadAarGroups}
                         />
                     </div>
                 </div>
@@ -1312,19 +1438,20 @@ export default function LineConfigurationForm({
                     {(
                         [
                             { key: 'callForwardAll', label: 'Forward All', hasDuration: false, hasSecondaryCss: true },
-                            { key: 'callForwardBusyInt', label: 'Forward Busy Internal', hasDuration: false },
-                            { key: 'callForwardBusy', label: 'Forward Busy External', hasDuration: false },
-                            { key: 'callForwardNoAnswerInt', label: 'Forward No Answer Internal', hasDuration: true },
-                            { key: 'callForwardNoAnswer', label: 'Forward No Answer External', hasDuration: true },
-                            { key: 'callForwardNoCoverageInt', label: 'Forward No Coverage Internal', hasDuration: false },
-                            { key: 'callForwardNoCoverage', label: 'Forward No Coverage External', hasDuration: false },
-                            { key: 'callForwardOnFailure', label: 'Forward on CTI Failure', hasDuration: false },
+                            { key: 'callForwardBusyInt', label: 'Forward Busy Internal', hasDuration: false, hasSecondaryCss: false },
+                            { key: 'callForwardBusy', label: 'Forward Busy External', hasDuration: false, hasSecondaryCss: false },
+                            { key: 'callForwardNoAnswerInt', label: 'Forward No Answer Internal', hasDuration: true, hasSecondaryCss: false },
+                            { key: 'callForwardNoAnswer', label: 'Forward No Answer External', hasDuration: true, hasSecondaryCss: false },
+                            { key: 'callForwardNoCoverageInt', label: 'Forward No Coverage Internal', hasDuration: false, hasSecondaryCss: false },
+                            { key: 'callForwardNoCoverage', label: 'Forward No Coverage External', hasDuration: false, hasSecondaryCss: false },
+                            { key: 'callForwardOnFailure', label: 'Forward on CTI Failure', hasDuration: false, hasSecondaryCss: false },
                             {
                                 key: 'callForwardNotRegisteredInt',
                                 label: 'Forward Unregistered Internal',
                                 hasDuration: false,
+                                hasSecondaryCss: false,
                             },
-                            { key: 'callForwardNotRegistered', label: 'Forward Unregistered External', hasDuration: false },
+                            { key: 'callForwardNotRegistered', label: 'Forward Unregistered External', hasDuration: false, hasSecondaryCss: false },
                         ] as const
                     ).map((cfg) => {
                         const cf: any = (line as any)[cfg.key] || {};
@@ -1391,6 +1518,7 @@ export default function LineConfigurationForm({
                                         loadingMessage="Loading calling search spaces..."
                                         fetchOptions={fetchCallingSearchSpaceOptions}
                                         displayValue={cf.callingSearchSpaceName?._ || ''}
+                                        onMouseEnter={loadCallingSearchSpaces}
                                     />
                                     {cfg.hasSecondaryCss && (
                                         <div className="mt-2">
@@ -1415,6 +1543,7 @@ export default function LineConfigurationForm({
                                                 loadingMessage="Loading calling search spaces..."
                                                 fetchOptions={fetchCallingSearchSpaceOptions}
                                                 displayValue={cf.secondaryCallingSearchSpaceName?._ || ''}
+                                                onMouseEnter={loadCallingSearchSpaces}
                                             />
                                         </div>
                                     )}
@@ -1461,6 +1590,7 @@ export default function LineConfigurationForm({
                             loadingMessage="Loading call pickup groups..."
                             fetchOptions={fetchCallPickupGroupOptions}
                             displayValue={line.callPickupGroupName?._ || ''}
+                            onMouseEnter={loadCallPickupGroups}
                         />
                     </div>
                 </div>
@@ -1515,6 +1645,7 @@ export default function LineConfigurationForm({
                                 loadingMessage="Loading calling search spaces..."
                                 fetchOptions={fetchCallingSearchSpaceOptions}
                                 displayValue={line.parkMonForwardNoRetrieveCssName?._ || ''}
+                                onMouseEnter={loadCallingSearchSpaces}
                             />
                         </div>
                     </div>
@@ -1561,6 +1692,7 @@ export default function LineConfigurationForm({
                                 loadingMessage="Loading calling search spaces..."
                                 fetchOptions={fetchCallingSearchSpaceOptions}
                                 displayValue={line.parkMonForwardNoRetrieveIntCssName?._ || ''}
+                                onMouseEnter={loadCallingSearchSpaces}
                             />
                         </div>
                     </div>
