@@ -444,20 +444,27 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                                 className="cursor-pointer rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
                                 onClick={() => loadTableDetails(table)}
                             >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                        <span className="font-mono font-medium text-sm">{table.name}</span>
-                                        <Badge variant="outline" className="text-xs">
-                                            {table.field_count} fields
-                                        </Badge>
-                                    </div>
+                                <div className="space-y-1">
+                                    <div className="text-sm text-muted-foreground">Name:</div>
+                                    <div className="font-mono font-medium text-sm">{table.name}</div>
+                                    
+                                    <div className="text-sm text-muted-foreground">Fields:</div>
+                                    <div className="text-sm">{table.field_count}</div>
+                                    
                                     {table.table_id && (
-                                        <Badge variant="secondary" className="text-xs">
-                                            {table.table_id}
-                                        </Badge>
+                                        <>
+                                            <div className="text-sm text-muted-foreground">Table ID:</div>
+                                            <div className="text-sm">{table.table_id}</div>
+                                        </>
+                                    )}
+                                    
+                                    {table.description && (
+                                        <>
+                                            <div className="text-sm text-muted-foreground">Description:</div>
+                                            <div className="text-xs text-muted-foreground">{table.description}</div>
+                                        </>
                                     )}
                                 </div>
-                                {table.description && <div className="mt-1 text-xs text-muted-foreground">{table.description}</div>}
                             </div>
                         ))}
                     </div>
