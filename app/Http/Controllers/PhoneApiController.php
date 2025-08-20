@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\Phone;
-use App\Services\PhoneApi;
+use App\Services\PhoneControlService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -23,8 +23,8 @@ class PhoneApiController extends Controller
         try {
             $phone = Phone::findOrFail($phoneId);
 
-            $phoneApi = new PhoneApi();
-            $result = $phoneApi->gatherPhoneData($phone);
+            $phoneControlService = new PhoneControlService();
+            $result = $phoneControlService->gatherPhoneData($phone);
 
             $phone->update([
                 'api_data' => $result['api_data']

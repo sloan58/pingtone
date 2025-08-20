@@ -59,6 +59,12 @@ Route::middleware('auth')->group(function () {
 
     // Phone API data gathering
     Route::get('/phones/{phone}/gather-api-data', [PhoneApiController::class, 'gatherData'])->name('phones.gather-api-data');
+    
+    // Phone control routes (CGI/Execute API)
+    Route::post('/phones/{phone}/press-button', [PhoneController::class, 'pressButton'])->name('phones.press-button');
+    Route::post('/phones/{phone}/display-message', [PhoneController::class, 'displayMessage'])->name('phones.display-message');
+    Route::post('/phones/{phone}/push-background', [PhoneController::class, 'pushBackground'])->name('phones.push-background');
+    Route::post('/phones/{phone}/reboot', [PhoneController::class, 'reboot'])->name('phones.reboot');
 
     // UCM Node API test route
     Route::post('/ucm-nodes/{ucmNode}/test-connection', [UcmNodeController::class, 'testConnection'])->name('ucm-nodes.test-connection');

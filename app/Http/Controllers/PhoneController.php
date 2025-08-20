@@ -9,7 +9,7 @@ use App\Models\Phone;
 use App\Models\PhoneButtonTemplate;
 use App\Models\PhoneScreenCapture;
 use App\Models\ServiceAreaDeviceLink;
-use App\Services\PhoneScreenCaptureService;
+use App\Services\PhoneControlService;
 use Exception;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,11 +20,11 @@ class PhoneController extends Controller
 {
     use AppliesSearchFilters;
 
-    protected PhoneScreenCaptureService $screenCaptureService;
+    protected PhoneControlService $phoneControlService;
 
-    public function __construct(PhoneScreenCaptureService $screenCaptureService)
+    public function __construct(PhoneControlService $phoneControlService)
     {
-        $this->screenCaptureService = $screenCaptureService;
+        $this->phoneControlService = $phoneControlService;
     }
 
     /**
@@ -256,7 +256,7 @@ class PhoneController extends Controller
     public function captureScreenshot(Phone $phone)
     {
         try {
-            $screenCapture = $this->screenCaptureService->captureScreenshot($phone);
+            $screenCapture = $this->phoneControlService->captureScreenshot($phone);
 
             // Transform the data to include accessors and match frontend expectations
             $screenCaptureData = [
@@ -288,7 +288,7 @@ class PhoneController extends Controller
     public function deleteScreenCapture(PhoneScreenCapture $screenCapture)
     {
         try {
-            $success = $this->screenCaptureService->deleteScreenCapture($screenCapture);
+            $success = $this->phoneControlService->deleteScreenCapture($screenCapture);
 
             if ($success) {
                 return response()->json([
@@ -482,6 +482,167 @@ class PhoneController extends Controller
             // Unexpected error
             return response()->json([
                 'error' => 'An unexpected error occurred: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Press a button on the phone.
+     */
+    public function pressButton(Request $request, Phone $phone)
+    {
+        $request->validate([
+            'button' => 'required|string|max:50',
+        ]);
+
+        try {
+            $result = $this->phoneControlService->pressButton($phone, $request->input('button'));
+
+            Log::info('Phone button pressed successfully', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'button' => $request->input('button'),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Button pressed successfully',
+                'data' => $result,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Failed to press phone button', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'button' => $request->input('button'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to press button',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Display a message on the phone screen.
+     */
+    public function displayMessage(Request $request, Phone $phone)
+    {
+        $request->validate([
+            'title' => 'required|string|max:100',
+            'text' => 'required|string|max:500',
+            'duration' => 'integer|min:0|max:300', // Max 5 minutes
+        ]);
+
+        try {
+            $result = $this->phoneControlService->displayMessage(
+                $phone,
+                $request->input('title'),
+                $request->input('text'),
+                $request->input('duration', 0)
+            );
+
+            Log::info('Phone message displayed successfully', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'title' => $request->input('title'),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Message displayed successfully',
+                'data' => $result,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Failed to display phone message', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'title' => $request->input('title'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to display message',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Push a background image to the phone.
+     */
+    public function pushBackground(Request $request, Phone $phone)
+    {
+        $request->validate([
+            'image_url' => 'required|url|max:255',
+        ]);
+
+        try {
+            $result = $this->phoneControlService->pushBackgroundImage($phone, $request->input('image_url'));
+
+            Log::info('Phone background image pushed successfully', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'image_url' => $request->input('image_url'),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Background image pushed successfully',
+                'data' => $result,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Failed to push phone background image', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'image_url' => $request->input('image_url'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to push background image',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Reboot the phone.
+     */
+    public function reboot(Phone $phone)
+    {
+        try {
+            $result = $this->phoneControlService->rebootPhone($phone);
+
+            Log::info('Phone reboot initiated successfully', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Phone reboot initiated successfully',
+                'data' => $result,
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Failed to reboot phone', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reboot phone',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
