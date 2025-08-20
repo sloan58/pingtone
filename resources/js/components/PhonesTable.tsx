@@ -52,15 +52,15 @@ export function PhonesTable({
                 );
             },
         },
-        { 
-            accessorKey: 'description', 
-            header: 'Description', 
-            cell: (info) => (info.getValue() as string) || '-' 
+        {
+            accessorKey: 'description',
+            header: 'Description',
+            cell: (info) => (info.getValue() as string) || '-'
         },
-        { 
-            accessorKey: 'model', 
-            header: 'Model', 
-            cell: (info) => (info.getValue() as string) || '-' 
+        {
+            accessorKey: 'model',
+            header: 'Model',
+            cell: (info) => (info.getValue() as string) || '-'
         },
         {
             accessorKey: 'devicePoolName',
@@ -117,7 +117,7 @@ export function PhonesTable({
     return (
         <div className="space-y-4">
             <h3 className="text-lg font-semibold">{title}</h3>
-            
+
             {showSearch && (
                 <AdvancedSearch
                     fields={[
@@ -126,7 +126,7 @@ export function PhonesTable({
                         { value: 'model', label: 'Model' },
                         { value: 'devicePoolName', label: 'Device Pool' },
                         { value: 'callingSearchSpaceName._', label: 'Calling Search Space' },
-                        { value: 'ucm_id', label: 'UCM' },
+                        { value: 'ucm_cluster_id', label: 'UCM' },
                     ]}
                     initial={filters}
                     onApply={(payload) => {
@@ -163,7 +163,7 @@ export function PhonesTable({
                 columnVisibility={columnVisibility}
                 onColumnVisibilityChange={handleColumnVisibilityChange}
             />
-            
+
             <div className="flex items-center justify-between gap-4">
                 <div className="text-sm text-muted-foreground">
                     Page {phones.current_page} of {phones.last_page} • {phones.total} total

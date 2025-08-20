@@ -34,8 +34,8 @@ const mobileNavItems: NavItem[] = [
         icon: null,
     },
     {
-        title: 'UCM Servers',
-        href: '/ucm',
+        title: 'UCM Clusters',
+        href: '/ucm-clusters',
         icon: null,
     },
     {

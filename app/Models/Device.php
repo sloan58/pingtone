@@ -35,9 +35,9 @@ abstract class Device extends Model
     /**
      * Get the UCM that owns this device.
      */
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
     /**

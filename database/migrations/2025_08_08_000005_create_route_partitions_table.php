@@ -11,8 +11,8 @@ return new class extends Migration
             $table->string('name')->index();
             $table->string('partitionUsage')->index();
             $table->string('uuid')->index();
-            $table->string('ucm_id')->index();
-            $table->unique(['name', 'ucm_id']);
+            $table->string('ucm_cluster_id')->index();
+            $table->unique(['name', 'ucm_cluster_id']);
         });
     }
 

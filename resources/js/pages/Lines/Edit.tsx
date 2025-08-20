@@ -1,7 +1,4 @@
-import { AppContent } from '@/components/app-content';
-import { AppHeader } from '@/components/app-header';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebar } from '@/components/app-sidebar';
+
 import LineConfigurationForm from '@/components/LineConfigurationForm';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -170,12 +167,9 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
     };
 
     return (
-        <AppShell variant="sidebar">
+        <AppLayout>
             <Head title={`Edit Line ${line.pattern}`} />
-            <AppSidebar />
-            <div className="flex flex-1 flex-col gap-4">
-                <AppHeader />
-                <AppContent variant="sidebar" className="p-0">
+            <div className="p-0">
                     <div className="p-6">
                         {/* Breadcrumbs */}
                         <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -283,6 +277,6 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
                 variant="destructive"
                 onConfirm={confirmDissociateDevice}
             />
-        </AppShell>
+        </AppLayout>
     );
 }

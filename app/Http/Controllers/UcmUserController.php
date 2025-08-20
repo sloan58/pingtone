@@ -45,7 +45,7 @@ class UcmUserController extends Controller
         $logic = strtolower((string)$request->input('logic', 'and')) === 'or' ? 'or' : 'and';
         if (!empty($filters)) {
             $this->applyFilters($query, $filters, $logic, [
-                'userid', 'displayName', 'mailid', 'ucm_id'
+                'userid', 'displayName', 'mailid', 'ucm_cluster_id'
             ]);
         }
 

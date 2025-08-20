@@ -219,74 +219,73 @@ export default function SSHTerminalComponent({
     return (
         <>
             {/* Theater mode backdrop */}
-            {expanded && (
-                <div 
-                    className="fixed inset-0 bg-black/50 z-40 transition-opacity duration-300"
-                    onClick={handleExpandToggle}
-                />
-            )}
-            
-            <Card className={`border border-primary/20 bg-card/50 shadow-lg shadow-primary/5 backdrop-blur-sm transition-all duration-300 ${
-                expanded ? 'fixed inset-4 z-50 h-auto' : ''
-            }`}>
-            <CardHeader className="border-b border-primary/20">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 font-mono text-base text-primary">SSH Terminal</CardTitle>
-                    <div className="flex items-center gap-3">
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className={`border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/10 ${expanded ? 'border-primary bg-primary/20 text-primary' : ''}`}
-                                        onClick={handleExpandToggle}
-                                        aria-label="Toggle Theater Mode"
-                                    >
-                                        <PanelLeft className="h-5 w-5" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Theater Mode</TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                        {getStatusIcon()}
-                        {isConnected ? (
-                            <Button
-                                onClick={handleDisconnect}
-                                variant="outline"
-                                size="sm"
-                                className="border-primary/30 px-3 text-primary hover:border-primary/50 hover:bg-primary/10"
-                            >
-                                Disconnect
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={handleConnect}
-                                variant="outline"
-                                size="sm"
-                                className="border-primary/30 px-3 text-primary hover:border-primary/50 hover:bg-primary/10"
-                                disabled={isConnecting}
-                            >
-                                Connect
-                            </Button>
-                        )}
+            {expanded && <div className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300" onClick={handleExpandToggle} />}
+
+            <Card
+                className={`border border-primary/20 bg-card/50 shadow-lg shadow-primary/5 backdrop-blur-sm transition-all duration-300 ${
+                    expanded ? 'fixed inset-4 z-50 h-auto' : ''
+                }`}
+            >
+                <CardHeader className="border-b border-primary/20">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 font-mono text-base text-primary">SSH Terminal</CardTitle>
+                        <div className="flex items-center gap-3">
+                            <TooltipProvider delayDuration={0}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className={`border-primary/30 text-primary hover:border-primary/50 hover:bg-primary/10 ${expanded ? 'border-primary bg-primary/20 text-primary' : ''}`}
+                                            onClick={handleExpandToggle}
+                                            aria-label="Toggle Theater Mode"
+                                        >
+                                            <PanelLeft className="h-5 w-5" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Theater Mode</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            {getStatusIcon()}
+                            {isConnected ? (
+                                <Button
+                                    onClick={handleDisconnect}
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-primary/30 px-3 text-primary hover:border-primary/50 hover:bg-primary/10"
+                                >
+                                    Disconnect
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={handleConnect}
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-primary/30 px-3 text-primary hover:border-primary/50 hover:bg-primary/10"
+                                    disabled={isConnecting}
+                                >
+                                    Connect
+                                </Button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent className="p-4">
-                <div style={{ 
-                    width: '100%', 
-                    height: expanded ? 'calc(100vh - 200px)' : 400, 
-                    background: '#000', 
-                    borderRadius: 8, 
-                    border: '1px solid hsl(var(--primary) / 0.2)',
-                    transition: 'height 0.3s ease',
-                    padding: '12px'
-                }}>
-                    <div ref={terminalRef} style={{ width: '100%', height: '100%' }} />
-                </div>
-            </CardContent>
-        </Card>
+                </CardHeader>
+                <CardContent className="p-4">
+                    <div
+                        style={{
+                            width: '100%',
+                            height: expanded ? 'calc(100vh - 200px)' : 400,
+                            background: '#000',
+                            borderRadius: 8,
+                            border: '1px solid hsl(var(--primary) / 0.2)',
+                            transition: 'height 0.3s ease',
+                            padding: '12px',
+                        }}
+                    >
+                        <div ref={terminalRef} style={{ width: '100%', height: '100%' }} />
+                    </div>
+                </CardContent>
+            </Card>
         </>
     );
 }

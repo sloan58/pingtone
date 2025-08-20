@@ -12,8 +12,8 @@ return new class extends Migration
     {
         Schema::create('phone_models', function (Blueprint $table) {
             $table->string('name')->index();
-            $table->string('ucm_id')->index();
-            $table->unique(['name', 'ucm_id']);
+            $table->string('ucm_cluster_id')->index();
+            $table->unique(['name', 'ucm_cluster_id']);
         });
     }
 

@@ -101,7 +101,7 @@ export default function UcmEdit({ ucm, apiVersions, syncHistory }: Props) {
                 );
             case 'completed':
                 return (
-                    <Badge variant="default" className="bg-green-600">
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                         Completed
                     </Badge>
                 );

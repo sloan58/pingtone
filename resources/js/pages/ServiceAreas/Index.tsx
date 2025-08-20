@@ -1,9 +1,6 @@
 import { AdvancedSearch, FilterRow } from '@/components/advanced-search';
-import { AppContent } from '@/components/app-content';
-import { AppHeader } from '@/components/app-header';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebar } from '@/components/app-sidebar';
 import { DataTable } from '@/components/data-table';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Head, Link, router } from '@inertiajs/react';
@@ -140,15 +137,8 @@ export default function ServiceAreasIndex({
     };
 
     return (
-        <AppShell variant="sidebar">
+        <AppLayout>
             <Head title="Service Areas" />
-
-            <AppSidebar />
-
-            <div className="flex flex-1 flex-col gap-4">
-                <AppHeader />
-
-                <AppContent variant="sidebar">
                     <div className="space-y-6">
                         {/* Header */}
                         <div className="flex items-center justify-between">
@@ -312,8 +302,6 @@ export default function ServiceAreasIndex({
                             </div>
                         </div>
                     </div>
-                </AppContent>
-            </div>
-        </AppShell>
+        </AppLayout>
     );
 }

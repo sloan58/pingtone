@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Log;
-use MongoDB\Laravel\Relations\HasMany;
 use MongoDB\Laravel\Relations\BelongsTo;
+use MongoDB\Laravel\Relations\HasMany;
 
 class Phone extends Device
 {
@@ -38,7 +38,7 @@ class Phone extends Device
     public function callingSearchSpace(): BelongsTo
     {
         return $this->belongsTo(CallingSearchSpace::class, 'callingSearchSpaceName._', 'name')
-            ->where('ucm_id', $this->ucm_id);
+            ->where('ucm_cluster_id', $this->ucm_cluster_id);
     }
 
     /**
@@ -98,18 +98,17 @@ class Phone extends Device
     /**
      * Store UCM details for this device
      */
-    public static function storeUcmDetails(array $device, Ucm $ucm): void
+    public static function storeUcmDetails(array $device, UcmCluster $ucmCluster): void
     {
-        $device['ucm_id'] = $ucm->id;
+        $device['ucm_cluster_id'] = $ucmCluster->id;
         $device['class'] = static::getDeviceClass();
-        $model = self::updateOrCreate(['uuid' => $device['uuid']], $device);
-        $model->touch();
+        self::updateOrCreate(['uuid' => $device['uuid']], $device)->touch();
     }
 
     /**
      * Update device lastx statistics using bulk operations
      */
-    public static function updateLastXStats(array $stats, Ucm $ucm): void
+    public static function updateLastXStats(array $stats, UcmNode $ucm): void
     {
         $operations = [];
         foreach ($stats as $stat) {
@@ -117,7 +116,7 @@ class Phone extends Device
                 'updateOne' => [
                     [
                         'uuid' => "{{$stat['uuid']}}",
-                        'ucm_id' => $ucm->id,
+                        'ucm_cluster_id' => $ucm->id,
                         'class' => static::getDeviceClass()
                     ],
                     [
@@ -130,7 +129,7 @@ class Phone extends Device
         $result = self::raw()->bulkWrite($operations);
 
         Log::info("Bulk updated device stats", [
-            'ucm_id' => $ucm->id,
+            'ucm_cluster_id' => $ucm->id,
             'device_class' => static::getDeviceClass(),
             'matched_count' => $result->getMatchedCount(),
             'modified_count' => $result->getModifiedCount(),

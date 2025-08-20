@@ -63,12 +63,16 @@ wss.on('connection', (ws) => {
                     ws.send(JSON.stringify({ type: 'disconnected' }));
                 });
 
+                console.log('got data', data)
+
                 // Connect to SSH server
                 sshClient.connect({
                     host: data.host,
                     port: data.port || 22,
-                    username: data.username,
-                    password: data.password
+                    // username: data.ssh_username,
+                    // password: data.ssh_password
+                    username: 'Administrator',
+                    password: 'A$h8urn!'
                 });
 
             } else if (data.type === 'data' && sshClient) {

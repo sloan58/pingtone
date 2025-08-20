@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use Exception;
-use SoapFault;
 use App\Services\Axl;
-use MongoDB\Laravel\Eloquent\Model;
+use Exception;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use MongoDB\Laravel\Eloquent\Model;
+use SoapFault;
 
 class Line extends Model
 {
@@ -20,9 +20,9 @@ class Line extends Model
         return '_id';
     }
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
     /**
@@ -130,9 +130,9 @@ class Line extends Model
         ]);
     }
 
-    public static function storeUcmDetails(array $line, Ucm $ucm): void
+    public static function storeUcmDetails(array $line, UcmCluster $ucmCluster): void
     {
-        $line['ucm_id'] = $ucm->id;
+        $line['ucm_cluster_id'] = $ucmCluster->id;
         self::updateOrCreate(['uuid' => $line['uuid']], $line)->touch();
     }
 }

@@ -1,7 +1,4 @@
-import { AppContent } from '@/components/app-content';
-import { AppHeader } from '@/components/app-header';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebar } from '@/components/app-sidebar';
+
 import LineConfigurationForm from '@/components/LineConfigurationForm';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -74,7 +71,7 @@ interface Phone {
     uuid: string;
     name: string;
     model?: string;
-    ucm_id?: string;
+    ucm_cluster_id?: string;
     ucm?: {
         name: string;
     };
@@ -131,10 +128,10 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
 
     // State for device dissociation
     const [dissociatingDevices, setDissociatingDevices] = useState<Set<string>>(new Set());
-    const [confirmDialog, setConfirmDialog] = useState<{ 
-        open: boolean; 
-        deviceId: string | null; 
-        deviceName: string; 
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        deviceId: string | null;
+        deviceName: string;
     }>({
         open: false,
         deviceId: null,
@@ -301,12 +298,9 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
     };
 
     return (
-        <AppShell variant="sidebar">
+        <AppLayout>
             <Head title={`Edit Button ${buttonIndex} - ${phone.name}`} />
-            <AppSidebar />
-            <div className="flex flex-1 flex-col gap-4">
-                <AppHeader />
-                <AppContent variant="sidebar" className="p-0">
+            <div className="p-0">
                     <div className="p-6">
                         {/* Breadcrumbs */}
                         <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -415,6 +409,6 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                 variant="destructive"
                 onConfirm={confirmDissociateDevice}
             />
-        </AppShell>
+        </AppLayout>
     );
 }

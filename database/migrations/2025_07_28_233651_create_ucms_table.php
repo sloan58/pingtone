@@ -11,17 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ucms', function (Blueprint $table) {
+        Schema::create('ucm_nodes', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('hostname')->unique();
+            $table->foreignId('ucm_cluster_id')->constrained('ucm_clusters')->onDelete('cascade');
+            $table->string('name');
+            $table->string('hostname');
             $table->string('username');
             $table->text('password');
             $table->string('schema_version')->nullable();
             $table->string('version')->nullable();
+            $table->string('cluster_name')->nullable();
+            $table->string('node_role')->nullable();
+            $table->string('ssh_username')->nullable();
+            $table->text('ssh_password')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_sync_at')->nullable();
             $table->timestamps();
+            
+            // Remove unique constraint from name since multiple clusters can have nodes with same names
+            $table->unique(['ucm_cluster_id', 'name']);
+            $table->unique(['ucm_cluster_id', 'hostname']);
         });
     }
 
@@ -30,6 +39,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ucms');
+        Schema::dropIfExists('ucm_nodes');
     }
-}; 
+};

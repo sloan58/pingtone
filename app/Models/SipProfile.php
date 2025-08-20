@@ -2,35 +2,42 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use MongoDB\Laravel\Eloquent\Model;
 
 class SipProfile extends Model
 {
     protected $guarded = [];
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
-    public static function storeUcmData(array $data, Ucm $ucm): void
+    /**
+     * Store UCM data from AXL response
+     *
+     * @param array $responseData
+     * @param UcmCluster $ucmCluster
+     * @return void
+     */
+    public static function storeUcmData(array $responseData, UcmCluster $ucmCluster): void
     {
-        foreach ($data as $profile) {
-            $profile['ucm_id'] = $ucm->id;
+        foreach ($responseData as $profile) {
+            $profile['ucm_cluster_id'] = $ucmCluster->id;
             $model = self::updateOrCreate(
-                ['uuid' => $profile['uuid'], 'ucm_id' => $ucm->id],
+                ['uuid' => $profile['uuid'], 'ucm_cluster_id' => $ucmCluster->id],
                 $profile
             );
             $model->touch();
         }
     }
 
-    public static function storeUcmDetails(array $profile, Ucm $ucm): void
+    public static function storeUcmDetails(array $profile, UcmCluster $ucmCluster): void
     {
-        $profile['ucm_id'] = $ucm->id;
+        $profile['ucm_cluster_id'] = $ucmCluster->id;
         $model = self::updateOrCreate(
-            ['uuid' => $profile['uuid'], 'ucm_id' => $ucm->id],
+            ['uuid' => $profile['uuid'], 'ucm_cluster_id' => $ucmCluster->id],
             $profile
         );
         $model->touch();

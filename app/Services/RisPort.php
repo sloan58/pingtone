@@ -5,7 +5,7 @@ namespace App\Services;
 use Exception;
 use SoapFault;
 use SoapClient;
-use App\Models\Ucm;
+use App\Models\UcmNode;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
  */
 class RisPort extends SoapClient
 {
-    protected Ucm $ucm;
+    protected UcmNode $ucm;
 
     // Retry tracking
     private int $tries = 0;
@@ -25,7 +25,7 @@ class RisPort extends SoapClient
     /**
      * @throws Exception
      */
-    public function __construct(Ucm $ucm)
+    public function __construct(UcmNode $ucm)
     {
         $this->ucm = $ucm;
 

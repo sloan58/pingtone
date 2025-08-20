@@ -2,28 +2,33 @@
 
 namespace App\Jobs;
 
-use Exception;
-use App\Models\Ucm;
 use App\Models\Intercom;
-use Illuminate\Bus\Queueable;
+use App\Models\UcmCluster;
+use Exception;
 use Illuminate\Bus\Batchable;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use SoapFault;
 
 class SyncIntercomsDetailsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-    public function __construct(protected Ucm $ucm)
+    public function __construct(protected UcmCluster $ucmCluster)
     {
     }
 
+    /**
+     * @throws SoapFault
+     * @throws Exception
+     */
     public function handle(): void
     {
-        $axlApi = $this->ucm->axlApi();
+        $axlApi = $this->ucmCluster->axlApi();
         $start = now();
 
         $intercoms = $axlApi->listUcmObjects(
@@ -40,13 +45,13 @@ class SyncIntercomsDetailsJob implements ShouldQueue
 
         foreach ($intercoms as $ic) {
             try {
-                Intercom::storeUcmDetails($axlApi->getLineByUuid($ic['uuid']), $this->ucm);
+                Intercom::storeUcmDetails($axlApi->getLineByUuid($ic['uuid']), $this->ucmCluster);
             } catch (Exception $e) {
-                Log::warning("{$this->ucm->name}: get intercom failed: {$ic['uuid']} - {$e->getMessage()}");
+                Log::warning("{$this->ucmCluster->name}: get intercom failed: {$ic['uuid']} - {$e->getMessage()}");
             }
         }
 
-        $this->ucm->intercoms()->where('updated_at', '<', $start)->delete();
+        $this->ucmCluster->intercoms()->where('updated_at', '<', $start)->delete();
     }
 }
 

@@ -10,8 +10,8 @@ return new class extends Migration
         Schema::create('intercoms', function (Blueprint $table) {
             $table->string('pattern')->index();
             $table->string('uuid')->index();
-            $table->string('ucm_id')->index();
-            $table->unique(['uuid', 'ucm_id']);
+            $table->string('ucm_cluster_id')->index();
+            $table->unique(['uuid', 'ucm_cluster_id']);
         });
     }
 

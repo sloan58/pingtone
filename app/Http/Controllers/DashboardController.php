@@ -2,26 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ucm;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\UcmNode;
+use App\Models\UcmCluster;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         // Get basic counts
-        $totalUcms = Ucm::count();
+        $totalUcms = UcmNode::count();
         $totalUsers = User::count();
 
-        // Get UCM statistics
-        $syncedToday = Ucm::where('last_sync_at', '>=', now()->startOfDay())->count();
-        $currentlySyncing = Ucm::whereHas('syncHistory', function($query) {
+        // Get UCM statistics (now based on clusters)
+        $syncedToday = UcmCluster::where('last_sync_at', '>=', now()->startOfDay())->count();
+        $currentlySyncing = UcmCluster::whereHas('syncHistory', function($query) {
             $query->where('status', 'syncing');
         })->count();
-        $failedSyncs = Ucm::whereHas('syncHistory', function($query) {
-            $query->where('status', 'failed');
+        $failedSyncs = UcmCluster::whereHas('syncHistory', function($query) {
+            $query->where('status', 'failed')
+                  ->latest('sync_start_time')
+                  ->limit(1);
         })->count();
 
         // Get recent activity (UCM focused)
@@ -61,20 +63,22 @@ class DashboardController extends Controller
         ];
 
         // Get system health data (UCM focused)
+        $totalClusters = UcmCluster::count();
         $systemHealth = [
             'ucm_servers' => [
                 'total' => $totalUcms,
+                'total_clusters' => $totalClusters,
                 'synced_today' => $syncedToday,
                 'currently_syncing' => $currentlySyncing,
                 'failed_syncs' => $failedSyncs,
-                'health_percentage' => $totalUcms > 0 ? round((($totalUcms - $failedSyncs) / $totalUcms) * 100, 1) : 0
+                'health_percentage' => $totalClusters > 0 ? round((($totalClusters - $failedSyncs) / $totalClusters) * 100, 1) : 0
             ]
         ];
 
         // Get monthly trends (simulated data)
         $ucmsPrevious = max(0, $totalUcms - rand(1, 3));
         $usersPrevious = max(0, $totalUsers - rand(1, 2));
-        
+
         $monthlyTrends = [
             'ucms' => [
                 'current' => $totalUcms,
@@ -91,6 +95,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'stats' => [
                 'total_ucms' => $totalUcms,
+                'total_clusters' => $totalClusters,
                 'total_users' => $totalUsers,
                 'synced_today' => $syncedToday,
                 'currently_syncing' => $currentlySyncing,
@@ -101,4 +106,4 @@ class DashboardController extends Controller
             'monthlyTrends' => $monthlyTrends
         ]);
     }
-} 
+}

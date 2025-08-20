@@ -1,10 +1,7 @@
 import { PhonesTable } from '@/components/PhonesTable';
 import { FilterRow } from '@/components/advanced-search';
-import { AppContent } from '@/components/app-content';
-import { AppHeader } from '@/components/app-header';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebar } from '@/components/app-sidebar';
 import { Phone } from '@/types';
+import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { VisibilityState } from '@tanstack/react-table';
 
@@ -27,22 +24,13 @@ export default function Index({
     filters?: { applied?: FilterRow[]; logic?: 'and' | 'or' };
 }) {
     return (
-        <AppShell variant="sidebar">
+        <AppLayout>
             <Head title="Phones" />
-
-            <AppSidebar />
-
-            <div className="flex flex-1 flex-col gap-4">
-                <AppHeader />
-
-                <AppContent variant="sidebar">
-                    <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
-                        <div className="p-6">
-                            <PhonesTable phones={phones} tableState={tableState} filters={filters} baseUrl="/phones" title="Phones" />
-                        </div>
-                    </div>
-                </AppContent>
+            <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+                <div className="p-6">
+                    <PhonesTable phones={phones} tableState={tableState} filters={filters} baseUrl="/phones" title="Phones" />
+                </div>
             </div>
-        </AppShell>
+        </AppLayout>
     );
 }

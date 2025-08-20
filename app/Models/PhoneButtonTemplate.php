@@ -2,45 +2,52 @@
 
 namespace App\Models;
 
-use Exception;
 use App\Support\MongoBulkUpsert;
-use MongoDB\Laravel\Eloquent\Model;
+use Exception;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use MongoDB\Laravel\Eloquent\Model;
 
 class PhoneButtonTemplate extends Model
 {
     protected $guarded = [];
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
-    public static function storeUcmData(array $responseData, Ucm $ucm): void
+    /**
+     * Store UCM data from AXL response
+     *
+     * @param array $responseData
+     * @param UcmCluster $ucmCluster
+     * @return void
+     */
+    public static function storeUcmData(array $responseData, UcmCluster $ucmCluster): void
     {
-        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
+        $rows = array_map(fn($row) => [...$row, 'ucm_cluster_id' => $ucmCluster->id], $responseData);
 
         MongoBulkUpsert::upsert(
             'phone_button_templates',
             $rows,
-            ['ucm_id', 'name'],
-            ['name' => 1, 'ucm_id' => 1]
+            ['ucm_cluster_id', 'name'],
+            ['name' => 1, 'ucm_cluster_id' => 1]
         );
     }
 
     /**
      * Store detailed phone button template data from SQL response rows
      */
-    public static function storeButtonTemplateDetails(array $responseData, Ucm $ucm): void
+    public static function storeButtonTemplateDetails(array $responseData, UcmCluster $ucmCluster): void
     {
-        collect($responseData)->groupBy('templatename')->each(function($record, $key) use ($ucm) {
+        collect($responseData)->groupBy('templatename')->each(function($record, $key) use ($ucmCluster) {
             try {
-                self::where('ucm_id', $ucm->id)
+                self::where('ucm_cluster_id', $ucmCluster->id)
                     ->where('name', $key)
                     ->first()?->update(['buttons' => $record->toArray()]);
             } catch (Exception $e) {
                 logger()->error("Error updating phone button template button data", [
-                    'ucm' => $ucm->name,
+                    'ucm' => $ucmCluster->name,
                     'record' => $record,
                     'message' => $e->getMessage(),
                 ]);
@@ -51,11 +58,11 @@ class PhoneButtonTemplate extends Model
     /**
      * Store phone button template protocol and model information from SQL response rows
      */
-    public static function storeTemplateProtocolModelInfo(array $responseData, Ucm $ucm): void
+    public static function storeTemplateProtocolModelInfo(array $responseData, UcmCluster $ucmCluster): void
     {
-        collect($responseData)->each(function($record) use ($ucm) {
+        collect($responseData)->each(function($record) use ($ucmCluster) {
             try {
-                self::where('ucm_id', $ucm->id)
+                self::where('ucm_cluster_id', $ucmCluster->id)
                     ->where('name', $record['templatename'])
                     ->first()?->update([
                         'model' => $record['model'],
@@ -63,7 +70,7 @@ class PhoneButtonTemplate extends Model
                     ]);
             } catch (Exception $e) {
                 logger()->error("Error updating phone button template protocol/model info", [
-                    'ucm' => $ucm->name,
+                    'ucm' => $ucmCluster->name,
                     'template' => $record['templatename'],
                     'message' => $e->getMessage(),
                 ]);

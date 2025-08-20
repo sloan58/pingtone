@@ -10,8 +10,8 @@ return new class extends Migration {
             $table->string('userid')->index();
             $table->string('email')->index();
             $table->string('uuid')->unique();
-            $table->string('ucm_id')->index();
-            $table->unique(['uuid', 'ucm_id']);
+            $table->string('ucm_cluster_id')->index();
+            $table->unique(['uuid', 'ucm_cluster_id']);
             $table->timestamps();
         });
     }

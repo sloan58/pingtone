@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Ucm;
-use App\Jobs\GatherPhoneStatusJob;
+use Exception;
+use App\Models\UcmNode;
 use Illuminate\Console\Command;
+use App\Jobs\GatherPhoneStatusJob;
 
 class GatherPhoneStatusCommand extends Command
 {
@@ -13,7 +14,7 @@ class GatherPhoneStatusCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'ucm:gather-phone-status 
+    protected $signature = 'ucm:gather-phone-status
                             {ucm? : The UCM name or ID to gather status for}
                             {--phones=* : Specific phone names to query (optional)}
                             {--all : Gather status for all UCMs}
@@ -53,7 +54,7 @@ class GatherPhoneStatusCommand extends Command
      */
     private function gatherForAllUcms(?array $phones, bool $useQueue): int
     {
-        $ucms = Ucm::all();
+        $ucms = UcmNode::all();
 
         if ($ucms->isEmpty()) {
             $this->warn('No UCMs found in the system');
@@ -64,7 +65,7 @@ class GatherPhoneStatusCommand extends Command
 
         foreach ($ucms as $ucm) {
             $this->info("Processing UCM: {$ucm->name}");
-            
+
             if ($useQueue) {
                 GatherPhoneStatusJob::dispatch($ucm, $phones);
                 $this->line("  → Queued job for UCM: {$ucm->name}");
@@ -73,7 +74,7 @@ class GatherPhoneStatusCommand extends Command
                     $job = new GatherPhoneStatusJob($ucm, $phones);
                     $job->handle();
                     $this->line("  → Completed for UCM: {$ucm->name}");
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->error("  → Failed for UCM {$ucm->name}: {$e->getMessage()}");
                 }
             }
@@ -88,7 +89,7 @@ class GatherPhoneStatusCommand extends Command
     private function gatherForSingleUcm(string $ucmIdentifier, ?array $phones, bool $useQueue): int
     {
         // Try to find UCM by ID first, then by name
-        $ucm = Ucm::find($ucmIdentifier) ?? Ucm::where('name', $ucmIdentifier)->first();
+        $ucm = UcmNode::find($ucmIdentifier) ?? UcmNode::where('name', $ucmIdentifier)->first();
 
         if (!$ucm) {
             $this->error("UCM not found: {$ucmIdentifier}");
@@ -96,7 +97,7 @@ class GatherPhoneStatusCommand extends Command
         }
 
         $this->info("Gathering phone status for UCM: {$ucm->name}");
-        
+
         if (!empty($phones)) {
             $this->line("  → Querying specific phones: " . implode(', ', $phones));
         }
@@ -109,7 +110,7 @@ class GatherPhoneStatusCommand extends Command
                 $job = new GatherPhoneStatusJob($ucm, $phones);
                 $job->handle();
                 $this->info("  → Phone status gathering completed successfully");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->error("  → Failed: {$e->getMessage()}");
                 return 1;
             }

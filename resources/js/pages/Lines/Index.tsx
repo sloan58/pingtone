@@ -1,7 +1,4 @@
-import { AppContent } from '@/components/app-content';
-import { AppHeader } from '@/components/app-header';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebar } from '@/components/app-sidebar';
+import AppLayout from '@/layouts/app-layout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Edit, Phone, Plus, Search } from 'lucide-react';
 import { useState } from 'react';
@@ -41,12 +38,8 @@ export default function LinesIndex({ lines, searchQuery = '' }: Props) {
     };
 
     return (
-        <AppShell variant="sidebar">
+        <AppLayout>
             <Head title="Lines" />
-            <AppSidebar />
-            <div className="flex flex-1 flex-col gap-4">
-                <AppHeader />
-                <AppContent variant="sidebar">
                     <div className="flex flex-col gap-6">
                         {/* Header */}
                         <div className="flex items-center justify-between">
@@ -190,8 +183,6 @@ export default function LinesIndex({ lines, searchQuery = '' }: Props) {
                             </div>
                         )}
                     </div>
-                </AppContent>
-            </div>
-        </AppShell>
+        </AppLayout>
     );
 }

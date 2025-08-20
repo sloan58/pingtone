@@ -54,7 +54,7 @@ export interface Phone {
     active_load?: string;
     inactive_load?: string;
     css_full_text?: string;
-    ucm_id: number;
+    ucm_cluster_id: number;
     created_at: string;
     updated_at: string;
     ucm?: Ucm;
@@ -84,7 +84,7 @@ export interface Line {
     auto_answer: string;
     secondary_calling_search_space_name?: string;
     recording_media_source?: string;
-    ucm_id: number;
+    ucm_cluster_id: number;
     created_at: string;
     updated_at: string;
     pivot?: {

@@ -2,34 +2,32 @@
 
 namespace App\Jobs;
 
-use Throwable;
-use App\Models\Ucm;
+use App\Models\UcmCluster;
 use Illuminate\Bus\Batch;
 use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
-class StartUcmBatchSyncJob implements ShouldQueue
+class InfrastructureSyncJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(protected string $ucmId) {}
+    private UcmCluster $ucmCluster;
+
+    public function __construct(UcmCluster $ucmCluster) {
+        $this->ucmCluster = $ucmCluster;
+    }
 
     /**
      * @throws Throwable
      */
     public function handle(): void
     {
-        $ucm = Ucm::find($this->ucmId);
-        if (!$ucm) {
-            Log::warning("StartUcmBatchSyncJob: UCM not found: {$this->ucmId}");
-            return;
-        }
-
         $infraTypes = [
             'presence_groups',
             'sip_dial_rules',
@@ -59,21 +57,15 @@ class StartUcmBatchSyncJob implements ShouldQueue
             'ucm_roles',
         ];
 
-        $jobs = array_map(fn (string $type) => new InfraSyncJob($ucm, $type), $infraTypes);
+        $jobs = array_map(fn (string $type) => new InfraSyncJob($this->ucmCluster, $type), $infraTypes);
 
-        $ucmId = $ucm->getKey();
+        $cluster = UcmCluster::find($this->ucmCluster->id);
+
         Bus::batch($jobs)
-            ->name("Infra sync: {$ucm->name}")
-            ->then(static function (Batch $batch) use ($ucmId) {
-                $ucm = Ucm::find($ucmId);
-                if ($ucm) {
-                    ServicesSyncJob::dispatch($ucm);
-                }
-            })
-            ->catch(static function (Batch $batch, Throwable $e) use ($ucmId) {
-                $ucm = Ucm::find($ucmId);
-                $name = $ucm?->name ?? $ucmId;
-                Log::error("Infra batch failed for {$name}: {$e->getMessage()}");
+            ->name("Infra sync: {$this->ucmCluster->name}")
+            ->catch(static function (Batch $batch, Throwable $e) use ($cluster)  {
+                Log::error("Infra batch failed for {$cluster->name}: {$e->getMessage()}");
+                throw $e;
             })
             ->dispatch();
     }

@@ -2,34 +2,45 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Ucm;
+use App\Enums\SyncStatusEnum;
+use App\Jobs\SyncUcmJob;
+use App\Models\UcmCluster;
 use Illuminate\Console\Command;
-use App\Jobs\StartUcmBatchSyncJob;
 
 class UcmSyncCommand extends Command
 {
-    protected $signature = 'ucm:sync {ucm_id? : Sync a single UCM by ID; omit to sync all}';
+    protected $signature = 'ucm:sync {cluster_id? : Sync a single cluster by ID; omit to sync all clusters}';
 
-    protected $description = 'Run UCM sync in two phases: infra (parallel) then services (list+get fan-out).';
+    protected $description = 'Run UCM cluster sync in two phases: infra (parallel) then services (list+get fan-out).';
 
     public function handle(): int
     {
-        $ucmId = $this->argument('ucm_id');
+        $clusterId = $this->argument('cluster_id');
 
-        $query = Ucm::query();
-        if ($ucmId) {
-            $query->where('_id', $ucmId);
+        $query = UcmCluster::query();
+        if ($clusterId) {
+            $query->where('id', $clusterId);
         }
 
-        $ucms = $query->get();
-        if ($ucms->isEmpty()) {
-            $this->warn('No UCMs found to sync.');
+        $clusters = $query->get();
+        if ($clusters->isEmpty()) {
+            $this->warn('No UCM clusters found to sync.');
             return self::SUCCESS;
         }
 
-        foreach ($ucms as $ucm) {
-            StartUcmBatchSyncJob::dispatch($ucm->getKey());
-            $this->info("Queued batch sync starter for UCM {$ucm->name} ({$ucm->getKey()}).");
+        foreach ($clusters as $cluster) {
+            if ($cluster->has_active_sync) {
+                $this->error("Sync already in progress for {$cluster->name}.");
+                return self::FAILURE;
+            }
+
+            $syncHistory = $cluster->syncHistory()->create([
+                'sync_start_time' => now(),
+                'status' => SyncStatusEnum::SYNCING,
+            ]);
+
+            dispatch(new SyncUcmJob($cluster, $syncHistory));
+            $this->info("Queued batch sync starter for cluster {$cluster->name}.");
         }
 
         return self::SUCCESS;

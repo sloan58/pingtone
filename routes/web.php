@@ -1,17 +1,18 @@
 <?php
 
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Application;
-use App\Http\Controllers\UcmController;
-use App\Http\Controllers\LineController;
-use App\Http\Controllers\PhoneController;
-use App\Http\Controllers\UcmUserController;
-use App\Http\Controllers\PhoneApiController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\SyncHistoryController;
-use App\Http\Controllers\ServiceAreaController;
 use App\Http\Controllers\InfrastructureOptionsController;
+use App\Http\Controllers\LineController;
+use App\Http\Controllers\PhoneApiController;
+use App\Http\Controllers\PhoneController;
+use App\Http\Controllers\ServiceAreaController;
+use App\Http\Controllers\SyncHistoryController;
+use App\Http\Controllers\UcmClusterController;
+use App\Http\Controllers\UcmNodeController;
+use App\Http\Controllers\UcmUserController;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/welcome', function () {
     return Inertia::render('Welcome', [
@@ -25,9 +26,14 @@ Route::get('/welcome', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::resource('ucm', UcmController::class)->except(['show']);
-    Route::get('/ucm/wizard', [UcmController::class, 'wizard'])->name('ucm.wizard');
-    Route::post('/ucm/discover', [UcmController::class, 'discover'])->name('ucm.discover');
+    // UCM Cluster routes (new cluster-focused routes)
+    Route::get('/ucm-clusters/wizard', [UcmClusterController::class, 'wizard'])->name('ucm-clusters.wizard');
+    Route::post('/ucm-clusters/discover', [UcmClusterController::class, 'discover'])->name('ucm-clusters.discover');
+    Route::post('/ucm-clusters/{ucmCluster}/sql-query', [UcmClusterController::class, 'executeSqlQuery'])->name('ucm-clusters.sql-query');
+    Route::resource('ucm-clusters', UcmClusterController::class)->except(['edit']);
+
+    // UCM Node routes (for individual node management)
+    Route::resource('ucm-nodes', UcmNodeController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
     Route::resource('phones', PhoneController::class)->only(['index', 'show', 'edit', 'update']);
     Route::resource('lines', LineController::class)->only(['index', 'edit', 'update']);
     Route::resource('ucm-users', UcmUserController::class)->only(['index']);
@@ -45,62 +51,62 @@ Route::middleware('auth')->group(function () {
     // Phone API data gathering
     Route::get('/phones/{phone}/gather-api-data', [PhoneApiController::class, 'gatherData'])->name('phones.gather-api-data');
 
-    // UCM API test route
-    Route::post('/ucm/{ucm}/test-connection', [UcmController::class, 'testConnection'])->name('ucm.test-connection');
-    
-    // UCM SQL query route
-    Route::post('/ucm/{ucm}/sql-query', [UcmController::class, 'executeSqlQuery'])->name('ucm.sql-query');
+    // UCM Node API test route
+    Route::post('/ucm-nodes/{ucmNode}/test-connection', [UcmNodeController::class, 'testConnection'])->name('ucm-nodes.test-connection');
 
-    // Sync History routes
-    Route::get('/ucm/{ucm}/sync-history', [SyncHistoryController::class, 'index'])->name('ucm.sync-history');
-    Route::post('/ucm/{ucm}/sync', [SyncHistoryController::class, 'startSync'])->name('ucm.sync.start');
+    // Cluster Sync routes
+    Route::post('/ucm-clusters/{ucmCluster}/sync', [SyncHistoryController::class, 'startClusterSync'])->name('ucm-clusters.sync.start');
+
+    // UCM Node Sync History routes (for individual nodes)
+    Route::get('/ucm-nodes/{ucmNode}/sync-history', [SyncHistoryController::class, 'index'])->name('ucm-nodes.sync-history');
+    Route::post('/ucm-nodes/{ucmNode}/sync', [SyncHistoryController::class, 'startSync'])->name('ucm-nodes.sync.start');
     Route::patch('/sync-history/{syncHistory}/complete', [SyncHistoryController::class, 'completeSync'])->name('sync-history.complete');
     Route::patch('/sync-history/{syncHistory}/fail', [SyncHistoryController::class, 'failSync'])->name('sync-history.fail');
 
 
 });
 
-// Infrastructure options (scoped by UCM)
+// Infrastructure options (scoped by UCM Node)
 Route::middleware('auth')->prefix('api')->group(function () {
-    Route::get('/ucm/{ucm}/options/device-pools', [InfrastructureOptionsController::class, 'devicePools']);
-    Route::get('/ucm/{ucm}/options/external-call-control-profiles', [InfrastructureOptionsController::class, 'externalCallControlProfiles']);
-    Route::get('/ucm/{ucm}/options/phone-models', [InfrastructureOptionsController::class, 'phoneModels']);
-    Route::get('/ucm/{ucm}/options/phones', [InfrastructureOptionsController::class, 'phones']);
-    Route::get('/ucm/{ucm}/options/common-device-configs', [InfrastructureOptionsController::class, 'commonDeviceConfigs']);
-    Route::get('/ucm/{ucm}/options/phone-button-templates', [InfrastructureOptionsController::class, 'phoneButtonTemplates']);
-    Route::get('/ucm/{ucm}/options/common-phone-configs', [InfrastructureOptionsController::class, 'commonPhoneConfigs']);
-    Route::get('/ucm/{ucm}/options/calling-search-spaces', [InfrastructureOptionsController::class, 'callingSearchSpaces']);
-    Route::get('/ucm/{ucm}/options/locations', [InfrastructureOptionsController::class, 'locations']);
-    Route::get('/ucm/{ucm}/options/media-resource-group-lists', [InfrastructureOptionsController::class, 'mediaResourceGroupLists']);
-    Route::get('/ucm/{ucm}/options/moh-audio-sources', [InfrastructureOptionsController::class, 'mohAudioSources']);
-    Route::get('/ucm/{ucm}/options/aar-groups', [InfrastructureOptionsController::class, 'aarGroups']);
-    Route::get('/ucm/{ucm}/options/user-locales', [InfrastructureOptionsController::class, 'userLocales']);
-    Route::get('/ucm/{ucm}/options/ucm-users', [InfrastructureOptionsController::class, 'ucmUsers']);
-    Route::get('/ucm/{ucm}/options/mobility-users', [InfrastructureOptionsController::class, 'mobilityUsers']);
-    Route::get('/ucm/{ucm}/options/geo-locations', [InfrastructureOptionsController::class, 'geoLocations']);
-    Route::get('/ucm/{ucm}/options/presence-groups', [InfrastructureOptionsController::class, 'presenceGroups']);
-    Route::get('/ucm/{ucm}/options/sip-dial-rules', [InfrastructureOptionsController::class, 'sipDialRules']);
-    Route::get('/ucm/{ucm}/options/phone-security-profiles', [InfrastructureOptionsController::class, 'phoneSecurityProfiles']);
-    Route::get('/ucm/{ucm}/options/sip-profiles', [InfrastructureOptionsController::class, 'sipProfiles']);
-    Route::get('/ucm/{ucm}/options/device-profiles', [InfrastructureOptionsController::class, 'deviceProfiles']);
-    Route::get('/ucm/{ucm}/options/voicemail-profiles', [InfrastructureOptionsController::class, 'voicemailProfiles']);
-    Route::get('/ucm/{ucm}/options/route-partitions', [InfrastructureOptionsController::class, 'routePartitions']);
-    Route::get('/ucm/{ucm}/options/call-pickup-groups', [InfrastructureOptionsController::class, 'callPickupGroups']);
-    Route::get('/ucm/{ucm}/options/extension-mobility-dynamic', [InfrastructureOptionsController::class, 'extensionMobilityDynamic']);
-    
+    Route::get('/ucm-nodes/{ucmNode}/options/device-pools', [InfrastructureOptionsController::class, 'devicePools']);
+    Route::get('/ucm-nodes/{ucmNode}/options/external-call-control-profiles', [InfrastructureOptionsController::class, 'externalCallControlProfiles']);
+    Route::get('/ucm-nodes/{ucmNode}/options/phone-models', [InfrastructureOptionsController::class, 'phoneModels']);
+    Route::get('/ucm-nodes/{ucmNode}/options/phones', [InfrastructureOptionsController::class, 'phones']);
+    Route::get('/ucm-nodes/{ucmNode}/options/common-device-configs', [InfrastructureOptionsController::class, 'commonDeviceConfigs']);
+    Route::get('/ucm-nodes/{ucmNode}/options/phone-button-templates', [InfrastructureOptionsController::class, 'phoneButtonTemplates']);
+    Route::get('/ucm-nodes/{ucmNode}/options/common-phone-configs', [InfrastructureOptionsController::class, 'commonPhoneConfigs']);
+    Route::get('/ucm-nodes/{ucmNode}/options/calling-search-spaces', [InfrastructureOptionsController::class, 'callingSearchSpaces']);
+    Route::get('/ucm-nodes/{ucmNode}/options/locations', [InfrastructureOptionsController::class, 'locations']);
+    Route::get('/ucm-nodes/{ucmNode}/options/media-resource-group-lists', [InfrastructureOptionsController::class, 'mediaResourceGroupLists']);
+    Route::get('/ucm-nodes/{ucmNode}/options/moh-audio-sources', [InfrastructureOptionsController::class, 'mohAudioSources']);
+    Route::get('/ucm-nodes/{ucmNode}/options/aar-groups', [InfrastructureOptionsController::class, 'aarGroups']);
+    Route::get('/ucm-nodes/{ucmNode}/options/user-locales', [InfrastructureOptionsController::class, 'userLocales']);
+    Route::get('/ucm-nodes/{ucmNode}/options/ucm-users', [InfrastructureOptionsController::class, 'ucmUsers']);
+    Route::get('/ucm-nodes/{ucmNode}/options/mobility-users', [InfrastructureOptionsController::class, 'mobilityUsers']);
+    Route::get('/ucm-nodes/{ucmNode}/options/geo-locations', [InfrastructureOptionsController::class, 'geoLocations']);
+    Route::get('/ucm-nodes/{ucmNode}/options/presence-groups', [InfrastructureOptionsController::class, 'presenceGroups']);
+    Route::get('/ucm-nodes/{ucmNode}/options/sip-dial-rules', [InfrastructureOptionsController::class, 'sipDialRules']);
+    Route::get('/ucm-nodes/{ucmNode}/options/phone-security-profiles', [InfrastructureOptionsController::class, 'phoneSecurityProfiles']);
+    Route::get('/ucm-nodes/{ucmNode}/options/sip-profiles', [InfrastructureOptionsController::class, 'sipProfiles']);
+    Route::get('/ucm-nodes/{ucmNode}/options/device-profiles', [InfrastructureOptionsController::class, 'deviceProfiles']);
+    Route::get('/ucm-nodes/{ucmNode}/options/voicemail-profiles', [InfrastructureOptionsController::class, 'voicemailProfiles']);
+    Route::get('/ucm-nodes/{ucmNode}/options/route-partitions', [InfrastructureOptionsController::class, 'routePartitions']);
+    Route::get('/ucm-nodes/{ucmNode}/options/call-pickup-groups', [InfrastructureOptionsController::class, 'callPickupGroups']);
+    Route::get('/ucm-nodes/{ucmNode}/options/extension-mobility-dynamic', [InfrastructureOptionsController::class, 'extensionMobilityDynamic']);
+
     // Line search and details for async select
     Route::get('/lines/search', [LineController::class, 'search'])->name('lines.search');
     Route::get('/lines/{uuid}', [LineController::class, 'show'])->name('lines.show');
-    
+
     // Line update API routes
     Route::put('/lines/{uuid}', [LineController::class, 'update'])->name('lines.api.update');
-    
+
     // Device dissociation from line (supports Phone, DeviceProfile, RemoteDestinationProfile)
     Route::post('/devices/{device_id}/dissociate-line/{line_id}', [PhoneController::class, 'dissociateLine'])->name('devices.dissociate-line');
 });
 
 Route::get('/test-toast', function () {
-    return redirect()->route('ucm.index')
+    return redirect()->route('ucm-clusters.index')
         ->with('toast', [
             'type' => 'success',
             'title' => 'Test Toast',

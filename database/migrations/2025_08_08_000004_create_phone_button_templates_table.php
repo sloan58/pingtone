@@ -10,10 +10,10 @@ return new class extends Migration
         Schema::create('phone_button_templates', function (Blueprint $table) {
             $table->string('name')->index();
             $table->string('uuid')->index();
-            $table->string('ucm_id')->index();
+            $table->string('ucm_cluster_id')->index();
             $table->string('model')->nullable()->index();
             $table->string('protocol')->nullable()->index();
-            $table->unique(['name', 'ucm_id']);
+            $table->unique(['name', 'ucm_cluster_id']);
         });
     }
 

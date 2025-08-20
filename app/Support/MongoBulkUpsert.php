@@ -13,7 +13,7 @@ class MongoBulkUpsert
      * @param string $collectionName
      * @param array $rows Array of arrays or objects containing data
      * @param array $filter Fields composing the unique filter
-     * @param array $hint Index hint (e.g., ['ucm_id' => 1, 'name' => 1])
+     * @param array $hint Index hint (e.g., ['ucm_cluster_id' => 1, 'name' => 1])
      */
     public static function upsert(
         string $collectionName,

@@ -14,16 +14,17 @@ class DeviceProfile extends Device
         return 'Device Profile';
     }
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
 
 
-    public static function storeUcmDetails(array $profile, Ucm $ucm): void
+    public static function storeUcmDetails(array $profile, UcmCluster $ucmCluster): void
     {
-        $profile['ucm_id'] = $ucm->id;
+        $profile['ucm_cluster_id'] = $ucmCluster->id;
+        $profile['class'] = static::getDeviceClass();
         self::updateOrCreate(['uuid' => $profile['uuid']], $profile)->touch();
     }
 }

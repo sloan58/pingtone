@@ -2,15 +2,15 @@
 
 namespace App\Jobs;
 
-use Exception;
-use App\Models\UcmUser;
-use MongoDB\BSON\Regex;
 use App\Models\ServiceArea;
-use Illuminate\Bus\Batchable;
-use Illuminate\Support\Facades\Log;
 use App\Models\ServiceAreaUcmUserLink;
-use Illuminate\Foundation\Queue\Queueable;
+use App\Models\UcmUser;
+use Exception;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
+use MongoDB\BSON\Regex;
 
 class AssignUcmUsersToServiceAreasJob implements ShouldQueue
 {
@@ -125,10 +125,6 @@ class AssignUcmUsersToServiceAreasJob implements ShouldQueue
         }
 
         Log::info("AssignUcmUsersToServiceAreasJob completed. Total sync operations: {$totalSyncCount}");
-
-        // Dispatch device assignment job after user assignment completes
-        Log::info("Dispatching AssignDevicesToServiceAreasJob after user assignment completion");
-        dispatch(new AssignDevicesToServiceAreasJob());
     }
 
     /**

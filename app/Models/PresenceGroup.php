@@ -2,35 +2,42 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use MongoDB\Laravel\Eloquent\Model;
 
 class PresenceGroup extends Model
 {
     protected $guarded = [];
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
-    public static function storeUcmData(array $data, Ucm $ucm): void
+    /**
+     * Store UCM data from AXL response
+     *
+     * @param array $responseData
+     * @param UcmCluster $ucmCluster
+     * @return void
+     */
+    public static function storeUcmData(array $responseData, UcmCluster $ucmCluster): void
     {
-        foreach ($data as $presenceGroup) {
-            $presenceGroup['ucm_id'] = $ucm->id;
+        foreach ($responseData as $presenceGroup) {
+            $presenceGroup['ucm_cluster_id'] = $ucmCluster->id;
             $model = self::updateOrCreate(
-                ['uuid' => $presenceGroup['uuid'], 'ucm_id' => $ucm->id],
+                ['uuid' => $presenceGroup['uuid'], 'ucm_cluster_id' => $ucmCluster->id],
                 $presenceGroup
             );
             $model->touch();
         }
     }
 
-    public static function storeUcmDetails(array $presenceGroup, Ucm $ucm): void
+    public static function storeUcmDetails(array $presenceGroup, UcmCluster $ucmCluster): void
     {
-        $presenceGroup['ucm_id'] = $ucm->id;
+        $presenceGroup['ucm_cluster_id'] = $ucmCluster->id;
         $model = self::updateOrCreate(
-            ['uuid' => $presenceGroup['uuid'], 'ucm_id' => $ucm->id],
+            ['uuid' => $presenceGroup['uuid'], 'ucm_cluster_id' => $ucmCluster->id],
             $presenceGroup
         );
         $model->touch();

@@ -2,39 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ucm;
+use Log;
+use Exception;
 use App\Models\Phone;
+use App\Models\UcmNode;
 use App\Models\UcmUser;
 use App\Models\Location;
 use App\Models\AarGroup;
 use App\Models\DevicePool;
 use App\Models\PhoneModel;
 use App\Models\UserLocale;
+use App\Models\SipProfile;
+use App\Models\GeoLocation;
 use Illuminate\Http\Request;
+use App\Models\SipDialRules;
+use App\Models\PresenceGroup;
+use App\Models\DeviceProfile;
 use App\Models\MohAudioSource;
+use App\Models\RoutePartition;
+use App\Models\CallPickupGroup;
+use App\Models\VoicemailProfile;
 use App\Models\CommonPhoneConfig;
 use Illuminate\Http\JsonResponse;
 use App\Models\CommonDeviceConfig;
 use App\Models\CallingSearchSpace;
 use App\Models\PhoneButtonTemplate;
-use App\Models\MediaResourceGroupList;
-use App\Models\GeoLocation;
-use App\Models\PresenceGroup;
-use App\Models\SipDialRules;
 use App\Models\PhoneSecurityProfile;
-use App\Models\SipProfile;
-use App\Models\DeviceProfile;
-use App\Models\CallPickupGroup;
+use App\Models\MediaResourceGroupList;
 use App\Models\ExternalCallControlProfile;
-use App\Models\VoicemailProfile;
-use App\Models\RoutePartition;
 
 class InfrastructureOptionsController extends Controller
 {
-    public function devicePools(Ucm $ucm): JsonResponse
+    public function devicePools(UcmNode $ucm): JsonResponse
     {
         $options = DevicePool::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -47,10 +49,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function externalCallControlProfiles(Ucm $ucm): JsonResponse
+    public function externalCallControlProfiles(UcmNode $ucm): JsonResponse
     {
         $options = ExternalCallControlProfile::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -63,10 +65,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function phoneModels(Ucm $ucm): JsonResponse
+    public function phoneModels(UcmNode $ucm): JsonResponse
     {
         $options = PhoneModel::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'name'])
             ->map(fn ($row) => [
@@ -78,10 +80,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function phones(Ucm $ucm): JsonResponse
+    public function phones(UcmNode $ucm): JsonResponse
     {
         $options = Phone::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -94,10 +96,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function commonDeviceConfigs(Ucm $ucm): JsonResponse
+    public function commonDeviceConfigs(UcmNode $ucm): JsonResponse
     {
         $options = CommonDeviceConfig::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -110,10 +112,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function phoneButtonTemplates(Ucm $ucm, Request $request): JsonResponse
+    public function phoneButtonTemplates(UcmNode $ucm, Request $request): JsonResponse
     {
         $query = PhoneButtonTemplate::query()
-            ->where('ucm_id', $ucm->getKey());
+            ->where('ucm_cluster_id', $ucm->getKey());
 
         // Filter by protocol if provided
         if ($request->has('protocol') && $request->protocol) {
@@ -128,10 +130,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($query->orderBy('name')->get());
     }
 
-    public function commonPhoneConfigs(Ucm $ucm): JsonResponse
+    public function commonPhoneConfigs(UcmNode $ucm): JsonResponse
     {
         $options = CommonPhoneConfig::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -144,10 +146,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function callingSearchSpaces(Ucm $ucm): JsonResponse
+    public function callingSearchSpaces(UcmNode $ucm): JsonResponse
     {
         $options = CallingSearchSpace::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -160,10 +162,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function locations(Ucm $ucm): JsonResponse
+    public function locations(UcmNode $ucm): JsonResponse
     {
         $options = Location::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -176,10 +178,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function mediaResourceGroupLists(Ucm $ucm): JsonResponse
+    public function mediaResourceGroupLists(UcmNode $ucm): JsonResponse
     {
         $options = MediaResourceGroupList::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -192,10 +194,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function mohAudioSources(Ucm $ucm): JsonResponse
+    public function mohAudioSources(UcmNode $ucm): JsonResponse
     {
         $options = MohAudioSource::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -208,10 +210,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function aarGroups(Ucm $ucm): JsonResponse
+    public function aarGroups(UcmNode $ucm): JsonResponse
     {
         $options = AarGroup::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -224,10 +226,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function userLocales(Ucm $ucm): JsonResponse
+    public function userLocales(UcmNode $ucm): JsonResponse
     {
         $options = UserLocale::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -240,10 +242,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function ucmUsers(Ucm $ucm): JsonResponse
+    public function ucmUsers(UcmNode $ucm): JsonResponse
     {
         $options = UcmUser::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name', 'userid'])
             ->map(fn ($row) => [
@@ -257,10 +259,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function mobilityUsers(Ucm $ucm): JsonResponse
+    public function mobilityUsers(UcmNode $ucm): JsonResponse
     {
         $options = UcmUser::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->where('enableMobility', 'true')
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name', 'userid'])
@@ -275,10 +277,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function geoLocations(Ucm $ucm): JsonResponse
+    public function geoLocations(UcmNode $ucm): JsonResponse
     {
         $options = GeoLocation::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -291,10 +293,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function presenceGroups(Ucm $ucm): JsonResponse
+    public function presenceGroups(UcmNode $ucm): JsonResponse
     {
         $options = PresenceGroup::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -307,10 +309,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function sipDialRules(Ucm $ucm): JsonResponse
+    public function sipDialRules(UcmNode $ucm): JsonResponse
     {
         $options = SipDialRules::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -323,18 +325,18 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function phoneSecurityProfiles(Ucm $ucm, Request $request): JsonResponse
+    public function phoneSecurityProfiles(UcmNode $ucm, Request $request): JsonResponse
     {
         $query = PhoneSecurityProfile::query()
-            ->where('ucm_id', $ucm->getKey());
+            ->where('ucm_cluster_id', $ucm->getKey());
 
         // Filter by phone type if provided
         if ($request->has('phoneType') && $request->phoneType) {
             $query->where('phoneType', $request->phoneType);
         } else {
             // If no phone type provided, still return profiles but log for debugging
-            \Log::info('Phone security profiles requested without phoneType filter', [
-                'ucm_id' => $ucm->getKey(),
+            Log::info('Phone security profiles requested without phoneType filter', [
+                'ucm_cluster_id' => $ucm->getKey(),
                 'phoneType' => $request->phoneType ?? 'not provided'
             ]);
         }
@@ -351,10 +353,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function sipProfiles(Ucm $ucm): JsonResponse
+    public function sipProfiles(UcmNode $ucm): JsonResponse
     {
         $options = SipProfile::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -367,10 +369,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function deviceProfiles(Ucm $ucm, Request $request): JsonResponse
+    public function deviceProfiles(UcmNode $ucm, Request $request): JsonResponse
     {
         $query = DeviceProfile::query()
-            ->where('ucm_id', $ucm->getKey());
+            ->where('ucm_cluster_id', $ucm->getKey());
 
         // Filter by phone model if provided
         if ($request->has('model') && $request->model) {
@@ -390,10 +392,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function voicemailProfiles(Ucm $ucm): JsonResponse
+    public function voicemailProfiles(UcmNode $ucm): JsonResponse
     {
         $options = VoicemailProfile::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -406,10 +408,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function callPickupGroups(Ucm $ucm): JsonResponse
+    public function callPickupGroups(UcmNode $ucm): JsonResponse
     {
         $options = CallPickupGroup::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])
             ->map(fn ($row) => [
@@ -422,10 +424,10 @@ class InfrastructureOptionsController extends Controller
         return response()->json($options);
     }
 
-    public function extensionMobilityDynamic(Ucm $ucm, Request $request): JsonResponse
+    public function extensionMobilityDynamic(UcmNode $ucm, Request $request): JsonResponse
     {
         $phoneId = $request->get('phoneId');
-        
+
         if (!$phoneId) {
             return response()->json(['error' => 'Phone ID is required'], 400);
         }
@@ -433,26 +435,26 @@ class InfrastructureOptionsController extends Controller
         try {
             // Get the phone to retrieve its UUID
             $phone = Phone::where('_id', $phoneId)
-                ->where('ucm_id', $ucm->getKey())
+                ->where('ucm_cluster_id', $ucm->getKey())
                 ->first();
-            
+
             if (!$phone) {
                 return response()->json(['error' => 'Phone not found'], 404);
             }
 
             $axl = $ucm->axlApi();
             $data = $axl->getExtensionMobilityDynamicForPhone($phone->uuid);
-            
+
             return response()->json($data);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    public function routePartitions(Ucm $ucm): JsonResponse
+    public function routePartitions(UcmNode $ucm): JsonResponse
     {
         $options = RoutePartition::query()
-            ->where('ucm_id', $ucm->getKey())
+            ->where('ucm_cluster_id', $ucm->getKey())
             ->where('partitionUsage', 'General')
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name'])

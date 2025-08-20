@@ -114,9 +114,9 @@ export default function LineConfigurationForm({
 
     // Load functions for onMouseEnter hover functionality
     const loadExternalCallControlProfiles = async () => {
-        if (externalCallControlProfiles.length === 0 && phone?.ucm_id) {
+        if (externalCallControlProfiles.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/external-call-control-profiles`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/external-call-control-profiles`);
                 setExternalCallControlProfiles(response.data);
             } catch (error) {
                 console.error('Failed to load external call control profiles:', error);
@@ -125,9 +125,9 @@ export default function LineConfigurationForm({
     };
 
     const loadVoicemailProfiles = async () => {
-        if (voicemailProfiles.length === 0 && phone?.ucm_id) {
+        if (voicemailProfiles.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/voicemail-profiles`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/voicemail-profiles`);
                 setVoicemailProfiles(response.data);
             } catch (error) {
                 console.error('Failed to load voicemail profiles:', error);
@@ -136,9 +136,9 @@ export default function LineConfigurationForm({
     };
 
     const loadCallingSearchSpaces = async () => {
-        if (callingSearchSpaces.length === 0 && phone?.ucm_id) {
+        if (callingSearchSpaces.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/calling-search-spaces`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/calling-search-spaces`);
                 setCallingSearchSpaces(response.data);
             } catch (error) {
                 console.error('Failed to load calling search spaces:', error);
@@ -147,9 +147,9 @@ export default function LineConfigurationForm({
     };
 
     const loadPresenceGroups = async () => {
-        if (presenceGroups.length === 0 && phone?.ucm_id) {
+        if (presenceGroups.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/presence-groups`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/presence-groups`);
                 setPresenceGroups(response.data);
             } catch (error) {
                 console.error('Failed to load presence groups:', error);
@@ -158,9 +158,9 @@ export default function LineConfigurationForm({
     };
 
     const loadMohAudioSources = async () => {
-        if (mohAudioSources.length === 0 && phone?.ucm_id) {
+        if (mohAudioSources.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/moh-audio-sources`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/moh-audio-sources`);
                 setMohAudioSources(response.data);
             } catch (error) {
                 console.error('Failed to load MOH audio sources:', error);
@@ -169,9 +169,9 @@ export default function LineConfigurationForm({
     };
 
     const loadRoutePartitions = async () => {
-        if (routePartitions.length === 0 && phone?.ucm_id) {
+        if (routePartitions.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/route-partitions`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/route-partitions`);
                 setRoutePartitions(response.data);
             } catch (error) {
                 console.error('Failed to load route partitions:', error);
@@ -180,9 +180,9 @@ export default function LineConfigurationForm({
     };
 
     const loadAarGroups = async () => {
-        if (aarGroups.length === 0 && phone?.ucm_id) {
+        if (aarGroups.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/aar-groups`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/aar-groups`);
                 setAarGroups(response.data);
             } catch (error) {
                 console.error('Failed to load AAR groups:', error);
@@ -191,9 +191,9 @@ export default function LineConfigurationForm({
     };
 
     const loadCallPickupGroups = async () => {
-        if (callPickupGroups.length === 0 && phone?.ucm_id) {
+        if (callPickupGroups.length === 0 && phone?.ucm_cluster_id) {
             try {
-                const response = await axios.get(`/api/ucm/${phone.ucm_id}/options/call-pickup-groups`);
+                const response = await axios.get(`/api/ucm/${phone.ucm_cluster_id}/options/call-pickup-groups`);
                 setCallPickupGroups(response.data);
             } catch (error) {
                 console.error('Failed to load call pickup groups:', error);

@@ -2,23 +2,23 @@
 
 namespace App\Jobs;
 
-use SoapFault;
-use Exception;
-use App\Models\Ucm;
 use App\Models\Phone;
-use Illuminate\Bus\Queueable;
+use App\Models\UcmCluster;
+use Exception;
 use Illuminate\Bus\Batchable;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use SoapFault;
 
 class SyncPhonesDetailsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-    public function __construct(protected Ucm $ucm)
+    public function __construct(protected UcmCluster $ucmCluster)
     {
     }
 
@@ -28,7 +28,7 @@ class SyncPhonesDetailsJob implements ShouldQueue
      */
     public function handle(): void
     {
-        $axlApi = $this->ucm->axlApi();
+        $axlApi = $this->ucmCluster->axlApi();
         $start = now();
 
         $phoneList = $axlApi->listUcmObjects(
@@ -54,13 +54,13 @@ class SyncPhonesDetailsJob implements ShouldQueue
                 if($lastStatuses) {
                     $phoneDetails = $phoneDetails + $lastStatuses;
                 }
-                Phone::storeUcmDetails($phoneDetails, $this->ucm);
+                Phone::storeUcmDetails($phoneDetails, $this->ucmCluster);
             } catch (Exception $e) {
-                Log::warning("{$this->ucm->name}: get phone failed: {$phone['name']} - {$e->getMessage()}");
+                Log::warning("{$this->ucmCluster->name}: get phone failed: {$phone['name']} - {$e->getMessage()}");
             }
         }
 
-        $this->ucm->phones()->where('updated_at', '<', $start)->delete();
+        $this->ucmCluster->phones()->where('updated_at', '<', $start)->delete();
     }
 }
 

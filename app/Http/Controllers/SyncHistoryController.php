@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ucm;
-use App\Models\SyncHistory;
-use App\Jobs\SyncUcmJob;
 use App\Enums\SyncStatusEnum;
+use App\Jobs\SyncUcmJob;
+use App\Models\SyncHistory;
+use App\Models\UcmCluster;
+use App\Models\UcmNode;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,28 +14,53 @@ use Inertia\Response;
 class SyncHistoryController extends Controller
 {
     /**
-     * Display the sync history for a UCM server.
+     * Display the sync history for a UCM cluster (accessed through a node).
      */
-    public function index(Ucm $ucm): Response
+    public function index(UcmNode $ucmNode): Response
     {
-        $syncHistory = $ucm->syncHistory()
+        // Get the cluster for this node
+        $cluster = $ucmNode->ucmCluster;
+
+        if (!$cluster) {
+            // Handle legacy nodes without clusters
+            return Inertia::render('Ucm/SyncHistory', [
+                'ucm' => $ucmNode,
+                'cluster' => null,
+                'syncHistory' => collect(),
+            ]);
+        }
+
+        $syncHistory = $cluster->syncHistory()
             ->with('syncable')
             ->orderBy('sync_start_time', 'desc')
             ->paginate(20);
 
         return Inertia::render('Ucm/SyncHistory', [
-            'ucm' => $ucm,
+            'ucm' => $ucmNode,
+            'cluster' => $cluster,
             'syncHistory' => $syncHistory,
         ]);
     }
 
     /**
-     * Start a sync operation for a UCM server.
+     * Start a sync operation for a UCM cluster (accessed through a node).
      */
-    public function startSync(Ucm $ucm)
+    public function startSync(UcmNode $ucmNode)
     {
-        // Check if there's already a sync in progress
-        $activeSync = $ucm->syncHistory()
+        // Get the cluster for this node
+        $cluster = $ucmNode->ucmCluster;
+
+        if (!$cluster) {
+            return redirect()->back()
+                ->with('toast', [
+                    'type' => 'error',
+                    'title' => 'Sync Not Available',
+                    'message' => 'This UCM node is not part of a cluster. Sync is only available at the cluster level.'
+                ]);
+        }
+
+        // Check if there's already a sync in progress for the cluster
+        $activeSync = $cluster->syncHistory()
             ->where('status', SyncStatusEnum::SYNCING)
             ->first();
 
@@ -43,24 +69,24 @@ class SyncHistoryController extends Controller
                 ->with('toast', [
                     'type' => 'warning',
                     'title' => 'Sync Already in Progress',
-                    'message' => 'A sync operation is already running for ' . $ucm->name
+                    'message' => 'A sync operation is already running for cluster ' . $cluster->name
                 ]);
         }
 
-        // Create a new sync history entry
-        $syncHistory = $ucm->syncHistory()->create([
+        // Create a new sync history entry for the cluster
+        $syncHistory = $cluster->syncHistory()->create([
             'sync_start_time' => now(),
             'status' => SyncStatusEnum::SYNCING,
         ]);
 
-        // Dispatch the sync job
-        dispatch(new SyncUcmJob($ucm, $syncHistory));
+        // Dispatch the sync job with the cluster
+        dispatch(new SyncUcmJob($cluster, $syncHistory));
 
         return redirect()->back()
             ->with('toast', [
                 'type' => 'success',
                 'title' => 'Sync Started',
-                'message' => 'Sync operation has been started for ' . $ucm->name
+                'message' => 'Sync operation has been started for cluster ' . $cluster->name
             ]);
     }
 
@@ -103,6 +129,51 @@ class SyncHistoryController extends Controller
                 'type' => 'error',
                 'title' => 'Sync Failed',
                 'message' => 'Sync operation failed'
+            ]);
+    }
+
+
+
+    /**
+     * Start a sync operation for a UCM cluster (direct cluster access).
+     */
+    public function startClusterSync(UcmCluster $ucmCluster)
+    {
+        if (!$ucmCluster->publisher) {
+            return redirect()->back()
+                ->with('toast', [
+                    'type' => 'warning',
+                    'title' => 'No Publisher Node',
+                    'message' => 'The ' . $ucmCluster->name . ' does not have a publisher node.'
+                ]);
+        }
+
+        // Check if there's already a sync in progress for the cluster
+        $activeSync = $ucmCluster->has_active_sync;
+
+        if ($activeSync) {
+            return redirect()->back()
+                ->with('toast', [
+                    'type' => 'warning',
+                    'title' => 'Sync Already in Progress',
+                    'message' => 'A sync operation is already running for cluster ' . $ucmCluster->name
+                ]);
+        }
+
+        // Create a new sync history entry for the cluster
+        $syncHistory = $ucmCluster->syncHistory()->create([
+            'sync_start_time' => now(),
+            'status' => SyncStatusEnum::SYNCING,
+        ]);
+
+        // Dispatch the sync job with the cluster
+        dispatch(new SyncUcmJob($ucmCluster, $syncHistory));
+
+        return redirect()->back()
+            ->with('toast', [
+                'type' => 'success',
+                'title' => 'Sync Started',
+                'message' => 'Sync operation has been started for cluster ' . $ucmCluster->name
             ]);
     }
 }

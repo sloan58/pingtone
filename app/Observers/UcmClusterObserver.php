@@ -4,71 +4,67 @@ namespace App\Observers;
 
 use Exception;
 use ReflectionClass;
-use ReflectionMethod;
-use App\Models\Ucm;
-use App\Models\PhoneModel;
-use App\Models\VoicemailProfile;
-use App\Models\RecordingProfile;
+use App\Models\UcmCluster;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\File;
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Support\Facades\File;
 use MongoDB\Laravel\Relations\BelongsTo;
 
-class UcmObserver
+class UcmClusterObserver
 {
     /**
-     * Handle the Ucm "created" event.
+     * Handle the UCM Cluster "created" event.
      */
-    public function created(Ucm $ucm): void
+    public function created(UcmCluster $ucm): void
     {
-        Log::info("UCM created", [
-            'ucm_id' => $ucm->id,
+        Log::info("UCM Cluster created", [
+            'ucm_cluster_id' => $ucm->id,
             'name' => $ucm->name,
         ]);
     }
 
     /**
-     * Handle the Ucm "updated" event.
+     * Handle the UCM Cluster "updated" event.
      */
-    public function updated(Ucm $ucm): void
+    public function updated(UcmCluster $ucm): void
     {
-        Log::info("UCM updated", [
-            'ucm_id' => $ucm->id,
+        Log::info("UCM Cluster updated", [
+            'ucm_cluster_id' => $ucm->id,
             'name' => $ucm->name,
         ]);
     }
 
     /**
-     * Handle the Ucm "deleted" event.
+     * Handle the UCM Cluster "deleted" event.
      */
-    public function deleted(Ucm $ucm): void
+    public function deleted(UcmCluster $ucm): void
     {
-        echo "OBSERVER DEBUG: UCM deleted - {$ucm->id}\n";
-        Log::info("UCM deleted, cleaning up related records", [
-            'ucm_id' => $ucm->id,
+        echo "OBSERVER DEBUG: UCM Cluster deleted - {$ucm->id}\n";
+        Log::info("UCM Cluster deleted, cleaning up related records", [
+            'ucm_cluster_id' => $ucm->id,
             'name' => $ucm->name,
         ]);
 
         try {
             $totalDeleted = 0;
             $deletionSummary = [];
-            
+
             // Get all models that have a belongsTo ucm() relationship
             $modelsWithUcmRelation = $this->getModelsWithUcmRelation();
-            
+
             foreach ($modelsWithUcmRelation as $modelClass) {
                 try {
                     $modelName = class_basename($modelClass);
-                    $deletedCount = $modelClass::where('ucm_id', $ucm->id)->delete();
-                    
+                    $deletedCount = $modelClass::where('ucm_cluster_id', $ucm->id)->delete();
+
                     if ($deletedCount > 0) {
                         echo "OBSERVER DEBUG: Deleted {$deletedCount} {$modelName} records\n";
                         $deletionSummary[$modelName] = $deletedCount;
                         $totalDeleted += $deletedCount;
-                        
+
                         Log::info("Deleted related records", [
                             'model' => $modelName,
-                            'ucm_id' => $ucm->id,
+                            'ucm_cluster_id' => $ucm->id,
                             'count' => $deletedCount,
                         ]);
                     }
@@ -76,54 +72,54 @@ class UcmObserver
                     echo "OBSERVER ERROR deleting {$modelClass}: " . $e->getMessage() . "\n";
                     Log::error("Error deleting related records", [
                         'model' => $modelClass,
-                        'ucm_id' => $ucm->id,
+                        'ucm_cluster_id' => $ucm->id,
                         'error' => $e->getMessage(),
                     ]);
                 }
             }
 
-            Log::info("UCM cleanup completed", [
-                'ucm_id' => $ucm->id,
+            Log::info("UCM Cluster cleanup completed", [
+                'ucm_cluster_id' => $ucm->id,
                 'total_records_deleted' => $totalDeleted,
                 'deletion_summary' => $deletionSummary,
             ]);
-            
+
             echo "OBSERVER DEBUG: Total records deleted: {$totalDeleted}\n";
-            
+
         } catch (Exception $e) {
             echo "OBSERVER ERROR: " . $e->getMessage() . "\n";
             Log::error("Error in UcmObserver::deleted", [
                 'error' => $e->getMessage(),
-                'ucm_id' => $ucm->id,
+                'ucm_cluster_id' => $ucm->id,
             ]);
         }
     }
 
     /**
-     * Handle the Ucm "restored" event.
+     * Handle the UCM Cluster "restored" event.
      */
-    public function restored(Ucm $ucm): void
+    public function restored(UcmCluster $ucm): void
     {
-        Log::info("UCM restored", [
-            'ucm_id' => $ucm->id,
+        Log::info("UCM Cluster restored", [
+            'ucm_cluster_id' => $ucm->id,
             'name' => $ucm->name,
         ]);
     }
 
     /**
-     * Handle the Ucm "force deleted" event.
+     * Handle the UCM Cluster "force deleted" event.
      */
-    public function forceDeleted(Ucm $ucm): void
+    public function forceDeleted(UcmCluster $ucm): void
     {
-        Log::info("UCM force deleted", [
-            'ucm_id' => $ucm->id,
+        Log::info("UCM Cluster force deleted", [
+            'ucm_cluster_id' => $ucm->id,
             'name' => $ucm->name,
         ]);
     }
 
     /**
      * Get all model classes that have a belongsTo ucm() relationship.
-     * 
+     *
      * @return array Array of model class names
      */
     private function getModelsWithUcmRelation(): array
@@ -135,12 +131,12 @@ class UcmObserver
             // Fallback for environments where base_path() is not available
             $modelsPath = __DIR__ . '/../Models';
         }
-        
+
         if (!File::exists($modelsPath)) {
             Log::warning("Models path does not exist: {$modelsPath}");
             return [];
         }
-        
+
         $modelFiles = File::allFiles($modelsPath);
         $modelsWithUcmRelation = [];
 
@@ -152,7 +148,7 @@ class UcmObserver
 
             // Get the class name from the file
             $className = 'App\\Models\\' . $file->getFilenameWithoutExtension();
-            
+
             // Skip if class doesn't exist or isn't a model
             if (!class_exists($className)) {
                 continue;
@@ -160,17 +156,17 @@ class UcmObserver
 
             try {
                 $reflection = new ReflectionClass($className);
-                
+
                 // Skip abstract classes (like Device)
                 if ($reflection->isAbstract()) {
                     continue;
                 }
-                
-                // Skip the Ucm model itself
-                if ($className === Ucm::class) {
+
+                // Skip the UCM Cluster model itself
+                if ($className === UcmCluster::class) {
                     continue;
                 }
-                
+
                 // Check if the class extends Model
                 if (!$reflection->isSubclassOf(Model::class)) {
                     continue;
@@ -182,7 +178,7 @@ class UcmObserver
                 }
 
                 $ucmMethod = $reflection->getMethod('ucm');
-                
+
                 // Skip if method is not public
                 if (!$ucmMethod->isPublic()) {
                     continue;
@@ -201,7 +197,7 @@ class UcmObserver
                 try {
                     $instance = new $className();
                     $relationship = $instance->ucm();
-                    
+
                     if ($relationship instanceof BelongsTo) {
                         $modelsWithUcmRelation[] = $className;
                     }

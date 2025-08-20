@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Activity, BarChart3, Bell, Database, LayoutGrid, MapPin, MessageSquare, Phone, Server, Settings, Users } from 'lucide-react';
+import { Activity, BarChart3, Bell, Database, Layers, LayoutGrid, MapPin, MessageSquare, Phone, Settings, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -34,9 +34,9 @@ const mainNavItems: NavItem[] = [
         icon: Activity,
     },
     {
-        title: 'UCM Servers',
-        href: '/ucm',
-        icon: Server,
+        title: 'UCM Clusters',
+        href: '/ucm-clusters',
+        icon: Layers,
     },
     {
         title: 'Service Areas',

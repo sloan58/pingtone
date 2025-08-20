@@ -2,21 +2,21 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Ucm;
+use App\Models\UcmNode;
 use Illuminate\Console\Command;
 use App\Jobs\GatherPhoneStatsJob;
 
 class GatherPhoneStatsCommand extends Command
 {
-    protected $signature = 'phones:gather-stats {ucm_id? : Gather stats from a single UCM by ID; omit to gather from all}';
+    protected $signature = 'phones:gather-stats {ucm_cluster_id? : Gather stats from a single UCM by ID; omit to gather from all}';
 
     protected $description = 'Gather phone statistics (last active, last seen, last UCM settings) from UCM registrationdynamic table';
 
     public function handle(): int
     {
-        $ucmId = $this->argument('ucm_id');
+        $ucmId = $this->argument('ucm_cluster_id');
 
-        $query = Ucm::query();
+        $query = UcmNode::query();
         if ($ucmId) {
             $query->where('_id', $ucmId);
         }

@@ -5,6 +5,7 @@
 
 echo "Starting SSH WebSocket Proxy Server..."
 
+# shellcheck disable=SC2164
 cd docker/websockets
 
 # Check if node_modules exists, if not install dependencies

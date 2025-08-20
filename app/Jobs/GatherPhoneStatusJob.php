@@ -4,9 +4,9 @@ namespace App\Jobs;
 
 use SoapFault;
 use Exception;
-use App\Models\Ucm;
-use App\Models\PhoneStatus;
+use App\Models\UcmNode;
 use App\Services\RisPort;
+use App\Models\PhoneStatus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
@@ -19,8 +19,8 @@ class GatherPhoneStatusJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
-        protected Ucm $ucm,
-        protected ?array $phones = null
+        protected UcmNode $ucm,
+        protected ?array  $phones = null
     )
     {
     }
@@ -49,7 +49,7 @@ class GatherPhoneStatusJob implements ShouldQueue
             PhoneStatus::storeFromRisPortData($risPortData, $this->ucm);
 
             Log::info("Successfully gathered and stored phone status for UCM {$this->ucm->name}", [
-                'ucm_id' => $this->ucm->getKey(),
+                'ucm_cluster_id' => $this->ucm->getKey(),
                 'has_data' => !empty($risPortData['selectCmDeviceReturn']['SelectCmDeviceResult']['CmNodes'] ?? null),
                 'total_devices_found' => $risPortData['selectCmDeviceReturn']['SelectCmDeviceResult']['TotalDevicesFound'] ?? 0,
             ]);
@@ -58,7 +58,7 @@ class GatherPhoneStatusJob implements ShouldQueue
             Log::error("Error gathering phone status for UCM {$this->ucm->name}", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'ucm_id' => $this->ucm->getKey(),
+                'ucm_cluster_id' => $this->ucm->getKey(),
             ]);
 
             throw $e;

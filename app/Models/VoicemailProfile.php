@@ -13,27 +13,27 @@ class VoicemailProfile extends Model
     /**
      * Get the UCM that owns this voicemail profile.
      */
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
     /**
      * Store UCM data from AXL response
      *
      * @param array $responseData
-     * @param Ucm $ucm
+     * @param UcmCluster $ucmCluster
      * @return void
      */
-    public static function storeUcmData(array $responseData, Ucm $ucm): void
+    public static function storeUcmData(array $responseData, UcmCluster $ucmCluster): void
     {
-        $rows = array_map(fn($row) => [...$row, 'ucm_id' => $ucm->id], $responseData);
+        $rows = array_map(fn($row) => [...$row, 'ucm_cluster_id' => $ucmCluster->id], $responseData);
 
         MongoBulkUpsert::upsert(
             'voicemail_profiles',
             $rows,
-            ['ucm_id', 'name'],
-            ['name' => 1, 'ucm_id' => 1]
+            ['ucm_cluster_id', 'name'],
+            ['name' => 1, 'ucm_cluster_id' => 1]
         );
     }
 }

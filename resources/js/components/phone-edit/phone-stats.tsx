@@ -7,7 +7,7 @@ interface PhoneStatsProps {
         lastseen?: string; // epoch timestamp
         lastknownucm?: string;
         collected_at?: string;
-        ucm_id?: string;
+        ucm_cluster_id?: string;
     };
     // Latest RisPort status data
     latestStatus?: {

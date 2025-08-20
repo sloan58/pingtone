@@ -2,21 +2,19 @@
 
 namespace App\Models;
 
-use Exception;
+use App\Enums\SyncStatusEnum;
+use App\Observers\UcmClusterObserver;
 use App\Services\Axl;
-use App\Observers\UcmObserver;
-use MongoDB\Laravel\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Exception;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Storage;
+use MongoDB\Laravel\Eloquent\Model;
+use MongoDB\Laravel\Relations\HasMany;
 
-#[ObservedBy([UcmObserver::class])]
-class Ucm extends Model
+#[ObservedBy([UcmClusterObserver::class])]
+class UcmCluster extends Model
 {
-    use HasFactory;
-
     protected $guarded = [];
 
     /**
@@ -45,9 +43,30 @@ class Ucm extends Model
     ];
 
     /**
+     * @return UcmNode|null
+     */
+    public function getPublisherAttribute(): ?UcmNode
+    {
+        return $this->ucmNodes()->where('node_role', 'Publisher')->first();
+    }
+
+    /**
+     * @return ?SyncHistory
+     */
+    public function getHasActiveSyncAttribute(): ?SyncHistory
+    {
+        return $this->syncHistory()->where('status', SyncStatusEnum::SYNCING)->first();
+    }
+
+    public function ucmNodes(): HasMany
+    {
+        return $this->hasMany(UcmNode::class);
+    }
+
+    /**
      * Get all devices associated with this UCM.
      */
-    public function devices(): HasMany
+    public function devices(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Device::class);
     }
@@ -368,12 +387,12 @@ class Ucm extends Model
             }
 
             logger()->warning(__METHOD__ . ': No version returned from API', [
-                'ucm_id' => $this->id,
+                'ucm_cluster_id' => $this->id,
             ]);
             return null;
         } catch (Exception $e) {
             logger()->error(__METHOD__ . ': Failed to update version from API', [
-                'ucm_id' => $this->id,
+                'ucm_cluster_id' => $this->id,
                 'error' => $e->getMessage(),
             ]);
             return null;

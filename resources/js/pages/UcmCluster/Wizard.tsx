@@ -9,7 +9,7 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, ArrowRight, CheckCircle, Loader2, Server } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle, Layers, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -29,6 +29,8 @@ interface DiscoveredNode {
 interface DiscoveryResult {
     success: boolean;
     message: string;
+    cluster_id: string | number;
+    cluster_name: string;
     nodes: DiscoveredNode[];
     publisher: DiscoveredNode;
     publisher_id: number;
@@ -47,22 +49,22 @@ interface WizardData {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'UCM Servers',
-        href: '/ucm',
+        title: 'UCM Clusters',
+        href: '/ucm-clusters',
     },
     {
-        title: 'UCM Onboarding Wizard',
-        href: '/ucm/wizard',
+        title: 'Cluster Onboarding Wizard',
+        href: '/ucm-clusters/wizard',
     },
 ];
 
-export default function UcmWizard({ apiVersions }: Props) {
+export default function UcmClusterWizard({ apiVersions }: Props) {
     useToast(); // For handling server flash messages
     const [currentStep, setCurrentStep] = useState(1);
     const [isDiscovering, setIsDiscovering] = useState(false);
     const [discoveredNodes, setDiscoveredNodes] = useState<DiscoveredNode[]>([]);
     const [publisherNode, setPublisherNode] = useState<DiscoveredNode | null>(null);
-    const [publisherId, setPublisherId] = useState<number | null>(null);
+    const [clusterId, setClusterId] = useState<string | number | null>(null);
 
     const { data, setData, processing, errors, setError, clearErrors } = useForm<WizardData>({
         cluster_name: '',
@@ -125,7 +127,7 @@ export default function UcmWizard({ apiVersions }: Props) {
 
         try {
             // Make API call to discover nodes
-            const response = await axios.post('/ucm/discover', {
+            const response = await axios.post('/ucm-clusters/discover', {
                 cluster_name: data.cluster_name,
                 hostname: data.hostname,
                 username: data.username,
@@ -139,7 +141,7 @@ export default function UcmWizard({ apiVersions }: Props) {
 
             setDiscoveredNodes(result.nodes);
             setPublisherNode(result.publisher);
-            setPublisherId(result.publisher_id);
+            setClusterId(result.cluster_id);
             setCurrentStep(5); // Move to success step
 
             toast.success('Discovery Successful', {
@@ -157,12 +159,12 @@ export default function UcmWizard({ apiVersions }: Props) {
     };
 
     const handleFinish = () => {
-        if (publisherId) {
-            // Redirect to the publisher node edit page
-            router.visit(`/ucm/${publisherId}/edit`);
+        if (clusterId) {
+            // Redirect to the cluster details page
+            router.visit(`/ucm-clusters/${clusterId}`);
         } else {
-            // Fallback to UCM index page
-            router.visit('/ucm');
+            // Fallback to cluster index page
+            router.visit('/ucm-clusters');
         }
     };
 
@@ -173,11 +175,11 @@ export default function UcmWizard({ apiVersions }: Props) {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <Server className="h-5 w-5" />
+                                <Layers className="h-5 w-5" />
                                 Cluster Information
                             </CardTitle>
                             <CardDescription>
-                                This is the name of your cluster! It will help you identify this UCM cluster in the system.
+                                This is the name of your UCM cluster! It will help you identify this cluster in the system.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -365,8 +367,8 @@ export default function UcmWizard({ apiVersions }: Props) {
 
                             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                                 <p className="text-sm text-blue-800">
-                                    <strong>Next:</strong> You'll be taken to the publisher node configuration page where you can manage your cluster
-                                    settings and start syncing data.
+                                    <strong>Next:</strong> You'll be taken to the cluster details page where you can manage your cluster settings and
+                                    start syncing data.
                                 </p>
                             </div>
                         </CardContent>
@@ -380,19 +382,19 @@ export default function UcmWizard({ apiVersions }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="UCM Onboarding Wizard" />
+            <Head title="UCM Cluster Onboarding Wizard" />
 
             <div className="space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">UCM Onboarding Wizard</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">UCM Cluster Onboarding Wizard</h1>
                         <p className="text-muted-foreground">Set up your Cisco Unified Communications Manager cluster</p>
                     </div>
                     <Button variant="outline" asChild>
-                        <a href="/ucm">
+                        <a href="/ucm-clusters">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to UCM Servers
+                            Back to UCM Clusters
                         </a>
                     </Button>
                 </div>
@@ -443,7 +445,7 @@ export default function UcmWizard({ apiVersions }: Props) {
                         {currentStep === 5 && (
                             <Button onClick={handleFinish}>
                                 <CheckCircle className="mr-2 h-4 w-4" />
-                                Go to Publisher Settings
+                                Go to Cluster Details
                             </Button>
                         )}
                     </div>

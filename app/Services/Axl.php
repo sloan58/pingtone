@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\UcmCluster;
+use App\Models\UcmNode;
 use Exception;
-use SoapFault;
-use SoapClient;
-use App\Models\Ucm;
 use Illuminate\Support\Facades\Log;
+use SoapClient;
+use SoapFault;
 
 /**
  * AXL SOAP Client for Cisco Unified Communications Manager
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\Log;
  */
 class Axl extends SoapClient
 {
-    protected Ucm $ucm;
+    protected UcmNode $ucmNode;
 
     // Pagination and retry tracking
     private bool $paginatingRequests = false;
@@ -31,14 +32,85 @@ class Axl extends SoapClient
     /**
      * @throws Exception
      */
-    public function __construct(Ucm $ucm)
+    public function __construct(protected UcmCluster $ucmCluster, ?UcmNode $ucmNode = null)
     {
-        $this->ucm = $ucm;
+        $this->ucmNode = $ucmCluster->publisher ?: $ucmNode;
 
         parent::__construct(
             $this->getWsdlPath(),
             $this->getSoapOptions()
         );
+    }
+
+    /**
+     * Discover cluster nodes using connection details without requiring a UcmNode model
+     *
+     * @param array $connectionDetails ['hostname', 'username', 'password', 'schema_version']
+     * @return array ['version' => string, 'nodes' => array, 'publisher' => array]
+     * @throws Exception
+     */
+    public static function discoverClusterNodes(array $connectionDetails): array
+    {
+        // Validate required connection details
+        $required = ['hostname', 'username', 'password', 'schema_version'];
+        foreach ($required as $field) {
+            if (empty($connectionDetails[$field])) {
+                throw new Exception("Missing required connection detail: {$field}");
+            }
+        }
+
+        Log::info('Starting cluster discovery', [
+            'hostname' => $connectionDetails['hostname'],
+            'username' => $connectionDetails['username'],
+            'schema_version' => $connectionDetails['schema_version'],
+        ]);
+
+        // Create a temporary UCM node instance for API testing (not saved to database)
+
+        $ucmCluster = new UcmCluster();
+
+        $tempUcmNode = new UcmNode([
+            'name' => 'temp-discovery',
+            'hostname' => $connectionDetails['hostname'],
+            'username' => $connectionDetails['username'],
+            'password' => $connectionDetails['password'],
+            'schema_version' => $connectionDetails['schema_version'],
+        ]);
+
+        // Test API connection and get version
+        $axlApi = new static($ucmCluster, $tempUcmNode);
+
+        $version = $axlApi->getCCMVersion();
+
+        if (!$version) {
+            throw new Exception('Failed to connect to UCM API or detect version');
+        }
+
+        Log::info("API connection successful, version: {$version}");
+
+        // Query to get cluster nodes and their roles
+        $sql = "SELECT p.name processnode, t.name type FROM processnode p JOIN typenodeusage t ON p.tknodeusage = t.enum WHERE p.name != 'EnterpriseWideData'";
+
+        $nodes = $axlApi->performSqlQuery($sql);
+
+        if (empty($nodes)) {
+            throw new Exception('No cluster nodes found');
+        }
+
+        Log::info('Discovered cluster nodes', ['count' => count($nodes), 'nodes' => $nodes]);
+
+        // Find publisher node
+        $publisherNode = collect($nodes)->firstWhere('type', 'Publisher');
+
+        if (!$publisherNode) {
+            throw new Exception('No publisher node found in cluster');
+        }
+
+        return [
+            'version' => $version,
+            'nodes' => $nodes,
+            'publisher' => $publisherNode,
+        ];
     }
 
     /**
@@ -48,10 +120,10 @@ class Axl extends SoapClient
      */
     public function getCCMVersion(): ?string
     {
-        Log::info("Getting CCM version from {$this->ucm->name}", [
-            'hostname' => $this->ucm->hostname,
-            'username' => $this->ucm->username,
-            'schema_version' => $this->ucm->schema_version,
+        Log::info("Getting CCM version from {$this->ucmNode->name}", [
+            'hostname' => $this->ucmNode->hostname,
+            'username' => $this->ucmNode->username,
+            'schema_version' => $this->ucmNode->schema_version,
             'wsdl_path' => $this->getWsdlPath(),
             'service_url' => $this->getServiceUrl(),
         ]);
@@ -68,7 +140,7 @@ class Axl extends SoapClient
 
         } catch (SoapFault $e) {
             Log::error("SOAP fault getting CCM version", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
                 'debug_info' => $this->getDebugInfo(),
@@ -79,7 +151,7 @@ class Axl extends SoapClient
             return null;
         } catch (Exception $e) {
             Log::error("Unexpected error getting CCM version", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -98,7 +170,7 @@ class Axl extends SoapClient
      */
     public function listUcmObjects(string $methodName, array $listObject, string $responseProperty): array
     {
-        Log::info("{$this->ucm->name}: Syncing {$responseProperty}");
+        Log::info("{$this->ucmNode->name}: Syncing {$responseProperty}");
 
         // Add pagination parameters if we're in pagination mode
         if ($this->paginatingRequests) {
@@ -106,7 +178,7 @@ class Axl extends SoapClient
             $listObject['first'] = $this->suggestedRows;
         }
 
-        Log::info("{$this->ucm->name}: Set list object", $listObject);
+        Log::info("{$this->ucmNode->name}: Set list object", $listObject);
 
         try {
             return json_decode(json_encode($this->__soapCall($methodName, [
@@ -116,7 +188,7 @@ class Axl extends SoapClient
             return $this->handleAxlApiError($e, [$methodName, $listObject, $responseProperty]);
         } catch (Exception $e) {
             Log::error("Unexpected error syncing {$responseProperty}", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'error' => $e->getMessage(),
             ]);
             throw $e;
@@ -137,7 +209,7 @@ class Axl extends SoapClient
 
         // Handle "Query request too large" errors with pagination
         if (str_contains($e->faultstring, 'Query request too large')) {
-            Log::info("{$this->ucm->name}: Received throttle response - implementing pagination");
+            Log::info("{$this->ucmNode->name}: Received throttle response - implementing pagination");
             preg_match_all('/[0-9]+/', $e->faultstring, $matches);
             if (count($matches[0]) >= 2) {
                 $this->totalRows = (int)$matches[0][0];
@@ -145,7 +217,7 @@ class Axl extends SoapClient
                 $this->paginatingRequests = true;
                 $this->iterations = (int)floor($this->totalRows / $this->suggestedRows) + 1;
                 $this->loop = 1;
-                Log::info("{$this->ucm->name}: Starting pagination", [
+                Log::info("{$this->ucmNode->name}: Starting pagination", [
                     'totalRows' => $this->totalRows,
                     'suggestedRows' => $this->suggestedRows,
                     'iterations' => $this->iterations,
@@ -154,7 +226,7 @@ class Axl extends SoapClient
                 // Call the method multiple times and accumulate data
                 $accumulatedData = [];
                 while ($this->loop <= $this->iterations) {
-                    Log::info("{$this->ucm->name}: Processing page {$this->loop} of {$this->iterations}", [
+                    Log::info("{$this->ucmNode->name}: Processing page {$this->loop} of {$this->iterations}", [
                         'skipRows' => $this->skipRows,
                         'suggestedRows' => $this->suggestedRows,
                     ]);
@@ -162,7 +234,7 @@ class Axl extends SoapClient
                     $data = $this->{$method}(...$args);
                     if (is_array($data)) {
                         $accumulatedData = array_merge($accumulatedData, $data);
-                        Log::info("{$this->ucm->name}: Accumulated data", [
+                        Log::info("{$this->ucmNode->name}: Accumulated data", [
                             'current_count' => count($data),
                             'total_count' => count($accumulatedData),
                             'loop' => $this->loop,
@@ -173,7 +245,7 @@ class Axl extends SoapClient
                     $this->loop++;
                 }
 
-                Log::info("{$this->ucm->name}: Pagination completed", [
+                Log::info("{$this->ucmNode->name}: Pagination completed", [
                     'total_count' => count($accumulatedData),
                 ]);
 
@@ -186,7 +258,7 @@ class Axl extends SoapClient
         if (str_contains($e->faultstring, 'Authentication failed') ||
             str_contains($e->faultstring, 'Invalid credentials') ||
             str_contains($e->faultstring, 'Access denied')) {
-            Log::error("{$this->ucm->name}: Authentication error - not retrying", [
+            Log::error("{$this->ucmNode->name}: Authentication error - not retrying", [
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
             ]);
@@ -197,7 +269,7 @@ class Axl extends SoapClient
         if (str_contains($e->faultstring, 'Connection refused') ||
             str_contains($e->faultstring, 'Connection timeout') ||
             str_contains($e->faultstring, 'Network is unreachable')) {
-            Log::warning("{$this->ucm->name}: Connection error detected", [
+            Log::warning("{$this->ucmNode->name}: Connection error detected", [
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
                 'tries' => $this->tries,
@@ -205,7 +277,7 @@ class Axl extends SoapClient
         }
 
         // Handle other SOAP errors with exponential backoff
-        Log::error("{$this->ucm->name}: Received AXL error response", [
+        Log::error("{$this->ucmNode->name}: Received AXL error response", [
             'faultcode' => $e->faultcode,
             'faultstring' => $e->faultstring,
             'tries' => $this->tries,
@@ -215,7 +287,7 @@ class Axl extends SoapClient
         $this->tries++;
 
         if ($this->tries > $this->maxTries) {
-            Log::error("{$this->ucm->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
+            Log::error("{$this->ucmNode->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
                 'method' => $method,
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
@@ -225,7 +297,7 @@ class Axl extends SoapClient
 
         $sleepSeconds = $this->tries * 10; // Exponential backoff: 10s, 20s, 30s
 
-        Log::info("{$this->ucm->name}: Retrying after {$sleepSeconds} seconds", [
+        Log::info("{$this->ucmNode->name}: Retrying after {$sleepSeconds} seconds", [
             'maxTries' => $this->maxTries,
             'tries' => $this->tries,
             'sleep' => $sleepSeconds,
@@ -257,10 +329,10 @@ class Axl extends SoapClient
      */
     private function getWsdlPath(): string
     {
-        $path = storage_path("axl/{$this->ucm->schema_version}/AXLAPI.wsdl");
+        $path = storage_path("axl/{$this->ucmCluster->schema_version}/AXLAPI.wsdl");
 
         if (!file_exists($path)) {
-            throw new Exception("WSDL file not found for version {$this->ucm->schema_version}");
+            throw new Exception("WSDL file not found for version {$this->ucmNode->schema_version}");
         }
 
         return $path;
@@ -272,7 +344,7 @@ class Axl extends SoapClient
     private function getServiceUrl(): string
     {
         // Use IP address directly to avoid DNS issues
-        $hostname = $this->ucm->hostname;
+        $hostname = $this->ucmNode->hostname;
         if (filter_var($hostname, FILTER_VALIDATE_IP)) {
             return "https://{$hostname}:8443/axl/";
         }
@@ -294,8 +366,8 @@ class Axl extends SoapClient
         return [
             'trace' => true,                    // Essential for debugging
             'exceptions' => true,               // Let exceptions bubble up
-            'login' => $this->ucm->username,    // Basic authentication
-            'password' => $this->ucm->password,
+            'login' => $this->ucmCluster->username,    // Basic authentication
+            'password' => $this->ucmCluster->password,
             'cache_wsdl' => WSDL_CACHE_NONE,   // Always use fresh WSDL
             'connection_timeout' => 30,         // Reasonable timeout
             'features' => SOAP_SINGLE_ELEMENT_ARRAYS, // Critical for XML parsing
@@ -334,7 +406,7 @@ class Axl extends SoapClient
      */
     public function performSqlQuery(string $sql): array
     {
-        Log::info("{$this->ucm->name}: Executing SQL query: {$sql}");
+        Log::info("{$this->ucmNode->name}: Executing SQL query: {$sql}");
 
         try {
             $res = $this->__soapCall('executeSQLQuery', [
@@ -543,7 +615,7 @@ class Axl extends SoapClient
                 $query
             );
         }
-        Log::info("{$this->ucm->name}: Running sql query", [$query]);
+        Log::info("{$this->ucmNode->name}: Running sql query", [$query]);
         return $query;
     }
 
@@ -668,7 +740,7 @@ class Axl extends SoapClient
             ]);
 
             Log::info("Successfully updated phone in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'phone_name' => $updateObject['name'] ?? 'unknown',
             ]);
 
@@ -676,7 +748,7 @@ class Axl extends SoapClient
 
         } catch (SoapFault|Exception $e) {
             Log::error("Failed to update phone in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'phone_name' => $updateObject['name'] ?? 'unknown',
                 'faultcode' => $e->faultcode ?? '',
                 'faultstring' => $e->faultstring ?? '',
@@ -718,7 +790,7 @@ class Axl extends SoapClient
             ]);
 
             Log::info("Successfully updated phone in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'phone_name' => $updateObject['name'] ?? 'unknown',
             ]);
 
@@ -726,7 +798,7 @@ class Axl extends SoapClient
 
         } catch (SoapFault|Exception $e) {
             Log::error("Failed to update line in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'line_pattern' => $updateObject['pattern'] ?? 'unknown',
                 'faultcode' => $e->faultcode ?? '',
                 'faultstring' => $e->faultstring ?? '',
@@ -750,7 +822,7 @@ class Axl extends SoapClient
             $res = $this->__soapCall('updateDeviceProfile', [$updateObject]);
 
             Log::info("Successfully updated device profile in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'device_profile_name' => $updateObject['name'] ?? 'unknown',
             ]);
 
@@ -758,7 +830,7 @@ class Axl extends SoapClient
 
         } catch (SoapFault|Exception $e) {
             Log::error("Failed to update device profile in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'device_profile_name' => $updateObject['name'] ?? 'unknown',
                 'faultcode' => $e->faultcode ?? '',
                 'faultstring' => $e->faultstring ?? '',
@@ -782,7 +854,7 @@ class Axl extends SoapClient
             $res = $this->__soapCall('updateRemoteDestinationProfile', [$updateObject]);
 
             Log::info("Successfully updated remote destination profile in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'rdp_name' => $updateObject['name'] ?? 'unknown',
             ]);
 
@@ -790,7 +862,7 @@ class Axl extends SoapClient
 
         } catch (SoapFault|Exception $e) {
             Log::error("Failed to update remote destination profile in UCM", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'rdp_name' => $updateObject['name'] ?? 'unknown',
                 'faultcode' => $e->faultcode ?? '',
                 'faultstring' => $e->faultstring ?? '',
@@ -825,7 +897,7 @@ class Axl extends SoapClient
     {
         try {
             Log::info("Getting extension mobility dynamic data for phone", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'phone_uuid' => $phoneUuid,
             ]);
 
@@ -842,7 +914,7 @@ class Axl extends SoapClient
 
         } catch (SoapFault|Exception $e) {
             Log::error("Failed to get extension mobility dynamic data", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmNode->name,
                 'phone_uuid' => $phoneUuid,
                 'faultcode' => $e->faultcode ?? '',
                 'faultstring' => $e->faultstring ?? '',

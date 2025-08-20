@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('presence_groups', function (Blueprint $table) {
             $table->string('name')->index();
             $table->string('uuid')->index();
-            $table->string('ucm_id')->index();
-            $table->unique(['name', 'ucm_id']);
+            $table->string('ucm_cluster_id')->index();
+            $table->unique(['name', 'ucm_cluster_id']);
         });
     }
 

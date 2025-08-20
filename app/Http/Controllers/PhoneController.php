@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Log;
-use Exception;
-use SoapFault;
-use Inertia\Inertia;
+use App\Http\Controllers\Concerns\AppliesSearchFilters;
 use App\Models\Line;
-use App\Models\Phone;
-use App\Models\PhoneStatus;
-use Illuminate\Http\Request;
 use App\Models\MohAudioSource;
-use App\Models\PhoneScreenCapture;
+use App\Models\Phone;
 use App\Models\PhoneButtonTemplate;
+use App\Models\PhoneScreenCapture;
+use App\Models\PhoneStatus;
 use App\Models\ServiceAreaDeviceLink;
 use App\Services\PhoneScreenCaptureService;
-use App\Http\Controllers\Concerns\AppliesSearchFilters;
+use Exception;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Log;
+use SoapFault;
 
 class PhoneController extends Controller
 {
@@ -33,7 +33,7 @@ class PhoneController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Phone::query()->with(['ucm']);
+        $query = Phone::query()->with(['ucmCluster']);
 
         // Filter by service area if provided
         if ($serviceAreaId = $request->get('service_area_id')) {
@@ -68,7 +68,7 @@ class PhoneController extends Controller
             // Apply regular filters
             if (!empty($otherFilters)) {
                 $this->applyFilters($query, array_values($otherFilters), $logic, [
-                    'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_id'
+                    'name', 'description', 'model', 'devicePoolName', 'device_pool_name', 'ucm_cluster_id'
                 ]);
             }
 
@@ -147,13 +147,13 @@ class PhoneController extends Controller
      */
     public function edit(Phone $phone)
     {
-        $phone->load('ucm');
+        $phone->load('ucmCluster');
         // Load service areas using custom relationship
         $phone->service_areas = $phone->serviceAreas()->get();
 
         // Get the latest RisPort status for this phone
         $latestStatus = PhoneStatus::where('phone_name', $phone->name)
-            ->where('ucm_id', $phone->ucm_id)
+            ->where('ucm_cluster_id', $phone->ucm_cluster_id)
             ->orderBy('timestamp', 'desc')
             ->first() ?? [];
 
@@ -161,14 +161,14 @@ class PhoneController extends Controller
         // We need the template details on page load to build the button UI
         $phoneButtonTemplate = null;
         if (isset($phone->phoneTemplateName['_'])) {
-            $phoneButtonTemplate = PhoneButtonTemplate::where('ucm_id', $phone->ucm_id)
+            $phoneButtonTemplate = PhoneButtonTemplate::where('ucm_cluster_id', $phone->ucm_cluster_id)
                 ->where('name', $phone->phoneTemplateName['_'])
                 ->first();
         }
 
         // The phone moh setting doesn't have the friendly name to display in the select
         // so we're sending all the information in another field.
-        $mohAudioSources = MohAudioSource::where('ucm_id', $phone->ucm_id)
+        $mohAudioSources = MohAudioSource::where('ucm_cluster_id', $phone->ucm_cluster_id)
             ->orderBy('name')
             ->get(['_id', 'uuid', 'name', 'sourceId']);
 
@@ -346,7 +346,7 @@ class PhoneController extends Controller
                 if (isset($buttonConfig['dirn']['uuid'])) {
                     $line = Line::where('uuid', $buttonConfig['dirn']['uuid'])->first();
                     $associatedDevices = Phone::withoutGlobalScope("device_class")
-                        ->where('ucm_id', $line->ucm_id)
+                        ->where('ucm_cluster_id', $line->ucm_cluster_id)
                         ->where('lines.line.dirn.uuid', $line->uuid)
                         ->select(['id', 'name', 'class'])
                     ->get()->toArray();
@@ -421,7 +421,7 @@ class PhoneController extends Controller
         try {
             // Find the device by MongoDB ID - check all device types
             $device = Phone::withoutGlobalScope('device_class')->find($device_id);
-            
+
             if (!$device) {
                 return response()->json([
                     'error' => 'Device not found'
@@ -430,7 +430,7 @@ class PhoneController extends Controller
 
             // Find the line by MongoDB ID to get its UUID for filtering
             $line = Line::find($line_id);
-            
+
             if (!$line) {
                 return response()->json([
                     'error' => 'Line not found'
@@ -439,7 +439,7 @@ class PhoneController extends Controller
 
             // Get the current device data
             $deviceData = $device->toArray();
-            
+
             // Check if the device has lines and filter out the specified line
             if (!isset($deviceData['lines']['line']) || !is_array($deviceData['lines']['line'])) {
                 return response()->json([

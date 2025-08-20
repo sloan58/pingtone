@@ -2,17 +2,17 @@
 
 namespace App\Jobs;
 
-use Exception;
 use App\Models\Phone;
-use App\Models\UcmUser;
 use App\Models\ServiceArea;
-use Illuminate\Bus\Batchable;
-use Illuminate\Support\Facades\Log;
 use App\Models\ServiceAreaDeviceLink;
 use App\Models\ServiceAreaUcmUserLink;
+use App\Models\UcmUser;
+use Exception;
+use Illuminate\Bus\Batchable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
 
 class AssignDevicesToServiceAreasJob implements ShouldQueue
 {
@@ -110,33 +110,33 @@ class AssignDevicesToServiceAreasJob implements ShouldQueue
                     $detached = [];
 
                     // For each service area, check if this device should be in it
-                                         foreach (ServiceArea::all() as $serviceArea) {
-                         $deviceShouldBeInThisArea = in_array($serviceArea->id, $serviceAreaIds);
-                         $currentDeviceIds = ServiceAreaDeviceLink::where('service_area_id', $serviceArea->id)
-                             ->where('device_type', 'Phone')
-                             ->pluck('device_id')
-                             ->map(fn($id) => (string)$id)
-                             ->toArray();
+                    foreach (ServiceArea::all() as $serviceArea) {
+                        $deviceShouldBeInThisArea = in_array($serviceArea->id, $serviceAreaIds);
+                        $currentDeviceIds = ServiceAreaDeviceLink::where('service_area_id', $serviceArea->id)
+                            ->where('device_type', 'Phone')
+                            ->pluck('device_id')
+                            ->map(fn($id) => (string)$id)
+                            ->toArray();
 
-                         $deviceIsCurrentlyInArea = in_array((string)$device->id, $currentDeviceIds);
+                        $deviceIsCurrentlyInArea = in_array((string)$device->id, $currentDeviceIds);
 
-                         if ($deviceShouldBeInThisArea && !$deviceIsCurrentlyInArea) {
-                             // Add device to this service area
-                             ServiceAreaDeviceLink::create([
-                                 'service_area_id' => $serviceArea->id,
-                                 'device_id' => $device->id,
-                                 'device_type' => 'Phone'
-                             ]);
-                             $attached[] = $device->id;
-                         } elseif (!$deviceShouldBeInThisArea && $deviceIsCurrentlyInArea) {
-                             // Remove device from this service area
-                             ServiceAreaDeviceLink::where('service_area_id', $serviceArea->id)
-                                 ->where('device_id', $device->id)
-                                 ->where('device_type', 'Phone')
-                                 ->delete();
-                             $detached[] = $device->id;
-                         }
-                     }
+                        if ($deviceShouldBeInThisArea && !$deviceIsCurrentlyInArea) {
+                            // Add device to this service area
+                            ServiceAreaDeviceLink::create([
+                                'service_area_id' => $serviceArea->id,
+                                'device_id' => $device->id,
+                                'device_type' => 'Phone'
+                            ]);
+                            $attached[] = $device->id;
+                        } elseif (!$deviceShouldBeInThisArea && $deviceIsCurrentlyInArea) {
+                            // Remove device from this service area
+                            ServiceAreaDeviceLink::where('service_area_id', $serviceArea->id)
+                                ->where('device_id', $device->id)
+                                ->where('device_type', 'Phone')
+                                ->delete();
+                            $detached[] = $device->id;
+                        }
+                    }
 
                     $attachedCount = count($attached);
                     $detachedCount = count($detached);

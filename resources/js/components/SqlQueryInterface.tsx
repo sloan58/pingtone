@@ -39,7 +39,7 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId }) => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`/ucm/${ucmId}/sql-query`, {
+            const response = await axios.post(`/ucm-clusters/${ucmId}/sql-query`, {
                 query: query.trim(),
             });
 

@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use Log;
+use Carbon\Carbon;
+use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PhoneStatus extends Model
 {
     protected $table = 'phone_statuses';
-    
+
     protected $guarded = [];
 
     /**
@@ -28,9 +32,9 @@ class PhoneStatus extends Model
     /**
      * Get the UCM that owns this phone status record.
      */
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
     /**
@@ -45,12 +49,12 @@ class PhoneStatus extends Model
      * Store phone status data from RisPort API response
      *
      * @param array $risPortData Complete RisPort API response
-     * @param Ucm $ucm The UCM instance
+     * @param UcmNode $ucm The UCM instance
      * @return void
      */
-    public static function storeFromRisPortData(array $risPortData, Ucm $ucm): void
+    public static function storeFromRisPortData(array $risPortData, UcmNode $ucm): void
     {
-        $timestamp = new \MongoDB\BSON\UTCDateTime();
+        $timestamp = new UTCDateTime();
         $operations = [];
 
         // Extract phone data from the RisPort response
@@ -81,7 +85,7 @@ class PhoneStatus extends Model
                 // Create the status record with complete device data
                 $statusData = [
                     'phone_name' => $device['Name'],
-                    'ucm_id' => $ucm->id,
+                    'ucm_cluster_id' => $ucm->id,
                     'timestamp' => $timestamp,
                     'cm_node' => $cmNode['Name'] ?? null,
                     'device_data' => $device, // Store complete device data
@@ -98,7 +102,7 @@ class PhoneStatus extends Model
         if (!empty($operations)) {
             $result = self::raw()->bulkWrite($operations);
 
-            \Log::info("Stored phone status data from RisPort", [
+            Log::info("Stored phone status data from RisPort", [
                 'ucm' => $ucm->name,
                 'inserted_count' => $result->getInsertedCount(),
                 'timestamp' => $timestamp->toDateTime()->format('c'),
@@ -110,14 +114,14 @@ class PhoneStatus extends Model
      * Get the latest status for a specific phone
      *
      * @param string $phoneName
-     * @param Ucm $ucm
+     * @param UcmNode $ucm
      * @return self|null
      */
-    public static function getLatestForPhone(string $phoneName, Ucm $ucm): ?self
+    public static function getLatestForPhone(string $phoneName, UcmNode $ucm): ?self
     {
         return self::where([
             'phone_name' => $phoneName,
-            'ucm_id' => $ucm->id,
+            'ucm_cluster_id' => $ucm->id,
         ])
         ->orderBy('timestamp', 'desc')
         ->first();
@@ -127,15 +131,15 @@ class PhoneStatus extends Model
      * Get phone status history for a specific phone
      *
      * @param string $phoneName
-     * @param Ucm $ucm
+     * @param UcmNode $ucm
      * @param int $limit
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
-    public static function getHistoryForPhone(string $phoneName, Ucm $ucm, int $limit = 100)
+    public static function getHistoryForPhone(string $phoneName, UcmNode $ucm, int $limit = 100)
     {
         return self::where([
             'phone_name' => $phoneName,
-            'ucm_id' => $ucm->id,
+            'ucm_cluster_id' => $ucm->id,
         ])
         ->orderBy('timestamp', 'desc')
         ->limit($limit)
@@ -145,15 +149,15 @@ class PhoneStatus extends Model
     /**
      * Get all phone statuses for a UCM within a time range
      *
-     * @param Ucm $ucm
-     * @param \Carbon\Carbon $startTime
-     * @param \Carbon\Carbon $endTime
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @param UcmNode $ucm
+     * @param Carbon $startTime
+     * @param Carbon $endTime
+     * @return Collection
      */
-    public static function getForUcmInTimeRange(Ucm $ucm, $startTime, $endTime)
+    public static function getForUcmInTimeRange(UcmNode $ucm, $startTime, $endTime)
     {
         return self::where([
-            'ucm_id' => $ucm->id,
+            'ucm_cluster_id' => $ucm->id,
         ])
         ->whereBetween('timestamp', [$startTime, $endTime])
         ->orderBy('timestamp', 'desc')
@@ -163,13 +167,13 @@ class PhoneStatus extends Model
     /**
      * Get summary statistics for a UCM
      *
-     * @param Ucm $ucm
-     * @param \Carbon\Carbon|null $since
+     * @param UcmNode $ucm
+     * @param Carbon|null $since
      * @return array
      */
-    public static function getSummaryForUcm(Ucm $ucm, $since = null): array
+    public static function getSummaryForUcm(UcmNode $ucm, $since = null): array
     {
-        $query = self::where('ucm_id', $ucm->id);
+        $query = self::where('ucm_cluster_id', $ucm->id);
 
         if ($since) {
             $query->where('timestamp', '>=', $since);

@@ -4,20 +4,21 @@ namespace App\Models;
 
 use MongoDB\Laravel\Eloquent\Model;
 use MongoDB\Laravel\Relations\BelongsTo;
+use MongoDB\Laravel\Relations\BelongsToMany;
 
 class UcmUser extends Model
 {
     protected $guarded = [];
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
     /**
      * Get service areas relationship (Laravel expects this to return a Relation)
      */
-    public function serviceAreas(): \MongoDB\Laravel\Relations\BelongsToMany
+    public function serviceAreas(): BelongsToMany
     {
         // Return a dummy belongsToMany relationship for Laravel compatibility
         return $this->belongsToMany(ServiceArea::class, null, 'ucm_user_id', 'service_area_id');
@@ -29,10 +30,10 @@ class UcmUser extends Model
      */
     public function getServiceAreas()
     {
-        $serviceAreaIds = \App\Models\ServiceAreaUcmUserLink::where('ucm_user_id', $this->id)
+        $serviceAreaIds = ServiceAreaUcmUserLink::where('ucm_user_id', $this->id)
             ->pluck('service_area_id');
-            
-        return \App\Models\ServiceArea::whereIn('id', $serviceAreaIds);
+
+        return ServiceArea::whereIn('id', $serviceAreaIds);
     }
 
     public function scopeEndUsers($query)
@@ -45,9 +46,9 @@ class UcmUser extends Model
         return $query->where('type', 'appuser');
     }
 
-    public static function storeUcmDetails(array $user, Ucm $ucm, string $type = 'enduser'): void
+    public static function storeUcmDetails(array $user, UcmCluster $ucmCluster, string $type = 'enduser'): void
     {
-        $user['ucm_id'] = $ucm->id;
+        $user['ucm_cluster_id'] = $ucmCluster->id;
         $user['type'] = $type;
         self::updateOrCreate(['uuid' => $user['uuid']], $user)->touch();
     }

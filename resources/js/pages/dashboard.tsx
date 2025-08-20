@@ -1,11 +1,8 @@
-import { AppContent } from '@/Components/app-content';
-import { AppHeader } from '@/Components/app-header';
-import { AppShell } from '@/Components/app-shell';
-import { AppSidebar } from '@/Components/app-sidebar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import AppLayout from '@/layouts/app-layout';
 import { Head } from '@inertiajs/react';
 import { Activity, BarChart3, Clock, Phone, Plus, Server, Settings, TrendingUp, Users } from 'lucide-react';
 
@@ -65,16 +62,9 @@ const getActivityColor = (color: string) => {
 
 export default function Dashboard({ stats, recentActivity, systemHealth, monthlyTrends }: DashboardProps) {
     return (
-        <AppShell variant="sidebar">
+        <AppLayout>
             <Head title="Dashboard" />
-
-            <AppSidebar />
-
-            <div className="flex flex-1 flex-col gap-4">
-                <AppHeader />
-
-                <AppContent variant="sidebar">
-                    <div className="space-y-6">
+            <div className="space-y-6">
                         {/* Header */}
                         <div className="flex items-center justify-between">
                             <div>
@@ -265,8 +255,6 @@ export default function Dashboard({ stats, recentActivity, systemHealth, monthly
                             </Card>
                         </div>
                     </div>
-                </AppContent>
-            </div>
-        </AppShell>
+        </AppLayout>
     );
 }

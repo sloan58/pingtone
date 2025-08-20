@@ -11,8 +11,8 @@ return new class extends Migration
             $table->string('pattern')->index();
             $table->string('name')->index();
             $table->string('uuid')->index();
-            $table->string('ucm_id')->index();
-            $table->unique(['name', 'ucm_id']); // Must be in the right order for 'hint' to work
+            $table->string('ucm_cluster_id')->index();
+            $table->unique(['name', 'ucm_cluster_id']); // Must be in the right order for 'hint' to work
         });
     }
 

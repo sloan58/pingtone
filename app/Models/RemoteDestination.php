@@ -2,21 +2,21 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use MongoDB\Laravel\Eloquent\Model;
 
 class RemoteDestination extends Model
 {
     protected $guarded = [];
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
-    public static function storeUcmDetails(array $rd, Ucm $ucm): void
+    public static function storeUcmDetails(array $rd, UcmCluster $ucmCluster): void
     {
-        $rd['ucm_id'] = $ucm->id;
+        $rd['ucm_cluster_id'] = $ucmCluster->id;
         self::updateOrCreate(['uuid' => $rd['uuid']], $rd)->touch();
     }
 }

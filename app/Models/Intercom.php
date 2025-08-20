@@ -2,21 +2,21 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use MongoDB\Laravel\Eloquent\Model;
 
 class Intercom extends Model
 {
     protected $guarded = [];
 
-    public function ucm(): BelongsTo
+    public function ucmCluster(): BelongsTo
     {
-        return $this->belongsTo(Ucm::class);
+        return $this->belongsTo(UcmCluster::class);
     }
 
-    public static function storeUcmDetails(array $intercom, Ucm $ucm): void
+    public static function storeUcmDetails(array $intercom, UcmCluster $ucmCluster): void
     {
-        $intercom['ucm_id'] = $ucm->id;
+        $intercom['ucm_cluster_id'] = $ucmCluster->id;
         self::updateOrCreate(['uuid' => $intercom['uuid']], $intercom)->touch();
     }
 }

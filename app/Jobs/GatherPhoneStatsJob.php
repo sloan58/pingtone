@@ -4,9 +4,9 @@ namespace App\Jobs;
 
 use SoapFault;
 use Exception;
-use App\Models\Ucm;
 use App\Models\Phone;
 use App\Services\Axl;
+use App\Models\UcmNode;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
@@ -19,7 +19,7 @@ class GatherPhoneStatsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
-        protected Ucm $ucm
+        protected UcmNode $ucm
     )
     {
     }
@@ -48,14 +48,14 @@ class GatherPhoneStatsJob implements ShouldQueue
             $count = count($stats);
             Log::info("Successfully gathered phone stats for UCM {$this->ucm->name}", [
                 'stats_count' => $count,
-                'ucm_id' => $this->ucm->getKey(),
+                'ucm_cluster_id' => $this->ucm->getKey(),
             ]);
 
         } catch (Exception $e) {
             Log::error("Error gathering phone stats for UCM {$this->ucm->name}", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'ucm_id' => $this->ucm->getKey(),
+                'ucm_cluster_id' => $this->ucm->getKey(),
             ]);
 
             throw $e;

@@ -2,28 +2,33 @@
 
 namespace App\Jobs;
 
+use App\Models\RemoteDestinationProfile;
+use App\Models\UcmCluster;
 use Exception;
-use App\Models\Ucm;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
-use App\Models\RemoteDestinationProfile;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use SoapFault;
 
 class SyncRemoteDestinationProfilesDetailsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
-    public function __construct(protected Ucm $ucm)
+    public function __construct(protected UcmCluster $ucmCluster)
     {
     }
 
+    /**
+     * @throws SoapFault
+     * @throws Exception
+     */
     public function handle(): void
     {
-        $axlApi = $this->ucm->axlApi();
+        $axlApi = $this->ucmCluster->axlApi();
         $start = now();
 
         $rdps = $axlApi->listUcmObjects(
@@ -37,13 +42,13 @@ class SyncRemoteDestinationProfilesDetailsJob implements ShouldQueue
 
         foreach ($rdps as $rdp) {
             try {
-                RemoteDestinationProfile::storeUcmDetails($axlApi->getRemoteDestinationProfileByName($rdp['name']), $this->ucm);
+                RemoteDestinationProfile::storeUcmDetails($axlApi->getRemoteDestinationProfileByName($rdp['name']), $this->ucmCluster);
             } catch (Exception $e) {
-                Log::warning("{$this->ucm->name}: get RDP failed: {$rdp['name']} - {$e->getMessage()}");
+                Log::warning("{$this->ucmCluster->name}: get RDP failed: {$rdp['name']} - {$e->getMessage()}");
             }
         }
 
-        $this->ucm->remoteDestinationProfiles()->where('updated_at', '<', $start)->delete();
+        $this->ucmCluster->remoteDestinationProfiles()->where('updated_at', '<', $start)->delete();
     }
 }
 

@@ -1,8 +1,5 @@
-import { AppContent } from '@/components/app-content';
-import { AppHeader } from '@/components/app-header';
-import { AppShell } from '@/components/app-shell';
-import { AppSidebar } from '@/components/app-sidebar';
 import { Badge } from '@/components/ui/badge';
+import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Head, Link } from '@inertiajs/react';
@@ -31,15 +28,8 @@ interface PhoneShowProps {
 
 export default function PhoneShow({ phone }: PhoneShowProps) {
     return (
-        <AppShell variant="sidebar">
+        <AppLayout>
             <Head title={`Phone - ${phone.name}`} />
-
-            <AppSidebar />
-
-            <div className="flex flex-1 flex-col gap-4">
-                <AppHeader />
-
-                <AppContent variant="sidebar">
                     <div className="space-y-6">
                         {/* Header */}
                         <div className="flex items-center justify-between">
@@ -150,8 +140,6 @@ export default function PhoneShow({ phone }: PhoneShowProps) {
                             </CardContent>
                         </Card>
                     </div>
-                </AppContent>
-            </div>
-        </AppShell>
+        </AppLayout>
     );
 }
