@@ -420,14 +420,15 @@ class PhoneControlService
         try {
             $url = "http://{$ipAddress}/CGI/Execute";
 
+            // Build query parameters - some phone models expect GET with XML parameter
+            $queryParams = array_merge(['XML' => $command], $parameters);
+
             $response = Http::timeout($this->timeout)
                 ->withBasicAuth($phone->ucmCluster->username, $phone->ucmCluster->password)
                 ->withHeaders([
                     'User-Agent' => 'PingTone/1.0',
-                    'Content-Type' => 'text/xml',
                 ])
-                ->withBody($command)
-                ->post($url);
+                ->get($url, $queryParams);
 
             if (!$response->successful()) {
                 $statusCode = $response->status();
@@ -440,16 +441,45 @@ class PhoneControlService
                 }
             }
 
+            $responseBody = $response->body();
+            
+            // Check for Cisco IP Phone error responses
+            if (preg_match('/<CiscoIPPhoneError Number="(\d+)"/', $responseBody, $matches)) {
+                $errorNumber = $matches[1];
+                $errorMessages = [
+                    '1' => 'Error in XML object',
+                    '2' => 'Error in URL',
+                    '3' => 'Error in file',
+                    '4' => 'Error in authentication',
+                    '5' => 'Error in request',
+                    '6' => 'Error in internal data',
+                    '7' => 'Error in authentication or user not associated with device',
+                    '8' => 'Error in XML parsing',
+                ];
+                
+                $errorMessage = $errorMessages[$errorNumber] ?? "Unknown error code {$errorNumber}";
+                
+                Log::warning("Phone returned error response", [
+                    'phone' => $phone->name,
+                    'command' => $command,
+                    'error_code' => $errorNumber,
+                    'error_message' => $errorMessage,
+                    'response' => $responseBody,
+                ]);
+                
+                throw new Exception("Phone error {$errorNumber}: {$errorMessage}");
+            }
+
             Log::info("CGI command executed successfully", [
                 'phone' => $phone->name,
                 'command' => $command,
-                'response' => $response->body(),
+                'response' => $responseBody,
                 'code' => $response->status(),
             ]);
 
             return [
                 'success' => true,
-                'response' => $response->body(),
+                'response' => $responseBody,
                 'status_code' => $response->status(),
             ];
 
