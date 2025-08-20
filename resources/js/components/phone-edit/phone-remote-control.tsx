@@ -45,16 +45,16 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
     const [isCapturing, setIsCapturing] = useState(false);
     const [captureError, setCaptureError] = useState<string | null>(null);
 
-        // Function to capture a temporary screenshot (doesn't save to database)
+    // Function to capture a temporary screenshot (doesn't save to database)
     const captureScreenshot = async (showToast: boolean = false) => {
         if (!canRemoteControl) return;
-        
+
         setIsCapturing(true);
         setCaptureError(null);
-        
+
         try {
             const response = await axios.post(`/phones/${phoneId}/capture-temporary-screenshot`);
-            
+
             if (response.data.success && response.data.image_data_url) {
                 setCurrentScreenCapture(response.data.image_data_url);
                 if (showToast) {
@@ -95,7 +95,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 parameters,
             });
 
-                        if (response.data.success) {
+            if (response.data.success) {
                 // Auto-capture screenshot after successful command (with small delay)
                 setTimeout(() => {
                     captureScreenshot(false);
@@ -231,12 +231,11 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading}>
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <Button 
-                                variant="outline" 
-                                size="lg" 
-                                onClick={() => executeCommand('nav_select')} 
+                            <Button
+                                variant="outline"
+                                onClick={() => executeCommand('nav_select')}
                                 disabled={isLoading}
-                                className="rounded-full px-6 py-3 font-medium text-base"
+                                className="rounded-full h-14 w-14 p-0 text-sm font-medium flex items-center justify-center"
                             >
                                 Select
                             </Button>
