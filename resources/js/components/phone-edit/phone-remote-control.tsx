@@ -221,33 +221,34 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                         <CardDescription>Navigate through phone menus and screens</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="mx-auto grid max-w-32 grid-cols-3 gap-2">
-                            <div></div>
+                        <div className="mx-auto flex flex-col items-center gap-2 w-fit">
+                            {/* Top button */}
                             <Button variant="outline" size="sm" onClick={() => executeCommand('nav_up')} disabled={isLoading}>
                                 <ArrowUp className="h-4 w-4" />
                             </Button>
-                            <div></div>
-
-                            <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading}>
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => executeCommand('nav_select')}
-                                disabled={isLoading}
-                                className="rounded-full h-14 w-14 p-0 text-sm font-medium flex items-center justify-center"
-                            >
-                                Select
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => executeCommand('nav_right')} disabled={isLoading}>
-                                <ArrowRight className="h-4 w-4" />
-                            </Button>
-
-                            <div></div>
+                            
+                            {/* Middle row with left, select, right */}
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading}>
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => executeCommand('nav_select')}
+                                    disabled={isLoading}
+                                    className="rounded-full h-14 w-14 p-0 text-sm font-medium flex items-center justify-center"
+                                >
+                                    Select
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => executeCommand('nav_right')} disabled={isLoading}>
+                                    <ArrowRight className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            
+                            {/* Bottom button */}
                             <Button variant="outline" size="sm" onClick={() => executeCommand('nav_down')} disabled={isLoading}>
                                 <ArrowDown className="h-4 w-4" />
                             </Button>
-                            <div></div>
                         </div>
                     </CardContent>
                 </Card>
