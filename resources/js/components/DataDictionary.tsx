@@ -1,11 +1,10 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import axios from 'axios';
-import { ArrowLeft, ChevronDown, ChevronRight, Database, Key, Loader2, Search, Zap } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronRight, Database, Loader2, Search, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -75,10 +74,8 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
             setTables(response.data.tables);
         } catch (error) {
             console.error('Failed to load data dictionary:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.error || error.message
-                : 'Failed to load data dictionary';
-            
+            const errorMessage = axios.isAxiosError(error) ? error.response?.data?.error || error.message : 'Failed to load data dictionary';
+
             toast.error('Error', {
                 description: errorMessage,
             });
@@ -91,7 +88,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
         setSelectedTable(table);
         setFieldsLoading(true);
         setFieldsCollapsed(true);
-        
+
         try {
             const response = await axios.get(`/ucm-clusters/${ucmId}/data-dictionary/tables/${table.name}`, {
                 params: {
@@ -103,10 +100,8 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
             setFields(response.data.fields);
         } catch (error) {
             console.error('Failed to load table details:', error);
-            const errorMessage = axios.isAxiosError(error)
-                ? error.response?.data?.error || error.message
-                : 'Failed to load table details';
-            
+            const errorMessage = axios.isAxiosError(error) ? error.response?.data?.error || error.message : 'Failed to load table details';
+
             toast.error('Error', {
                 description: errorMessage,
             });
@@ -195,12 +190,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col space-y-3">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleBackToTables}
-                            className="flex items-center space-x-2 w-fit"
-                        >
+                        <Button variant="outline" size="sm" onClick={handleBackToTables} className="flex w-fit items-center space-x-2">
                             <ArrowLeft className="h-4 w-4" />
                             <span>Back to Tables</span>
                         </Button>
@@ -227,35 +217,27 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                     {/* Fields */}
                     <Card>
                         <CardHeader
-                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                            className="cursor-pointer transition-colors hover:bg-muted/50"
                             onClick={() => setFieldsCollapsed(!fieldsCollapsed)}
                         >
                             <div className="flex items-center justify-between">
                                 <div>
                                     <CardTitle className="text-lg">Fields</CardTitle>
-                                    <p className="text-sm text-muted-foreground">
-                                        Detailed field information from the data dictionary
-                                    </p>
+                                    <p className="text-sm text-muted-foreground">Detailed field information from the data dictionary</p>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <span className="text-sm text-muted-foreground">
-                                        {fieldsCollapsed ? 'Click to expand' : 'Click to collapse'}
-                                    </span>
-                                    {fieldsCollapsed ? (
-                                        <ChevronRight className="h-4 w-4" />
-                                    ) : (
-                                        <ChevronDown className="h-4 w-4" />
-                                    )}
+                                    <span className="text-sm text-muted-foreground">{fieldsCollapsed ? 'Click to expand' : 'Click to collapse'}</span>
+                                    {fieldsCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                 </div>
                             </div>
                         </CardHeader>
                         {!fieldsCollapsed && (
                             <CardContent>
                                 {/* Field Search Form */}
-                                <div className="mb-6 mt-2">
-                                    <div className="flex items-center space-x-2 max-w-md">
+                                <div className="mt-2 mb-6">
+                                    <div className="flex max-w-md items-center space-x-2">
                                         <div className="relative flex-1">
-                                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                                             <Input
                                                 placeholder="Search fields..."
                                                 value={fieldSearchTerm}
@@ -263,18 +245,12 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                                                 className="pl-10"
                                             />
                                         </div>
-                                        <span className="text-sm font-medium text-muted-foreground">
-                                            {filteredFields.length} fields
-                                        </span>
+                                        <span className="text-sm font-medium text-muted-foreground">{filteredFields.length} fields</span>
                                     </div>
-                                    <div className="flex items-center space-x-2 mt-2">
+                                    <div className="mt-2 flex items-center space-x-2">
                                         <Zap className="h-3 w-3 text-muted-foreground" />
                                         <span className="text-xs text-muted-foreground">Regex</span>
-                                        <Switch
-                                            checked={fieldUseRegex}
-                                            onCheckedChange={setFieldUseRegex}
-                                            className="scale-75"
-                                        />
+                                        <Switch checked={fieldUseRegex} onCheckedChange={setFieldUseRegex} className="scale-75" />
                                     </div>
                                 </div>
 
@@ -286,12 +262,10 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                                 ) : (
                                     <div className="space-y-4">
                                         {filteredFields.map((field) => (
-                                            <div key={field.name} className="border rounded-lg p-4">
-                                                <div className="flex items-center justify-between mb-3">
+                                            <div key={field.name} className="rounded-lg border p-4">
+                                                <div className="mb-3 flex items-center justify-between">
                                                     <div className="flex items-center space-x-2">
-                                                        <span className="font-mono font-medium text-lg">
-                                                            {field.name}
-                                                        </span>
+                                                        <span className="font-mono text-lg font-medium">{field.name}</span>
                                                         {field.field_id && (
                                                             <Badge variant="secondary" className="text-xs">
                                                                 {field.field_id}
@@ -341,7 +315,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                                                     {field.properties && field.properties.length > 0 && (
                                                         <div>
                                                             <span className="font-medium text-muted-foreground">Properties:</span>
-                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                            <div className="mt-1 flex flex-wrap gap-1">
                                                                 {field.properties.map((prop, index) => (
                                                                     <Badge key={index} variant="outline" className="text-xs">
                                                                         {prop}
@@ -357,10 +331,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                                                     <div className="mt-3 space-y-2">
                                                         <div className="text-sm font-medium">Rules:</div>
                                                         {field.rules.map((rule, index) => (
-                                                            <div
-                                                                key={index}
-                                                                className="border rounded p-3 bg-muted/50 text-xs space-y-1"
-                                                            >
+                                                            <div key={index} className="space-y-1 rounded border bg-muted/50 p-3 text-xs">
                                                                 <div>
                                                                     <span className="font-medium">Type:</span> {rule.rule_type}
                                                                 </div>
@@ -394,7 +365,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                             <CardContent>
                                 <div className="space-y-2">
                                     {selectedTable.uniqueness_constraints.map((constraint, index) => (
-                                        <div key={index} className="text-sm text-muted-foreground p-2 bg-muted/50 rounded">
+                                        <div key={index} className="rounded bg-muted/50 p-2 text-sm text-muted-foreground">
                                             {constraint}
                                         </div>
                                     ))}
@@ -435,9 +406,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Data Dictionary</h1>
-                    <p className="text-muted-foreground">
-                        Explore database schema, tables, columns, and constraints for UCM {version}
-                    </p>
+                    <p className="text-muted-foreground">Explore database schema, tables, columns, and constraints for UCM {version}</p>
                 </div>
             </div>
 
@@ -468,40 +437,28 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                         <span className="ml-2">Loading data dictionary...</span>
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2">
                         {filteredTables.map((table) => (
-                            <Card
+                            <div
                                 key={table.name}
-                                className="hover:shadow-md transition-shadow cursor-pointer h-full flex flex-col"
+                                className="cursor-pointer rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
                                 onClick={() => loadTableDetails(table)}
                             >
-                                <CardHeader className="pb-3 flex-shrink-0">
-                                    <CardTitle className="text-lg">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center space-x-2">
-                                                <Database className="h-5 w-5 text-primary" />
-                                                <span className="font-mono">{table.name}</span>
-                                            </div>
-                                            <Badge variant="outline">{table.field_count} fields</Badge>
-                                        </div>
-                                        {table.description && (
-                                            <div className="text-sm text-muted-foreground">{table.description}</div>
-                                        )}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="pt-0 flex-grow flex flex-col justify-end">
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-xs text-muted-foreground">Click to view details</div>
-                                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                            {table.table_id && (
-                                                <Badge variant="outline" className="text-xs">
-                                                    {table.table_id}
-                                                </Badge>
-                                            )}
-                                        </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <span className="font-mono font-medium">{table.name}</span>
+                                        <Badge variant="outline" className="text-xs">
+                                            {table.field_count} fields
+                                        </Badge>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    {table.table_id && (
+                                        <Badge variant="secondary" className="text-xs">
+                                            {table.table_id}
+                                        </Badge>
+                                    )}
+                                </div>
+                                {table.description && <div className="mt-1 text-sm text-muted-foreground">{table.description}</div>}
+                            </div>
                         ))}
                     </div>
                 )}
@@ -509,9 +466,9 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                 {!loading && filteredTables.length === 0 && (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12">
-                            <Database className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No Tables Found</h3>
-                            <p className="text-muted-foreground text-center mb-4">
+                            <Database className="mb-4 h-12 w-12 text-muted-foreground" />
+                            <h3 className="mb-2 text-lg font-semibold">No Tables Found</h3>
+                            <p className="mb-4 text-center text-muted-foreground">
                                 {searchTerm
                                     ? `No tables match your search "${searchTerm}"`
                                     : 'No data dictionary tables available for this UCM version'}
