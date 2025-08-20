@@ -103,7 +103,7 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                         <Button variant="outline" size="sm" asChild>
-                            <Link href={`/ucm-clusters/${ucmId}`}>
+                            <Link href={`/ucm-clusters/${ucmId}#sql-queries`}>
                                 <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Cluster
                             </Link>
