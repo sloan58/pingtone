@@ -157,100 +157,9 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                     </CardContent>
                 </Card>
 
-                {loading ? (
-                    <Card>
-                        <CardContent className="flex items-center justify-center py-12">
-                            <div className="text-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                                <span className="text-sm text-muted-foreground">Loading database schema...</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <div className="grid gap-4">
-                        {filteredTables.map((table) => (
-                            <Card key={table.name} className="hover:shadow-md transition-shadow">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-lg bg-primary/10">
-                                                <Database className="h-5 w-5 text-primary" />
-                                            </div>
-                                            <div>
-                                                <CardTitle className="text-lg font-mono">{table.name}</CardTitle>
-                                                {table.description && (
-                                                    <p className="text-sm text-muted-foreground mt-1">{table.description}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => {
-                                                console.log('View Details clicked for table:', table.name);
-                                                loadTableDetails(table);
-                                            }}
-                                            className="flex items-center gap-2"
-                                        >
-                                            View Details
-                                            <ChevronRight className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </CardHeader>
-                                
-                                <CardContent className="pt-0">
-                                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                                        <div className="flex items-center gap-1">
-                                            <Hash className="h-4 w-4" />
-                                            <span>{table.field_count} fields</span>
-                                        </div>
-                                        
-                                        {table.table_id && (
-                                            <div className="flex items-center gap-1">
-                                                <FileText className="h-4 w-4" />
-                                                <span>{table.table_id}</span>
-                                            </div>
-                                        )}
-                                        
-                                        {table.row_count && (
-                                            <div className="flex items-center gap-1">
-                                                <Rows3 className="h-4 w-4" />
-                                                <span>{table.row_count.toLocaleString()} rows</span>
-                                            </div>
-                                        )}
-                                        
-                                        {table.size_mb && (
-                                            <div className="flex items-center gap-1">
-                                                <Database className="h-4 w-4" />
-                                                <span>{table.size_mb.toFixed(2)} MB</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    
-                                    {table.uniqueness_constraints && table.uniqueness_constraints.length > 0 && (
-                                        <div className="mt-3 pt-3 border-t">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Key className="h-4 w-4 text-amber-600" />
-                                                <span className="text-sm font-medium text-amber-700">Uniqueness Constraints</span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1">
-                                                {table.uniqueness_constraints.map((constraint, i) => (
-                                                    <Badge key={i} variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-800">
-                                                        {constraint}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-
-                {/* Table Details Modal/Overlay */}
+                {/* Table Details - Show prominently when selected */}
                 {selectedTable && (
-                    <Card className="mt-6 border-2 border-primary/20">
+                    <Card className="border-2 border-primary/20">
                         <CardHeader className="bg-primary/5">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="flex items-center gap-2">
@@ -375,6 +284,99 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                         </CardContent>
                     </Card>
                 )}
+
+                {loading ? (
+                    <Card>
+                        <CardContent className="flex items-center justify-center py-12">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                                <span className="text-sm text-muted-foreground">Loading database schema...</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid gap-4">
+                        {filteredTables.map((table) => (
+                            <Card key={table.name} className="hover:shadow-md transition-shadow">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-lg bg-primary/10">
+                                                <Database className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-lg font-mono">{table.name}</CardTitle>
+                                                {table.description && (
+                                                    <p className="text-sm text-muted-foreground mt-1">{table.description}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                console.log('View Details clicked for table:', table.name);
+                                                loadTableDetails(table);
+                                            }}
+                                            className="flex items-center gap-2"
+                                        >
+                                            View Details
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                
+                                <CardContent className="pt-0">
+                                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                                        <div className="flex items-center gap-1">
+                                            <Hash className="h-4 w-4" />
+                                            <span>{table.field_count} fields</span>
+                                        </div>
+                                        
+                                        {table.table_id && (
+                                            <div className="flex items-center gap-1">
+                                                <FileText className="h-4 w-4" />
+                                                <span>{table.table_id}</span>
+                                            </div>
+                                        )}
+                                        
+                                        {table.row_count && (
+                                            <div className="flex items-center gap-1">
+                                                <Rows3 className="h-4 w-4" />
+                                                <span>{table.row_count.toLocaleString()} rows</span>
+                                            </div>
+                                        )}
+                                        
+                                        {table.size_mb && (
+                                            <div className="flex items-center gap-1">
+                                                <Database className="h-4 w-4" />
+                                                <span>{table.size_mb.toFixed(2)} MB</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {table.uniqueness_constraints && table.uniqueness_constraints.length > 0 && (
+                                        <div className="mt-3 pt-3 border-t">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Key className="h-4 w-4 text-amber-600" />
+                                                <span className="text-sm font-medium text-amber-700">Uniqueness Constraints</span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1">
+                                                {table.uniqueness_constraints.map((constraint, i) => (
+                                                    <Badge key={i} variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-800">
+                                                        {constraint}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+
+
             </div>
         </AppLayout>
     );
