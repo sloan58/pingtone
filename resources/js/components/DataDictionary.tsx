@@ -445,8 +445,8 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                                 onClick={() => loadTableDetails(table)}
                             >
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3">
-                                        <span className="font-mono font-medium">{table.name}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <span className="font-mono font-medium text-sm">{table.name}</span>
                                         <Badge variant="outline" className="text-xs">
                                             {table.field_count} fields
                                         </Badge>
@@ -457,7 +457,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                                         </Badge>
                                     )}
                                 </div>
-                                {table.description && <div className="mt-1 text-sm text-muted-foreground">{table.description}</div>}
+                                {table.description && <div className="mt-1 text-xs text-muted-foreground">{table.description}</div>}
                             </div>
                         ))}
                     </div>
