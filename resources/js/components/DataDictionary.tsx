@@ -468,7 +468,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                         <span className="ml-2">Loading data dictionary...</span>
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 grid-cols-1">
                         {filteredTables.map((table) => (
                             <Card
                                 key={table.name}

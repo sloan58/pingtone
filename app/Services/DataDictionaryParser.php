@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DataDictionaryField;
 use App\Models\DataDictionaryTable;
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -11,17 +12,18 @@ class DataDictionaryParser
 {
     /**
      * Parse HTML data dictionary file for a specific UCM version.
+     * @throws Exception
      */
     public function parseVersion(string $version): array
     {
         $htmlPath = $this->getHtmlPath($version);
-        
-        if (!Storage::exists($htmlPath)) {
-            throw new \Exception("Data dictionary file not found for version {$version} at {$htmlPath}");
+
+        if (!Storage::drive('ucm-data-dictionary')->exists($htmlPath)) {
+            throw new Exception("Data dictionary file not found for version {$version} at {$htmlPath}");
         }
 
-        $htmlContent = Storage::get($htmlPath);
-        
+        $htmlContent = Storage::drive('ucm-data-dictionary')->get($htmlPath);
+
         Log::info("Parsing data dictionary for UCM version {$version}", [
             'file_size' => strlen($htmlContent),
             'file_path' => $htmlPath,
@@ -32,15 +34,16 @@ class DataDictionaryParser
 
     /**
      * Get the storage path for the HTML file based on version.
+     * @throws Exception
      */
     private function getHtmlPath(string $version): string
     {
         return match ($version) {
-            '11.5' => 'data-dictionary/cucm-11.5/UCM 11.5(1) Data Dictionary.html',
-            '12.0' => 'data-dictionary/cucm-12.0/datadictionary.12.0.0.html',
-            '12.5' => 'data-dictionary/cucm-12.5/UCM 12.5(1) Data Dictionary.htm',
-            '15.0' => 'data-dictionary/cucm-15.0/datadictionary.html',
-            default => throw new \Exception("Unsupported UCM version: {$version}"),
+            '11.5' => '11_5/datadictionary.html',
+            '12.0' => '12_0/datadictionary.html',
+            '12.5' => '12_5/datadictionary.html',
+            '15.0' => '15/datadictionary.html',
+            default => throw new Exception("Unsupported UCM version: {$version}"),
         };
     }
 
@@ -93,7 +96,7 @@ class DataDictionaryParser
                 ];
 
                 $currentField = null;
-                
+
                 Log::debug("Found table: {$tableName} ({$tableId})", ['line' => $lineNumber + 1]);
             }
 
@@ -121,7 +124,7 @@ class DataDictionaryParser
                     ];
 
                     $fields[] = $currentField;
-                    
+
                     Log::debug("  Found field: {$fieldName} ({$fieldId})", ['line' => $lineNumber + 1]);
                 }
             }
@@ -133,7 +136,7 @@ class DataDictionaryParser
 
                 // Update the last field in the array
                 $lastFieldIndex = count($fields) - 1;
-                
+
                 switch ($label) {
                     case 'Type:':
                         $fields[$lastFieldIndex]['data_type'] = $value;
@@ -165,16 +168,16 @@ class DataDictionaryParser
             if (preg_match($tableDescPattern, $line, $matches) && $currentTable) {
                 $description = trim($matches[1]);
                 $cleanDescription = $this->cleanHtmlText($description);
-                
+
                 if (!empty($cleanDescription)) {
                     $currentTable['description'] = $cleanDescription;
-                    
+
                     // Update the last table in the array
                     $lastTableIndex = count($tables);
                     if ($lastTableIndex > 0) {
                         $tables[$lastTableIndex - 1]['description'] = $cleanDescription;
                     }
-                    
+
                     Log::debug("  Found table description for {$currentTable['name']}: {$cleanDescription}");
                 }
             }
@@ -183,16 +186,16 @@ class DataDictionaryParser
             if (preg_match($uniquenessPattern, $line, $matches) && $currentTable) {
                 $constraint = trim($matches[1]);
                 $cleanConstraint = $this->cleanHtmlText($constraint);
-                
+
                 if (!empty($cleanConstraint) && $cleanConstraint !== 'No multicolumn uniqueness constraints') {
                     $currentTable['uniqueness_constraints'][] = $cleanConstraint;
-                    
+
                     // Update the last table in the array
                     $lastTableIndex = count($tables);
                     if ($lastTableIndex > 0) {
                         $tables[$lastTableIndex - 1]['uniqueness_constraints'][] = $cleanConstraint;
                     }
-                    
+
                     Log::debug("  Found uniqueness constraint for {$currentTable['name']}: {$cleanConstraint}");
                 }
             }
@@ -260,10 +263,11 @@ class DataDictionaryParser
         foreach ($versions as $version) {
             try {
                 $htmlPath = $this->getHtmlPath($version);
-                if (Storage::exists($htmlPath)) {
+                echo Storage::drive('ucm-data-dictionary')->path($htmlPath) . PHP_EOL;
+                if (Storage::drive('ucm-data-dictionary')->path($htmlPath)) {
                     $available[] = $version;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Skip unavailable versions
             }
         }

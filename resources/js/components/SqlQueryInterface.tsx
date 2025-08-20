@@ -122,8 +122,8 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
                         <div>
                             <CardTitle>SQL Query Interface</CardTitle>
                             <CardDescription>
-                                Execute SQL queries directly against the UCM database using the AXL executeSQLQuery method. Use standard SQL syntax to query
-                                UCM tables.
+                                Execute SQL queries directly against the UCM database using the AXL executeSQLQuery method. Use standard SQL syntax to
+                                query UCM tables.
                             </CardDescription>
                         </div>
                         <Sheet open={showDataDictionary} onOpenChange={setShowDataDictionary}>
@@ -133,11 +133,11 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
                                     <span>Schema Reference</span>
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="w-[900px] sm:w-[1000px] lg:w-[1200px] overflow-hidden p-6">
+                            <SheetContent side="right" className="w-[900px] overflow-hidden p-6 sm:w-[1000px] lg:w-[1200px]">
                                 <SheetHeader className="mb-6">
                                     <SheetTitle>UCM Database Schema Reference</SheetTitle>
                                 </SheetHeader>
-                                <div className="overflow-auto h-[calc(100vh-160px)] pr-2">
+                                <div className="h-[calc(100vh-160px)] overflow-auto pr-2">
                                     <DataDictionary ucmId={ucmId} version={version} />
                                 </div>
                             </SheetContent>

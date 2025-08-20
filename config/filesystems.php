@@ -65,6 +65,14 @@ return [
             'root' => storage_path('axl'),
         ],
 
+        'ucm-data-dictionary' => [
+            'driver' => 'local',
+            'root' => storage_path('app/ucm-data-dictionary'),
+            'serve' => true,
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

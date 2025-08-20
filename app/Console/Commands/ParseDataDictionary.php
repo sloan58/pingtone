@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\DataDictionaryParser;
+use Exception;
 use Illuminate\Console\Command;
 
 class ParseDataDictionary extends Command
@@ -12,7 +13,7 @@ class ParseDataDictionary extends Command
      *
      * @var string
      */
-    protected $signature = 'data-dictionary:parse {--version= : Specific UCM version to parse (e.g., 15.0)} {--all : Parse all available versions}';
+    protected $signature = 'data-dictionary:parse';
 
     /**
      * The console command description.
@@ -29,45 +30,40 @@ class ParseDataDictionary extends Command
         $this->info('UCM Data Dictionary Parser');
         $this->info('==========================');
 
-        $version = $this->option('version');
-        $parseAll = $this->option('all');
+        $availableVersions = $parser->getAvailableVersions();
 
-        if (!$version && !$parseAll) {
-            $this->error('Please specify either --version=X.X or --all');
+        if (empty($availableVersions)) {
+            $this->warn('No data dictionary files found in storage.');
+            $this->info('Please place HTML files in storage/app/data-dictionary/ directory.');
             return Command::FAILURE;
         }
 
-        try {
-            if ($parseAll) {
-                $this->parseAllVersions($parser);
-            } else {
-                $this->parseVersion($parser, $version);
-            }
+        $this->info('Available versions: ' . implode(', ', $availableVersions));
 
-            $this->info('✅ Data dictionary parsing completed successfully!');
-            return Command::SUCCESS;
-
-        } catch (\Exception $e) {
-            $this->error("❌ Error: {$e->getMessage()}");
-            return Command::FAILURE;
+        foreach ($availableVersions as $version) {
+            $this->parseVersion($parser, $version);
         }
+
+        $this->info('✅ Data dictionary parsing completed successfully!');
+        return Command::SUCCESS;
     }
 
     /**
      * Parse all available versions.
+     * @throws Exception
      */
     private function parseAllVersions(DataDictionaryParser $parser): void
     {
         $availableVersions = $parser->getAvailableVersions();
-        
+
         if (empty($availableVersions)) {
             $this->warn('No data dictionary files found in storage.');
-            $this->info('Please place HTML files in storage/app/data-dictionary/ directory.');
+            $this->info('Please place HTML files in storage/app/ucm-data-dictionary/ directory.');
             return;
         }
 
         $this->info('Available versions: ' . implode(', ', $availableVersions));
-        
+
         foreach ($availableVersions as $version) {
             $this->parseVersion($parser, $version);
         }
@@ -75,40 +71,41 @@ class ParseDataDictionary extends Command
 
     /**
      * Parse a specific version.
+     * @throws Exception
      */
     private function parseVersion(DataDictionaryParser $parser, string $version): void
     {
         $this->info("📖 Parsing UCM {$version} data dictionary...");
-        
+
         $progressBar = $this->output->createProgressBar(3);
         $progressBar->setFormat('verbose');
-        
+
         // Step 1: Parse HTML
         $progressBar->setMessage('Parsing HTML file...');
         $progressBar->advance();
-        
+
         $data = $parser->parseVersion($version);
-        
+
         // Step 2: Validate data
         $progressBar->setMessage('Validating parsed data...');
         $progressBar->advance();
-        
+
         $tablesCount = count($data['tables']);
         $fieldsCount = count($data['fields']);
-        
+
         if ($tablesCount === 0) {
-            throw new \Exception("No tables found in data dictionary for version {$version}");
+            throw new Exception("No tables found in data dictionary for version {$version}");
         }
-        
+
         // Step 3: Store in database
         $progressBar->setMessage('Storing in database...');
         $progressBar->advance();
-        
+
         $parser->storeData($data, $version);
-        
+
         $progressBar->finish();
         $this->newLine();
-        
+
         $this->info("✅ UCM {$version}: {$tablesCount} tables, {$fieldsCount} fields");
     }
 }
