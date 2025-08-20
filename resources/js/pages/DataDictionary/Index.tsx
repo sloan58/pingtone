@@ -300,7 +300,10 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                             fields.map((field, index) => {
                                                 console.log(`Rendering field ${index}:`, field);
                                                 return (
-                                            <div key={`${field.name}-${index}`} className="border rounded-lg p-4 bg-muted/30">
+                                            <div key={`${field.name}-${index}`} className="border-2 border-red-500 rounded-lg p-4 bg-red-100">
+                                                <div className="text-lg font-bold text-red-800">
+                                                    TEST FIELD: {field.name || 'NO NAME'} - {field.data_type || 'NO TYPE'}
+                                                </div>
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center gap-2">
                                                         <Type className="h-4 w-4 text-blue-600" />
