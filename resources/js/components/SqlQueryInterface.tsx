@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
 import { Book, ChevronDown, ChevronRight, Loader2, Play, Trash2 } from 'lucide-react';
@@ -126,22 +126,22 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
                                 UCM tables.
                             </CardDescription>
                         </div>
-                        <Dialog open={showDataDictionary} onOpenChange={setShowDataDictionary}>
-                            <DialogTrigger asChild>
+                        <Sheet open={showDataDictionary} onOpenChange={setShowDataDictionary}>
+                            <SheetTrigger asChild>
                                 <Button variant="outline" size="sm" className="flex items-center space-x-2">
                                     <Book className="h-4 w-4" />
                                     <span>Schema Reference</span>
                                 </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-                                <DialogHeader>
-                                    <DialogTitle>UCM Database Schema Reference</DialogTitle>
-                                </DialogHeader>
-                                <div className="overflow-auto max-h-[calc(90vh-120px)]">
+                            </SheetTrigger>
+                            <SheetContent side="right" className="w-[800px] sm:w-[900px] lg:w-[1000px] overflow-hidden">
+                                <SheetHeader>
+                                    <SheetTitle>UCM Database Schema Reference</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-6 overflow-auto h-[calc(100vh-120px)]">
                                     <DataDictionary ucmId={ucmId} version={version} />
                                 </div>
-                            </DialogContent>
-                        </Dialog>
+                            </SheetContent>
+                        </Sheet>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
