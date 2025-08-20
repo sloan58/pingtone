@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Log;
 
 class DataDictionaryController extends Controller
 {
+    public function index(UcmCluster $ucmCluster)
+    {
+        return inertia('DataDictionary/Index', [
+            'ucmId' => $ucmCluster->id,
+            'version' => $ucmCluster->schema_version ?? 'Unknown',
+            'clusterName' => $ucmCluster->name,
+        ]);
+    }
     /**
      * Get data dictionary for a specific UCM cluster.
      */

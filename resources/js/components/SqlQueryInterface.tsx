@@ -1,12 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
-import { Book, ChevronDown, ChevronRight, Loader2, Play, Trash2 } from 'lucide-react';
+import { Book, ChevronDown, ChevronRight, Loader2, Play, Trash2, ExternalLink } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import DataDictionary from './DataDictionary';
+import { router } from '@inertiajs/react';
 import QueryEditor from './QueryEditor';
 import ResultsTable from './ResultsTable';
 
@@ -30,7 +29,7 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
     const [results, setResults] = useState<QueryResults | null>(null);
     const [loading, setLoading] = useState(false);
     const [showSamples, setShowSamples] = useState(false);
-    const [showDataDictionary, setShowDataDictionary] = useState(false);
+
     useToast(); // For handling server flash messages
 
     const handleExecuteQuery = async () => {
@@ -126,22 +125,16 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
                                 query UCM tables.
                             </CardDescription>
                         </div>
-                        <Sheet open={showDataDictionary} onOpenChange={setShowDataDictionary}>
-                            <SheetTrigger asChild>
-                                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                                    <Book className="h-4 w-4" />
-                                    <span>Schema Reference</span>
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="right" className="w-[1100px] overflow-hidden p-8 sm:w-[1200px] lg:w-[1400px] xl:w-[1600px]">
-                                <SheetHeader className="mb-6">
-                                    <SheetTitle>UCM Database Schema Reference</SheetTitle>
-                                </SheetHeader>
-                                <div className="h-[calc(100vh-160px)] overflow-auto pr-2">
-                                    <DataDictionary ucmId={ucmId} version={version} />
-                                </div>
-                            </SheetContent>
-                        </Sheet>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex items-center space-x-2"
+                            onClick={() => router.visit(`/ucm-clusters/${ucmId}/data-dictionary`)}
+                        >
+                            <Book className="h-4 w-4" />
+                            <span>Schema Reference</span>
+                            <ExternalLink className="h-3 w-3" />
+                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">

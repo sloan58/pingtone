@@ -315,7 +315,7 @@ class PhoneController extends Controller
      */
     public function editButton(Request $request, Phone $phone, int $buttonIndex)
     {
-        $phone->load('ucm');
+        $phone->load('ucmCluster');
 
         // Get the button configuration
         $buttonConfig = null;

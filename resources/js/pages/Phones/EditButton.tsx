@@ -1,8 +1,8 @@
-
 import LineConfigurationForm from '@/components/LineConfigurationForm';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ChevronRight, Loader2, Phone, Settings } from 'lucide-react';
@@ -301,102 +301,101 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
         <AppLayout>
             <Head title={`Edit Button ${buttonIndex} - ${phone.name}`} />
             <div className="p-0">
-                    <div className="p-6">
-                        {/* Breadcrumbs */}
-                        <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <button
-                                onClick={() => router.visit('/phones')}
-                                className="flex items-center space-x-1 transition-colors hover:text-foreground"
-                            >
-                                <Phone className="h-4 w-4" />
-                                <span>Phones</span>
-                            </button>
-                            <ChevronRight className="h-4 w-4" />
-                            <button onClick={() => router.visit(`/phones/${phone.id}/edit`)} className="transition-colors hover:text-foreground">
-                                {phone.name || phone.id}
-                            </button>
-                            <ChevronRight className="h-4 w-4" />
-                            <div className="flex items-center space-x-1 text-foreground">
-                                <Settings className="h-4 w-4" />
-                                <span>Button {buttonIndex}</span>
+                <div className="p-6">
+                    {/* Breadcrumbs */}
+                    <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <button
+                            onClick={() => router.visit('/phones')}
+                            className="flex items-center space-x-1 transition-colors hover:text-foreground"
+                        >
+                            <Phone className="h-4 w-4" />
+                            <span>Phones</span>
+                        </button>
+                        <ChevronRight className="h-4 w-4" />
+                        <button onClick={() => router.visit(`/phones/${phone.id}/edit`)} className="transition-colors hover:text-foreground">
+                            {phone.name || phone.id}
+                        </button>
+                        <ChevronRight className="h-4 w-4" />
+                        <div className="flex items-center space-x-1 text-foreground">
+                            <Settings className="h-4 w-4" />
+                            <span>Button {buttonIndex}</span>
+                        </div>
+                    </nav>
+
+                    {/* Sticky Header */}
+                    <div className="sticky top-0 z-10 mt-4 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                        <div className="flex items-center gap-6">
+                            <div>
+                                <h1 className="text-2xl font-bold">Button {buttonIndex}</h1>
+                                <p className="text-sm text-muted-foreground">
+                                    {phone.name} • {buttonType} configuration
+                                </p>
                             </div>
-                        </nav>
+                        </div>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                'Save Changes'
+                            )}
+                        </button>
+                    </div>
 
-                        {/* Sticky Header */}
-                        <div className="sticky top-0 z-10 mt-4 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                            <div className="flex items-center gap-6">
-                                <div>
-                                    <h1 className="text-2xl font-bold">Button {buttonIndex}</h1>
-                                    <p className="text-sm text-muted-foreground">
-                                        {phone.name} • {buttonType} configuration
-                                    </p>
-                                </div>
+                    <div className="mt-6">
+                        <h2 className="mb-4 text-xl font-semibold">Global Line Configuration</h2>
+                        <LineConfigurationForm
+                            line={currentLine}
+                            onLineChange={setCurrentLine}
+                            onHasChanges={setHasChanges}
+                            associatedDevices={associatedDevices}
+                            buttonIndex={buttonIndex}
+                            phone={phone}
+                            onUpdatePhoneLine={updatePhoneLine}
+                            onDissociateDevice={handleDissociateDevice}
+                            dissociatingDevices={dissociatingDevices}
+                            showDirectoryNumberField={true}
+                            showAssociatedDevices={true}
+                        />
+                    </div>
+
+                    <div className="mt-8">
+                        <h2 className="mb-4 text-xl font-semibold">Configuration on {phone.name}</h2>
+                        <div className="space-y-4">{/* Device-specific configuration sections will go here */}</div>
+                    </div>
+
+                    <div className="mt-6">
+                        {/* Debug Section - Remove this later */}
+                        <div className="overflow-hidden rounded-lg border bg-card shadow">
+                            <div className="border-b p-6">
+                                <h3 className="text-lg font-semibold">Debug Information</h3>
+                                <p className="text-sm text-muted-foreground">Current line and target line configuration data</p>
                             </div>
-                            <button
-                                onClick={handleSave}
-                                disabled={isSaving}
-                                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                            >
-                                {isSaving ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    'Save Changes'
-                                )}
-                            </button>
-                        </div>
-
-                        <div className="mt-6">
-                            <h2 className="mb-4 text-xl font-semibold">Global Line Configuration</h2>
-                            <LineConfigurationForm
-                                line={currentLine}
-                                onLineChange={setCurrentLine}
-                                onHasChanges={setHasChanges}
-                                associatedDevices={associatedDevices}
-                                buttonIndex={buttonIndex}
-                                phone={phone}
-                                onUpdatePhoneLine={updatePhoneLine}
-                                onDissociateDevice={handleDissociateDevice}
-                                dissociatingDevices={dissociatingDevices}
-                                showDirectoryNumberField={true}
-                                showAssociatedDevices={true}
-                            />
-                        </div>
-
-                        <div className="mt-8">
-                            <h2 className="mb-4 text-xl font-semibold">Configuration on {phone.name}</h2>
-                            <div className="space-y-4">{/* Device-specific configuration sections will go here */}</div>
-                        </div>
-
-                        <div className="mt-6">
-                            {/* Debug Section - Remove this later */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <h3 className="text-lg font-semibold">Debug Information</h3>
-                                    <p className="text-sm text-muted-foreground">Current line and target line configuration data</p>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                                        <div>
-                                            <h4 className="mb-2 font-medium">Line Data (Global)</h4>
-                                            <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
-                                                {JSON.stringify(currentLine, null, 2)}
-                                            </pre>
-                                        </div>
-                                        <div>
-                                            <h4 className="mb-2 font-medium">Target Line Config (Phone-specific)</h4>
-                                            <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
-                                                {JSON.stringify(targetLineConfig, null, 2)}
-                                            </pre>
-                                        </div>
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                    <div>
+                                        <h4 className="mb-2 font-medium">Line Data (Global)</h4>
+                                        <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
+                                            {JSON.stringify(currentLine, null, 2)}
+                                        </pre>
+                                    </div>
+                                    <div>
+                                        <h4 className="mb-2 font-medium">Target Line Config (Phone-specific)</h4>
+                                        <pre className="max-h-96 overflow-auto rounded border bg-muted p-3 text-xs">
+                                            {JSON.stringify(targetLineConfig, null, 2)}
+                                        </pre>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </AppContent>
+                </div>
             </div>
 
             <ConfirmDialog
