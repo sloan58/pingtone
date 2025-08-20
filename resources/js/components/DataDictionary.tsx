@@ -441,7 +441,7 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                         {filteredTables.map((table) => (
                             <div
                                 key={table.name}
-                                className="cursor-pointer rounded border bg-card px-3 py-2 transition-colors hover:bg-accent"
+                                className="cursor-pointer rounded border bg-card pl-2 pr-3 py-2 transition-colors hover:bg-accent"
                                 onClick={() => loadTableDetails(table)}
                             >
                                 <div className="flex items-center justify-between">
