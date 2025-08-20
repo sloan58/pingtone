@@ -233,117 +233,118 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                         </CardTitle>
                         <CardDescription>Keypad, navigation, and line controls</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Keypad */}
-                        <div>
-                            <h4 className="mb-3 text-sm font-medium">Keypad</h4>
-                            <div className="grid grid-cols-3 gap-2 max-w-48 mx-auto">
-                                {/* Row 1: 1, 2, 3 */}
-                                {[1, 2, 3].map((num) => (
+                    <CardContent className="space-y-4">
+                        {/* Keypad and Navigation Side by Side */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Keypad */}
+                            <div>
+                                <h4 className="mb-3 text-sm font-medium text-center">Keypad</h4>
+                                <div className="grid grid-cols-3 gap-1">
+                                    {/* Row 1: 1, 2, 3 */}
+                                    {[1, 2, 3].map((num) => (
+                                        <Button
+                                            key={num}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                            disabled={isLoading}
+                                            className="aspect-square text-xs font-semibold"
+                                        >
+                                            {num}
+                                        </Button>
+                                    ))}
+                                    
+                                    {/* Row 2: 4, 5, 6 */}
+                                    {[4, 5, 6].map((num) => (
+                                        <Button
+                                            key={num}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                            disabled={isLoading}
+                                            className="aspect-square text-xs font-semibold"
+                                        >
+                                            {num}
+                                        </Button>
+                                    ))}
+                                    
+                                    {/* Row 3: 7, 8, 9 */}
+                                    {[7, 8, 9].map((num) => (
+                                        <Button
+                                            key={num}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                            disabled={isLoading}
+                                            className="aspect-square text-xs font-semibold"
+                                        >
+                                            {num}
+                                        </Button>
+                                    ))}
+                                    
+                                    {/* Row 4: *, 0, # */}
                                     <Button
-                                        key={num}
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                        onClick={() => executeCommand('press_button', { button: 'KeyPadStar' })}
                                         disabled={isLoading}
-                                        className="aspect-square text-sm font-semibold"
+                                        className="aspect-square text-xs font-semibold"
                                     >
-                                        {num}
+                                        *
                                     </Button>
-                                ))}
-                                
-                                {/* Row 2: 4, 5, 6 */}
-                                {[4, 5, 6].map((num) => (
                                     <Button
-                                        key={num}
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                        onClick={() => executeCommand('press_button', { button: 'KeyPad0' })}
                                         disabled={isLoading}
-                                        className="aspect-square text-sm font-semibold"
+                                        className="aspect-square text-xs font-semibold"
                                     >
-                                        {num}
+                                        0
                                     </Button>
-                                ))}
-                                
-                                {/* Row 3: 7, 8, 9 */}
-                                {[7, 8, 9].map((num) => (
                                     <Button
-                                        key={num}
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                        onClick={() => executeCommand('press_button', { button: 'KeyPadPound' })}
                                         disabled={isLoading}
-                                        className="aspect-square text-sm font-semibold"
+                                        className="aspect-square text-xs font-semibold"
                                     >
-                                        {num}
-                                    </Button>
-                                ))}
-                                
-                                {/* Row 4: *, 0, # */}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => executeCommand('press_button', { button: 'KeyPadStar' })}
-                                    disabled={isLoading}
-                                    className="aspect-square text-sm font-semibold"
-                                >
-                                    *
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => executeCommand('press_button', { button: 'KeyPad0' })}
-                                    disabled={isLoading}
-                                    className="aspect-square text-sm font-semibold"
-                                >
-                                    0
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => executeCommand('press_button', { button: 'KeyPadPound' })}
-                                    disabled={isLoading}
-                                    className="aspect-square text-sm font-semibold"
-                                >
-                                    #
-                                </Button>
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        {/* Navigation */}
-                        <div>
-                            <h4 className="mb-3 text-sm font-medium">Navigation</h4>
-                            <div className="mx-auto flex w-fit flex-col items-center gap-2">
-                                {/* Top button */}
-                                <Button variant="outline" size="sm" onClick={() => executeCommand('nav_up')} disabled={isLoading}>
-                                    <ArrowUp className="h-4 w-4" />
-                                </Button>
-
-                                {/* Middle row with left, select, right */}
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading}>
-                                        <ArrowLeft className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => executeCommand('nav_select')}
-                                        disabled={isLoading}
-                                        className="h-14 w-14 p-0 flex items-center justify-center rounded-full"
-                                    >
-                                        Select
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => executeCommand('nav_right')} disabled={isLoading}>
-                                        <ArrowRight className="h-4 w-4" />
+                                        #
                                     </Button>
                                 </div>
+                            </div>
 
-                                {/* Bottom button */}
-                                <Button variant="outline" size="sm" onClick={() => executeCommand('nav_down')} disabled={isLoading}>
-                                    <ArrowDown className="h-4 w-4" />
-                                </Button>
+                            {/* Navigation */}
+                            <div>
+                                <h4 className="mb-3 text-sm font-medium text-center">Navigation</h4>
+                                <div className="flex flex-col items-center gap-1">
+                                    {/* Top button */}
+                                    <Button variant="outline" size="sm" onClick={() => executeCommand('nav_up')} disabled={isLoading} className="h-8 w-8 p-0">
+                                        <ArrowUp className="h-3 w-3" />
+                                    </Button>
+
+                                    {/* Middle row with left, select, right */}
+                                    <div className="flex items-center gap-1">
+                                        <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading} className="h-8 w-8 p-0">
+                                            <ArrowLeft className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => executeCommand('nav_select')}
+                                            disabled={isLoading}
+                                            className="h-10 w-10 p-0 flex items-center justify-center rounded-full text-xs font-medium"
+                                        >
+                                            OK
+                                        </Button>
+                                        <Button variant="outline" size="sm" onClick={() => executeCommand('nav_right')} disabled={isLoading} className="h-8 w-8 p-0">
+                                            <ArrowRight className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+
+                                    {/* Bottom button */}
+                                    <Button variant="outline" size="sm" onClick={() => executeCommand('nav_down')} disabled={isLoading} className="h-8 w-8 p-0">
+                                        <ArrowDown className="h-3 w-3" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
