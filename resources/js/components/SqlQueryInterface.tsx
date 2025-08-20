@@ -133,11 +133,11 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
                                     <span>Schema Reference</span>
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="w-[800px] sm:w-[900px] lg:w-[1000px] overflow-hidden">
-                                <SheetHeader>
+                            <SheetContent side="right" className="w-[900px] sm:w-[1000px] lg:w-[1200px] overflow-hidden p-6">
+                                <SheetHeader className="mb-6">
                                     <SheetTitle>UCM Database Schema Reference</SheetTitle>
                                 </SheetHeader>
-                                <div className="mt-6 overflow-auto h-[calc(100vh-120px)]">
+                                <div className="overflow-auto h-[calc(100vh-160px)] pr-2">
                                     <DataDictionary ucmId={ucmId} version={version} />
                                 </div>
                             </SheetContent>
