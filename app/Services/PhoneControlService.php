@@ -427,15 +427,16 @@ class PhoneControlService
         try {
             $url = "http://{$ipAddress}/CGI/Execute";
 
-            // Build query parameters - some phone models expect GET with XML parameter
-            $queryParams = array_merge(['XML' => $command], $parameters);
+            // POST with form data containing XML field (per Cisco documentation)
+            $formData = array_merge(['XML' => $command], $parameters);
 
             $response = Http::timeout($this->timeout)
                 ->withBasicAuth($phone->ucmCluster->username, $phone->ucmCluster->password)
                 ->withHeaders([
                     'User-Agent' => 'PingTone/1.0',
                 ])
-                ->get($url, $queryParams);
+                ->asForm()
+                ->post($url, $formData);
 
             if (!$response->successful()) {
                 $statusCode = $response->status();
