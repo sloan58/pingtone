@@ -71,18 +71,8 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
     const loadTables = async () => {
         try {
             setLoading(true);
-            console.log('Loading tables for version:', version, 'UCM ID:', ucmId);
             const response = await fetch(`/ucm-clusters/${ucmId}/data-dictionary/api?version=${version}`);
             const data = await response.json();
-            console.log('API Response:', data);
-            
-            // Debug specific table
-            const aarTable = data.tables?.find(t => t.name === 'aarneighborhood');
-            if (aarTable) {
-                console.log('aarneighborhood table data:', aarTable);
-                console.log('aarneighborhood constraints:', aarTable.uniqueness_constraints);
-            }
-            
             setTables(data.tables || []);
         } catch (error) {
             console.error('Failed to load tables:', error);
