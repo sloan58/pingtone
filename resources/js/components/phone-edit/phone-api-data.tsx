@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { XmlDisplay } from '@/components/xml-display';
+import axios from 'axios';
 import { FileText, Network, RefreshCw, Settings, Wifi } from 'lucide-react';
 import { useState } from 'react';
 
@@ -24,17 +25,15 @@ export function PhoneApiData({ phoneId, apiData, onDataUpdate }: PhoneApiDataPro
         if (!isLoading) {
             setIsLoading(true);
             try {
-                const response = await fetch(`/phones/${phoneId}/gather-api-data`);
+                const response = await axios.get(`/phones/${phoneId}/gather-api-data`);
 
-                const responseData = await response.json();
-
-                if (responseData.success) {
+                if (response.data.success) {
                     // Update the parent component with new data
                     if (onDataUpdate) {
-                        onDataUpdate(responseData.data);
+                        onDataUpdate(response.data.data);
                     }
                 } else {
-                    console.error('Failed to gather phone API data:', responseData.error);
+                    console.error('Failed to gather phone API data:', response.data.error);
                 }
             } catch (error) {
                 console.error('Failed to gather phone API data:', error);

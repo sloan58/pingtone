@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Concerns\AppliesSearchFilters;
+use Log;
+use Exception;
+use SoapFault;
 use App\Models\Line;
-use App\Models\MohAudioSource;
+use Inertia\Inertia;
 use App\Models\Phone;
-use App\Models\PhoneButtonTemplate;
+use Illuminate\Http\Request;
+use App\Models\MohAudioSource;
 use App\Models\PhoneScreenCapture;
+use App\Models\PhoneButtonTemplate;
 use App\Models\ServiceAreaDeviceLink;
 use App\Services\PhoneControlService;
-use Exception;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Log;
-use SoapFault;
+use App\Http\Controllers\Concerns\AppliesSearchFilters;
 
 class PhoneController extends Controller
 {
@@ -168,7 +168,7 @@ class PhoneController extends Controller
             ->get(['_id', 'uuid', 'name', 'sourceId']);
 
         // Get screen captures for this phone
-        $screenCaptures = $this->screenCaptureService->getScreenCaptures($phone);
+        $screenCaptures = $this->phoneControlService->getScreenCaptures($phone);
 
         // Transform screen captures to include accessors and match frontend expectations
         $transformedScreenCaptures = $screenCaptures->map(function ($capture) {
@@ -271,6 +271,10 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Screenshot captured successfully',
+                'toast' => [
+                    'type' => 'success',
+                    'message' => 'Screenshot captured successfully'
+                ],
                 'screenCapture' => $screenCaptureData,
             ]);
 
@@ -278,6 +282,10 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to capture screenshot: ' . $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Failed to capture screenshot: ' . $e->getMessage()
+                ]
             ], 500);
         }
     }
@@ -294,11 +302,19 @@ class PhoneController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Screen capture deleted successfully',
+                    'toast' => [
+                        'type' => 'success',
+                        'message' => 'Screen capture deleted successfully'
+                    ]
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to delete screen capture',
+                    'toast' => [
+                        'type' => 'error',
+                        'message' => 'Failed to delete screen capture'
+                    ]
                 ], 500);
             }
 
@@ -306,6 +322,10 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete screen capture: ' . $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Failed to delete screen capture: ' . $e->getMessage()
+                ]
             ], 500);
         }
     }
@@ -315,7 +335,7 @@ class PhoneController extends Controller
      */
     public function editButton(Request $request, Phone $phone, int $buttonIndex)
     {
-        $phone->load('ucm');
+        $phone->load('ucmCluster');
 
         // Get the button configuration
         $buttonConfig = null;
@@ -507,6 +527,10 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Button pressed successfully',
+                'toast' => [
+                    'type' => 'success',
+                    'message' => 'Button pressed successfully'
+                ],
                 'data' => $result,
             ]);
 
@@ -522,6 +546,10 @@ class PhoneController extends Controller
                 'success' => false,
                 'message' => 'Failed to press button',
                 'error' => $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Failed to press button: ' . $e->getMessage()
+                ]
             ], 500);
         }
     }
@@ -554,6 +582,10 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Message displayed successfully',
+                'toast' => [
+                    'type' => 'success',
+                    'message' => 'Message displayed successfully'
+                ],
                 'data' => $result,
             ]);
 
@@ -569,6 +601,10 @@ class PhoneController extends Controller
                 'success' => false,
                 'message' => 'Failed to display message',
                 'error' => $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Failed to display message: ' . $e->getMessage()
+                ]
             ], 500);
         }
     }
@@ -594,6 +630,10 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Background image pushed successfully',
+                'toast' => [
+                    'type' => 'success',
+                    'message' => 'Background image pushed successfully'
+                ],
                 'data' => $result,
             ]);
 
@@ -609,6 +649,10 @@ class PhoneController extends Controller
                 'success' => false,
                 'message' => 'Failed to push background image',
                 'error' => $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Failed to push background image: ' . $e->getMessage()
+                ]
             ], 500);
         }
     }
@@ -629,6 +673,10 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Phone reboot initiated successfully',
+                'toast' => [
+                    'type' => 'success',
+                    'message' => 'Phone reboot initiated successfully'
+                ],
                 'data' => $result,
             ]);
 
@@ -643,6 +691,10 @@ class PhoneController extends Controller
                 'success' => false,
                 'message' => 'Failed to reboot phone',
                 'error' => $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Failed to reboot phone: ' . $e->getMessage()
+                ]
             ], 500);
         }
     }

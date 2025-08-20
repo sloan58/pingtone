@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\UcmNode;
 use Exception;
-use Illuminate\Support\Facades\Log;
-use SoapClient;
 use SoapFault;
+use SoapClient;
+use App\Models\UcmCluster;
+use Illuminate\Support\Facades\Log;
 
 /**
  * RisPort SOAP Client for Cisco Unified Communications Manager
@@ -16,8 +16,6 @@ use SoapFault;
  */
 class RisPort extends SoapClient
 {
-    protected UcmNode $ucm;
-
     // Retry tracking
     private int $tries = 0;
     private int $maxTries = 3;
@@ -25,10 +23,8 @@ class RisPort extends SoapClient
     /**
      * @throws Exception
      */
-    public function __construct(UcmNode $ucm)
+    public function __construct(protected UcmCluster $ucmCluster)
     {
-        $this->ucm = $ucm;
-
         parent::__construct(
             $this->getWsdlPath(),
             $this->getSoapOptions()
@@ -44,15 +40,15 @@ class RisPort extends SoapClient
      */
     public function queryPhoneStatus(?array $phones = null): array
     {
-        $phoneList = count($phones) ? $phones : $this->ucm->ucmCluster->phones()->pluck('name')->toArray();
+        $phoneList = count($phones ?? []) ? $phones : $this->ucmCluster->phones()->pluck('name')->toArray();
 
         Log::info("Querying phone status from RisPort", [
-            'ucm' => $this->ucm->name,
+            'ucm' => $this->ucmCluster->name,
             'phone_count' => count($phoneList),
         ]);
 
         if (empty($phoneList)) {
-            Log::info("No phones to query for UCM {$this->ucm->name}");
+            Log::info("No phones to query for UCM {$this->ucmCluster->name}");
             return [];
         }
 
@@ -62,7 +58,7 @@ class RisPort extends SoapClient
 
         foreach (array_chunk($phoneList, $chunkSize) as $chunkIndex => $chunk) {
             Log::info("Processing phone chunk", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmCluster->name,
                 'chunk' => $chunkIndex + 1,
                 'chunk_size' => count($chunk),
             ]);
@@ -72,7 +68,7 @@ class RisPort extends SoapClient
         }
 
         Log::info("Completed phone status query", [
-            'ucm' => $this->ucm->name,
+            'ucm' => $this->ucmCluster->name,
             'total_results' => count($allResults),
         ]);
 
@@ -96,7 +92,7 @@ class RisPort extends SoapClient
 
         try {
             Log::info("Sending SelectCmDeviceExt request to RisPort", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmCluster->name,
                 'phone_count' => count($phones),
             ]);
 
@@ -119,7 +115,7 @@ class RisPort extends SoapClient
             $responseArray = json_decode(json_encode($response), true);
 
             Log::info("Successfully received RisPort response", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmCluster->name,
                 'has_data' => !empty($responseArray['selectCmDeviceReturn']['SelectCmDeviceResult']['CmNodes'] ?? null),
                 'total_devices_found' => $responseArray['selectCmDeviceReturn']['SelectCmDeviceResult']['TotalDevicesFound'] ?? 0,
             ]);
@@ -130,7 +126,7 @@ class RisPort extends SoapClient
             return $this->handleRisPortApiError($e, [$phones]);
         } catch (Exception $e) {
             Log::error("Unexpected error querying RisPort", [
-                'ucm' => $this->ucm->name,
+                'ucm' => $this->ucmCluster->name,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -155,14 +151,14 @@ class RisPort extends SoapClient
             str_contains($e->faultstring, 'rate limit') ||
             str_contains($e->faultstring, 'throttle')) {
 
-            Log::warning("{$this->ucm->name}: Received throttle response from RisPort", [
+            Log::warning("{$this->ucmCluster->name}: Received throttle response from RisPort", [
                 'faultstring' => $e->faultstring,
                 'tries' => $this->tries,
             ]);
 
             if ($this->tries < $this->maxTries) {
                 $sleepSeconds = ($this->tries + 1) * 30; // 30s, 60s, 90s
-                Log::info("{$this->ucm->name}: Sleeping {$sleepSeconds} seconds before retry");
+                Log::info("{$this->ucmCluster->name}: Sleeping {$sleepSeconds} seconds before retry");
                 sleep($sleepSeconds);
 
                 $this->tries++;
@@ -174,7 +170,7 @@ class RisPort extends SoapClient
         if (str_contains($e->faultstring, 'Authentication failed') ||
             str_contains($e->faultstring, 'Invalid credentials') ||
             str_contains($e->faultstring, 'Access denied')) {
-            Log::error("{$this->ucm->name}: Authentication error - not retrying", [
+            Log::error("{$this->ucmCluster->name}: Authentication error - not retrying", [
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
             ]);
@@ -185,7 +181,7 @@ class RisPort extends SoapClient
         if (str_contains($e->faultstring, 'Connection refused') ||
             str_contains($e->faultstring, 'Connection timeout') ||
             str_contains($e->faultstring, 'Network is unreachable')) {
-            Log::warning("{$this->ucm->name}: Connection error detected", [
+            Log::warning("{$this->ucmCluster->name}: Connection error detected", [
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
                 'tries' => $this->tries,
@@ -193,7 +189,7 @@ class RisPort extends SoapClient
         }
 
         // Handle other SOAP errors with exponential backoff
-        Log::error("{$this->ucm->name}: Received RisPort error response", [
+        Log::error("{$this->ucmCluster->name}: Received RisPort error response", [
             'faultcode' => $e->faultcode,
             'faultstring' => $e->faultstring,
             'tries' => $this->tries,
@@ -203,7 +199,7 @@ class RisPort extends SoapClient
         $this->tries++;
 
         if ($this->tries > $this->maxTries) {
-            Log::error("{$this->ucm->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
+            Log::error("{$this->ucmCluster->name}: Exceeded maximum retry attempts ({$this->maxTries})", [
                 'method' => $method,
                 'faultcode' => $e->faultcode,
                 'faultstring' => $e->faultstring,
@@ -213,7 +209,7 @@ class RisPort extends SoapClient
 
         $sleepSeconds = $this->tries * 10; // Exponential backoff: 10s, 20s, 30s
 
-        Log::info("{$this->ucm->name}: Retrying after {$sleepSeconds} seconds", [
+        Log::info("{$this->ucmCluster->name}: Retrying after {$sleepSeconds} seconds", [
             'maxTries' => $this->maxTries,
             'tries' => $this->tries,
             'sleep' => $sleepSeconds,
@@ -233,7 +229,7 @@ class RisPort extends SoapClient
     private function getWsdlPath(): string
     {
         // RisPort uses a different WSDL than AXL - it's typically available at the service URL
-        return "https://{$this->ucm->hostname}/realtimeservice2/services/RISService70?wsdl";
+        return "https://{$this->ucmCluster->publisher->hostname}/realtimeservice2/services/RISService70?wsdl";
     }
 
     /**
@@ -242,7 +238,7 @@ class RisPort extends SoapClient
     private function getServiceUrl(): string
     {
         // Use IP address directly to avoid DNS issues
-        $hostname = $this->ucm->hostname;
+        $hostname = $this->ucmCluster->publisher->hostname;
         if (filter_var($hostname, FILTER_VALIDATE_IP)) {
             return "https://{$hostname}/realtimeservice2/services/RISService70";
         }
@@ -264,8 +260,8 @@ class RisPort extends SoapClient
         return [
             'trace' => true,                    // Essential for debugging
             'exceptions' => true,               // Let exceptions bubble up
-            'login' => $this->ucm->ucmCluster->username,    // Basic authentication
-            'password' => $this->ucm->ucmCluster->password,
+            'login' => $this->ucmCluster->username,    // Basic authentication
+            'password' => $this->ucmCluster->password,
             'cache_wsdl' => WSDL_CACHE_NONE,   // Always use fresh WSDL
             'connection_timeout' => 30,         // Reasonable timeout
             'features' => SOAP_SINGLE_ELEMENT_ARRAYS, // Critical for XML parsing

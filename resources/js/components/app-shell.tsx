@@ -1,5 +1,5 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/sonner';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 

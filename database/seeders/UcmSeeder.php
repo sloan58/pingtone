@@ -15,20 +15,19 @@ class UcmSeeder extends Seeder
     {
         // Create a test cluster
         $cluster = UcmCluster::create([
-            'name' => 'Test Cluster',
+            "name" => "Karmatek",
+            "username" => "pingtone",
+            "password" => "password",
+            "schema_version" => "15.0",
         ]);
 
         // Create a test UCM node
         UcmNode::create([
-            'ucm_cluster_id' => $cluster->id,
-            'name' => 'Karmatek',
-            'hostname' => '192.168.1.10',
-            'username' => 'pingtone',
-            'password' => 'password',
-            'is_active' => true,
-            'schema_version' => '15.0',
-            'cluster_name' => 'Test Cluster',
-            'node_role' => 'Publisher',
+            "ucm_cluster_id" => $cluster->getKey(),
+            "name" => "ucm-pub.karmatek.io",
+            "hostname" => "192.168.1.10",
+            "version" => "15.0.1.10000(32)",
+            "node_role" => "Publisher",
         ]);
     }
 }

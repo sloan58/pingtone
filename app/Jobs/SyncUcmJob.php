@@ -2,17 +2,17 @@
 
 namespace App\Jobs;
 
-use App\Enums\SyncStatusEnum;
-use App\Models\SyncHistory;
+use Throwable;
 use App\Models\UcmCluster;
+use App\Models\SyncHistory;
+use App\Enums\SyncStatusEnum;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
-use Throwable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 
 class SyncUcmJob implements ShouldQueue
 {
@@ -39,6 +39,8 @@ class SyncUcmJob implements ShouldQueue
             new ServicesSyncJob($this->cluster),
             new AssignUcmUsersToServiceAreasJob,
             new AssignDevicesToServiceAreasJob,
+            new GatherPhoneStatsJob($this->cluster),
+            new GatherPhoneStatusJob($this->cluster),
             function () use ($syncHistory, $cluster) {
                 $syncHistory->update([
                     'sync_end_time' => now(),

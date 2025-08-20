@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Log;
-use MongoDB\Laravel\Relations\BelongsTo;
 use MongoDB\Laravel\Relations\HasMany;
+use MongoDB\Laravel\Relations\BelongsTo;
 
 class Phone extends Device
 {
@@ -113,33 +113,35 @@ class Phone extends Device
     /**
      * Update device lastx statistics using bulk operations
      */
-    public static function updateLastXStats(array $stats, UcmNode $ucm): void
+    public static function updateLastXStats(array $stats, UcmCluster $ucmCluster): void
     {
-        $operations = [];
-        foreach ($stats as $stat) {
-            $operations[] = [
-                'updateOne' => [
-                    [
-                        'uuid' => "{{$stat['uuid']}}",
-                        'ucm_cluster_id' => $ucm->ucmCluster->id,
-                        'class' => static::getDeviceClass()
-                    ],
-                    [
-                        '$set' => ['lastx' => $stat]
+        foreach (array_chunk($stats, 1000) as $chunk) {
+            $operations = [];
+            foreach ($chunk as $stat) {
+                $operations[] = [
+                    'updateOne' => [
+                        [
+                            'uuid' => "{{$stat['uuid']}}",
+                            'ucm_cluster_id' => $ucmCluster->id,
+                            'class' => static::getDeviceClass()
+                        ],
+                        [
+                            '$set' => ['lastx' => $stat]
+                        ]
                     ]
-                ]
-            ];
+                ];
+            }
+
+            $result = self::raw()->bulkWrite($operations);
+
+            Log::info("Bulk updated device stats", [
+                'ucm_cluster_id' => $ucmCluster->id,
+                'device_class' => static::getDeviceClass(),
+                'matched_count' => $result->getMatchedCount(),
+                'modified_count' => $result->getModifiedCount(),
+                'stats_count' => count($stats)
+            ]);
         }
-
-        $result = self::raw()->bulkWrite($operations);
-
-        Log::info("Bulk updated device stats", [
-            'ucm_cluster_id' => $ucm->ucmCluster->id,
-            'device_class' => static::getDeviceClass(),
-            'matched_count' => $result->getMatchedCount(),
-            'modified_count' => $result->getModifiedCount(),
-            'stats_count' => count($stats)
-        ]);
     }
 
     /**
@@ -169,7 +171,7 @@ class Phone extends Device
         }
 
         // Check if UCM credentials are available
-        if (!$this->ucm || !$this->ucm->username || !$this->ucm->password) {
+        if (!$this->ucmCluster || !$this->ucmCluster->username || !$this->ucmCluster->password) {
             Log::info('Phone screen capture check failed - UCM credentials', [
                 'phone_id' => $this->_id,
                 'phone_name' => $this->name,

@@ -4,8 +4,8 @@ namespace App\Jobs;
 
 use SoapFault;
 use Exception;
-use App\Models\UcmNode;
 use App\Services\RisPort;
+use App\Models\UcmCluster;
 use App\Models\PhoneStatus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -19,8 +19,8 @@ class GatherPhoneStatusJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
-        protected UcmNode $ucm,
-        protected ?array  $phones = null
+        protected UcmCluster $ucmCluster,
+        protected ?array     $phones = null
     )
     {
     }
@@ -30,35 +30,35 @@ class GatherPhoneStatusJob implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info("Starting phone status gathering for UCM {$this->ucm->name}", [
+        Log::info("Starting phone status gathering for UCM {$this->ucmCluster->name}", [
             'phone_count' => $this->phones ? count($this->phones) : 'all',
         ]);
 
         try {
-            $risPortClient = new RisPort($this->ucm);
+            $risPortClient = new RisPort($this->ucmCluster);
 
             // Query phone status from RisPort API
             $risPortData = $risPortClient->queryPhoneStatus($this->phones);
 
             if (empty($risPortData)) {
-                Log::info("No RisPort data received for UCM {$this->ucm->name}");
+                Log::info("No RisPort data received for UCM {$this->ucmCluster->name}");
                 return;
             }
 
             // Store the complete RisPort response in the timeseries collection
-            PhoneStatus::storeFromRisPortData($risPortData, $this->ucm);
+            PhoneStatus::storeFromRisPortData($risPortData, $this->ucmCluster);
 
-            Log::info("Successfully gathered and stored phone status for UCM {$this->ucm->name}", [
-                'ucm_cluster_id' => $this->ucm->getKey(),
+            Log::info("Successfully gathered and stored phone status for UCM {$this->ucmCluster->name}", [
+                'ucm_cluster_id' => $this->ucmCluster->getKey(),
                 'has_data' => !empty($risPortData['selectCmDeviceReturn']['SelectCmDeviceResult']['CmNodes'] ?? null),
                 'total_devices_found' => $risPortData['selectCmDeviceReturn']['SelectCmDeviceResult']['TotalDevicesFound'] ?? 0,
             ]);
 
         } catch (Exception $e) {
-            Log::error("Error gathering phone status for UCM {$this->ucm->name}", [
+            Log::error("Error gathering phone status for UCM {$this->ucmCluster->name}", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
-                'ucm_cluster_id' => $this->ucm->getKey(),
+                'ucm_cluster_id' => $this->ucmCluster->getKey(),
             ]);
 
             throw $e;

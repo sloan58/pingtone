@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
-//            UcmSeeder::class,
+            UcmSeeder::class,
             // SyncHistorySeeder::class,
         ]);
     }

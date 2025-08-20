@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Log;
+use Carbon\Carbon;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PhoneStatus extends Model
 {
@@ -49,10 +49,10 @@ class PhoneStatus extends Model
      * Store phone status data from RisPort API response
      *
      * @param array $risPortData Complete RisPort API response
-     * @param UcmNode $ucm The UCM instance
+     * @param UcmCluster $ucmCluster The UCM instance
      * @return void
      */
-    public static function storeFromRisPortData(array $risPortData, UcmNode $ucm): void
+    public static function storeFromRisPortData(array $risPortData, UcmCluster $ucmCluster): void
     {
         $timestamp = new UTCDateTime();
         $operations = [];
@@ -85,7 +85,7 @@ class PhoneStatus extends Model
                 // Create the status record with complete device data
                 $statusData = [
                     'phone_name' => $device['Name'],
-                    'ucm_cluster_id' => $ucm->id,
+                    'ucm_cluster_id' => $ucmCluster->id,
                     'timestamp' => $timestamp,
                     'cm_node' => $cmNode['Name'] ?? null,
                     'device_data' => $device, // Store complete device data
@@ -103,7 +103,7 @@ class PhoneStatus extends Model
             $result = self::raw()->bulkWrite($operations);
 
             Log::info("Stored phone status data from RisPort", [
-                'ucm' => $ucm->name,
+                'ucm' => $ucmCluster->name,
                 'inserted_count' => $result->getInsertedCount(),
                 'timestamp' => $timestamp->toDateTime()->format('c'),
             ]);

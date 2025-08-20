@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\UcmCluster;
-use App\Models\UcmNode;
 use Exception;
-use Illuminate\Support\Facades\Log;
-use SoapClient;
 use SoapFault;
+use SoapClient;
+use App\Models\UcmNode;
+use App\Models\UcmCluster;
+use Illuminate\Support\Facades\Log;
 
 /**
  * AXL SOAP Client for Cisco Unified Communications Manager
@@ -32,9 +32,9 @@ class Axl extends SoapClient
     /**
      * @throws Exception
      */
-    public function __construct(protected UcmCluster $ucmCluster, ?UcmNode $ucmNode = null)
+    public function __construct(protected UcmCluster $ucmClusterCluster, ?UcmNode $ucmNode = null)
     {
-        $this->ucmNode = $ucmCluster->publisher ?: $ucmNode;
+        $this->ucmNode = $ucmClusterCluster->publisher ?: $ucmNode;
 
         parent::__construct(
             $this->getWsdlPath(),
@@ -331,7 +331,7 @@ class Axl extends SoapClient
      */
     private function getWsdlPath(): string
     {
-        $path = storage_path("axl/{$this->ucmCluster->schema_version}/AXLAPI.wsdl");
+        $path = storage_path("axl/{$this->ucmClusterCluster->schema_version}/AXLAPI.wsdl");
 
         if (!file_exists($path)) {
             throw new Exception("WSDL file not found for version {$path}");
@@ -368,8 +368,8 @@ class Axl extends SoapClient
         return [
             'trace' => true,                    // Essential for debugging
             'exceptions' => true,               // Let exceptions bubble up
-            'login' => $this->ucmCluster->username,    // Basic authentication
-            'password' => $this->ucmCluster->password,
+            'login' => $this->ucmClusterCluster->username,    // Basic authentication
+            'password' => $this->ucmClusterCluster->password,
             'cache_wsdl' => WSDL_CACHE_NONE,   // Always use fresh WSDL
             'connection_timeout' => 30,         // Reasonable timeout
             'features' => SOAP_SINGLE_ELEMENT_ARRAYS, // Critical for XML parsing

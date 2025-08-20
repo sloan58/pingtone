@@ -599,7 +599,7 @@ class PhoneControlService
     private function getPhoneIpAddress(Phone $phone): ?string
     {
         // Get the latest phone status to check for IP address
-        $latestStatus = PhoneStatus::getLatestForPhone($phone->name, $phone->ucmClusterCluster);
+        $latestStatus = PhoneStatus::getLatestForPhone($phone->name, $phone->ucmCluster);
 
         return $latestStatus?->device_data['IPAddress']['item'][0]['IP'] ?? null;
     }
