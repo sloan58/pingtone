@@ -292,7 +292,7 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                     </div>
                                 </div>
                             ) : (
-                                <ScrollArea className="h-[400px]">
+                                <div className="max-h-[400px] overflow-auto border-4 border-blue-500 bg-blue-100 p-4">
                                     <div className="space-y-3">
                                         {console.log('Rendering fields:', fields.length, 'fields') || null}
                                         {console.log('First field object:', fields[0]) || null}
@@ -370,7 +370,7 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                             })
                                         )}
                                     </div>
-                                </ScrollArea>
+                                </div>
                             )}
                         </CardContent>
                     </Card>
