@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Storage;
  * - CGI/Execute commands (button presses, background images, etc.)
  * - Phone status monitoring
  *
- * Maintains backward compatibility with existing PhoneScreenCaptureService and PhoneApi
+ * Replaces the deprecated PhoneScreenCaptureService and PhoneApi classes
  */
 class PhoneControlService
 {
