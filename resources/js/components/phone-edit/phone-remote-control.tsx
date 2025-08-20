@@ -301,6 +301,91 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                     </CardContent>
                 </Card>
 
+                {/* Phone Keypad */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            Phone Keypad
+                        </CardTitle>
+                        <CardDescription>Press number keys, star, and pound</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-3 gap-2 max-w-48 mx-auto">
+                            {/* Row 1: 1, 2, 3 */}
+                            {[1, 2, 3].map((num) => (
+                                <Button
+                                    key={num}
+                                    variant="outline"
+                                    size="lg"
+                                    onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                    disabled={isLoading}
+                                    className="aspect-square text-lg font-semibold"
+                                >
+                                    {num}
+                                </Button>
+                            ))}
+                            
+                            {/* Row 2: 4, 5, 6 */}
+                            {[4, 5, 6].map((num) => (
+                                <Button
+                                    key={num}
+                                    variant="outline"
+                                    size="lg"
+                                    onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                    disabled={isLoading}
+                                    className="aspect-square text-lg font-semibold"
+                                >
+                                    {num}
+                                </Button>
+                            ))}
+                            
+                            {/* Row 3: 7, 8, 9 */}
+                            {[7, 8, 9].map((num) => (
+                                <Button
+                                    key={num}
+                                    variant="outline"
+                                    size="lg"
+                                    onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
+                                    disabled={isLoading}
+                                    className="aspect-square text-lg font-semibold"
+                                >
+                                    {num}
+                                </Button>
+                            ))}
+                            
+                            {/* Row 4: *, 0, # */}
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => executeCommand('press_button', { button: 'KeyPadStar' })}
+                                disabled={isLoading}
+                                className="aspect-square text-lg font-semibold"
+                            >
+                                *
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => executeCommand('press_button', { button: 'KeyPad0' })}
+                                disabled={isLoading}
+                                className="aspect-square text-lg font-semibold"
+                            >
+                                0
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => executeCommand('press_button', { button: 'KeyPadPound' })}
+                                disabled={isLoading}
+                                className="aspect-square text-lg font-semibold"
+                            >
+                                #
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Line Buttons */}
                 <Card>
                     <CardHeader>
