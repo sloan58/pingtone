@@ -37,6 +37,9 @@ interface SyncHistory {
 interface UcmCluster {
     id: number;
     name: string;
+    username: string;
+    schema_version: string;
+    ssh_username: string | null;
     sync_status: string;
     latest_sync_status: string | null;
     has_active_sync: boolean;
@@ -55,15 +58,12 @@ export default function Show({ cluster, apiVersions }: Props) {
     useToast(); // Add toast hook to handle server flash messages
     const [activeTab, setActiveTab] = useState('cluster-overview');
 
-    // Get publisher node for form defaults
-    const publisherNode = cluster.ucm_nodes.find((node) => node.node_role === 'Publisher');
-
     const { data, setData, put, processing, errors } = useForm({
         name: cluster.name,
-        username: publisherNode?.username || '',
+        username: cluster.username || '',
         password: '',
-        schema_version: publisherNode?.schema_version || '',
-        ssh_username: publisherNode?.ssh_username || '',
+        schema_version: cluster.schema_version || '',
+        ssh_username: cluster.ssh_username || '',
         ssh_password: '',
     });
 

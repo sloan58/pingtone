@@ -159,10 +159,29 @@ class UcmClusterController extends Controller
                 'ssh_password' => 'nullable|string',
             ]);
 
-            // Update cluster name
-            $ucm_cluster->update(['name' => $validated['name']]);
+            // Prepare cluster updates
+            $clusterUpdates = ['name' => $validated['name']];
+            
+            if (!empty($validated['username'])) {
+                $clusterUpdates['username'] = $validated['username'];
+            }
+            if (!empty($validated['password'])) {
+                $clusterUpdates['password'] = $validated['password'];
+            }
+            if (!empty($validated['schema_version'])) {
+                $clusterUpdates['schema_version'] = $validated['schema_version'];
+            }
+            if (!empty($validated['ssh_username'])) {
+                $clusterUpdates['ssh_username'] = $validated['ssh_username'];
+            }
+            if (!empty($validated['ssh_password'])) {
+                $clusterUpdates['ssh_password'] = $validated['ssh_password'];
+            }
 
-            // Update all nodes in the cluster with new credentials if provided
+            // Update the cluster
+            $ucm_cluster->update($clusterUpdates);
+
+            // Also update all nodes in the cluster with new credentials if provided
             $nodeUpdates = [];
             if (!empty($validated['username'])) {
                 $nodeUpdates['username'] = $validated['username'];
@@ -182,7 +201,7 @@ class UcmClusterController extends Controller
 
             if (!empty($nodeUpdates)) {
                 $ucm_cluster->ucmNodes()->update($nodeUpdates);
-                Log::info('Updated credentials for all nodes in cluster', [
+                Log::info('Updated credentials for cluster and all nodes', [
                     'cluster_id' => $ucm_cluster->id,
                     'cluster_name' => $ucm_cluster->name,
                     'updated_fields' => array_keys($nodeUpdates),
