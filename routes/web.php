@@ -55,6 +55,7 @@ Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/suggestions', [DataDictio
 
     // Phone screen capture routes
     Route::post('/phones/{phone}/capture-screenshot', [PhoneController::class, 'captureScreenshot'])->name('phones.capture-screenshot');
+    Route::post('/phones/{phone}/capture-temporary-screenshot', [PhoneController::class, 'captureTemporaryScreenshot'])->name('phones.capture-temporary-screenshot');
     Route::delete('/phone-screen-captures/{screenCapture}', [PhoneController::class, 'deleteScreenCapture'])->name('phone-screen-captures.delete');
 
     // Phone API data gathering

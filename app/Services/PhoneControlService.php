@@ -636,6 +636,85 @@ class PhoneControlService
     }
 
     /**
+     * Capture a temporary screenshot for live remote control (doesn't save to database)
+     * 
+     * @param Phone $phone
+     * @return array Response with base64 image data
+     * @throws Exception
+     */
+    public function captureTemporaryScreenshot(Phone $phone): array
+    {
+        // Check if phone can perform screen capture
+        if (!$phone->canScreenCapture()) {
+            throw new Exception('Phone does not support screen capture or is not properly configured.');
+        }
+
+        // Validate phone has required properties
+        if (!$phone->currentIpAddress) {
+            throw new Exception('Phone does not have a valid IP address.');
+        }
+
+        if (!$phone->ucmCluster || !$phone->ucmCluster->username || !$phone->ucmCluster->password) {
+            throw new Exception('Phone UCM credentials are not configured.');
+        }
+
+        // Assign phone to app user if needed
+        $this->assignPhoneToAppUser($phone);
+
+        if ($this->phoneViewError) {
+            throw new Exception('Failed to associate user with phone for screen capture.');
+        }
+
+        try {
+            // Make HTTP request to phone's screenshot endpoint
+            $response = Http::timeout($this->timeout)
+                ->withBasicAuth($phone->ucmCluster->username, $phone->ucmCluster->password)
+                ->withHeaders([
+                    'Accept' => 'application/octet-stream',
+                    'User-Agent' => 'PingTone/1.0',
+                ])
+                ->get("http://{$phone->currentIpAddress}/CGI/Screenshot");
+
+            if (!$response->successful()) {
+                $statusCode = $response->status();
+                if ($statusCode === 401) {
+                    throw new Exception('Authentication failed. Please check UCM credentials.');
+                } elseif ($statusCode === 404) {
+                    throw new Exception('Screenshot endpoint not found. Phone may not support screen capture.');
+                } else {
+                    throw new Exception("Failed to capture screenshot. HTTP status: {$statusCode}");
+                }
+            }
+
+            // Convert response body to base64 for direct display (no file saving)
+            $base64Image = base64_encode($response->body());
+            $dataUrl = 'data:image/png;base64,' . $base64Image;
+
+            Log::info('Temporary phone screen capture successful', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'image_size' => strlen($response->body()),
+            ]);
+
+            return [
+                'success' => true,
+                'image_data_url' => $dataUrl,
+                'captured_at' => now()->toISOString(),
+            ];
+
+        } catch (Exception $e) {
+            Log::error('Temporary phone screen capture failed', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'ip_address' => $phone->currentIpAddress,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
      * Common button press shortcuts
      */
     public function pressLineButton(Phone $phone, int $lineNumber): array

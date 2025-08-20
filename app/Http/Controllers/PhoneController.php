@@ -291,6 +291,33 @@ class PhoneController extends Controller
     }
 
     /**
+     * Capture a temporary screenshot for live remote control (doesn't save to database).
+     */
+    public function captureTemporaryScreenshot(Phone $phone)
+    {
+        try {
+            $result = $this->phoneControlService->captureTemporaryScreenshot($phone);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Temporary screenshot captured successfully',
+                'image_data_url' => $result['image_data_url'],
+                'captured_at' => $result['captured_at'],
+            ]);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to capture temporary screenshot: ' . $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Failed to capture screenshot: ' . $e->getMessage()
+                ]
+            ], 500);
+        }
+    }
+
+    /**
      * Delete a screen capture.
      */
     public function deleteScreenCapture(PhoneScreenCapture $screenCapture)

@@ -1,29 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { 
-    Phone, 
-    Settings, 
-    BookOpen, 
-    Globe, 
-    RotateCcw, 
+import { Textarea } from '@/components/ui/textarea';
+import axios from 'axios';
+import {
     AlertTriangle,
-    MessageSquare,
-    ArrowUp,
     ArrowDown,
     ArrowLeft,
     ArrowRight,
+    ArrowUp,
+    BookOpen,
+    Globe,
+    MessageSquare,
     MousePointer,
+    Phone,
+    RotateCcw,
+    Settings,
+    Terminal,
     Zap,
-    Terminal
 } from 'lucide-react';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface PhoneRemoteControlProps {
@@ -39,13 +39,13 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
     const [messageTitle, setMessageTitle] = useState('');
     const [messageText, setMessageText] = useState('');
     const [customCommand, setCustomCommand] = useState('');
-    
+
     // Live screen capture state
     const [currentScreenCapture, setCurrentScreenCapture] = useState<string | null>(null);
     const [isCapturing, setIsCapturing] = useState(false);
     const [captureError, setCaptureError] = useState<string | null>(null);
 
-    // Function to capture a new screenshot
+        // Function to capture a temporary screenshot (doesn't save to database)
     const captureScreenshot = async (showToast: boolean = false) => {
         if (!canRemoteControl) return;
         
@@ -53,10 +53,10 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
         setCaptureError(null);
         
         try {
-            const response = await axios.post(`/phones/${phoneId}/capture-screenshot`);
+            const response = await axios.post(`/phones/${phoneId}/capture-temporary-screenshot`);
             
-            if (response.data.success && response.data.screenCapture) {
-                setCurrentScreenCapture(response.data.screenCapture.image_url);
+            if (response.data.success && response.data.image_data_url) {
+                setCurrentScreenCapture(response.data.image_data_url);
                 if (showToast) {
                     toast.success('Screen captured successfully');
                 }
@@ -88,16 +88,16 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
         }
 
         setIsLoading(true);
-        
+
         try {
             const response = await axios.post(`/phones/${phoneId}/remote-control`, {
                 action,
-                parameters
+                parameters,
             });
 
             if (response.data.success) {
                 toast.success(response.data.toast?.message || 'Command executed successfully');
-                
+
                 // Auto-capture screenshot after successful command (with small delay)
                 setTimeout(() => {
                     captureScreenshot(false);
@@ -106,9 +106,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 toast.error(response.data.toast?.message || 'Command failed');
             }
         } catch (error: any) {
-            const errorMessage = error.response?.data?.toast?.message || 
-                               error.response?.data?.message || 
-                               'Failed to execute command';
+            const errorMessage = error.response?.data?.toast?.message || error.response?.data?.message || 'Failed to execute command';
             toast.error(errorMessage);
         } finally {
             setIsLoading(false);
@@ -120,11 +118,11 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
             toast.error('Please enter a title or message text');
             return;
         }
-        
+
         executeCommand('display_message', {
             title: messageTitle || 'Message',
             text: messageText,
-            duration: 0
+            duration: 0,
         });
     };
 
@@ -133,20 +131,18 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
             toast.error('Please enter a command');
             return;
         }
-        
+
         executeCommand('custom_command', {
-            command: customCommand
+            command: customCommand,
         });
     };
 
     if (!canRemoteControl) {
         return (
-            <div className="text-center py-8">
-                <Phone className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium text-muted-foreground mb-2">Remote Control Not Available</h3>
-                <p className="text-sm text-muted-foreground">
-                    This phone does not support remote control or is not properly configured.
-                </p>
+            <div className="py-8 text-center">
+                <Phone className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-medium text-muted-foreground">Remote Control Not Available</h3>
+                <p className="text-sm text-muted-foreground">This phone does not support remote control or is not properly configured.</p>
             </div>
         );
     }
@@ -159,47 +155,35 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                     <h3 className="text-lg font-medium">Remote Control</h3>
                     <p className="text-sm text-muted-foreground">Control {phoneName} remotely</p>
                 </div>
-                <Badge variant="outline" className="text-green-600 border-green-200">
-                    <Zap className="w-3 h-3 mr-1" />
+                <Badge variant="outline" className="border-green-200 text-green-600">
+                    <Zap className="mr-1 h-3 w-3" />
                     Ready
                 </Badge>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Live Screen Capture */}
                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <Phone className="w-4 h-4" />
+                                <Phone className="h-4 w-4" />
                                 Live Phone Screen
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => captureScreenshot(true)}
-                                disabled={isCapturing}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => captureScreenshot(true)} disabled={isCapturing}>
                                 {isCapturing ? 'Capturing...' : 'Refresh'}
                             </Button>
                         </CardTitle>
-                        <CardDescription>
-                            Real-time view of {phoneName} - updates automatically after each command
-                        </CardDescription>
+                        <CardDescription>Real-time view of {phoneName} - updates automatically after each command</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex justify-center">
                             {captureError ? (
-                                <div className="text-center py-8">
-                                    <Phone className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                                    <p className="text-sm text-muted-foreground mb-2">Screen capture failed</p>
+                                <div className="py-8 text-center">
+                                    <Phone className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                    <p className="mb-2 text-sm text-muted-foreground">Screen capture failed</p>
                                     <p className="text-xs text-red-500">{captureError}</p>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => captureScreenshot(true)}
-                                        className="mt-2"
-                                    >
+                                    <Button variant="outline" size="sm" onClick={() => captureScreenshot(true)} className="mt-2">
                                         Try Again
                                     </Button>
                                 </div>
@@ -208,20 +192,18 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                     <img
                                         src={currentScreenCapture}
                                         alt={`${phoneName} screen capture`}
-                                        className="max-w-full h-auto border rounded-lg shadow-lg"
+                                        className="h-auto max-w-full rounded-lg border shadow-lg"
                                         style={{ maxHeight: '400px' }}
                                     />
                                     {isCapturing && (
-                                        <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
-                                            <div className="bg-white/90 px-3 py-1 rounded text-sm">
-                                                Updating...
-                                            </div>
+                                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/20">
+                                            <div className="rounded bg-white/90 px-3 py-1 text-sm">Updating...</div>
                                         </div>
                                     )}
                                 </div>
                             ) : (
-                                <div className="text-center py-8">
-                                    <Phone className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                <div className="py-8 text-center">
+                                    <Phone className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                                     <p className="text-sm text-muted-foreground">
                                         {isCapturing ? 'Capturing screen...' : 'No screen capture available'}
                                     </p>
@@ -235,59 +217,32 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <MousePointer className="w-4 h-4" />
+                            <MousePointer className="h-4 w-4" />
                             Navigation
                         </CardTitle>
-                        <CardDescription>
-                            Navigate through phone menus and screens
-                        </CardDescription>
+                        <CardDescription>Navigate through phone menus and screens</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-3 gap-2 max-w-32 mx-auto">
+                        <div className="mx-auto grid max-w-32 grid-cols-3 gap-2">
                             <div></div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => executeCommand('nav_up')}
-                                disabled={isLoading}
-                            >
-                                <ArrowUp className="w-4 h-4" />
+                            <Button variant="outline" size="sm" onClick={() => executeCommand('nav_up')} disabled={isLoading}>
+                                <ArrowUp className="h-4 w-4" />
                             </Button>
                             <div></div>
-                            
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => executeCommand('nav_left')}
-                                disabled={isLoading}
-                            >
-                                <ArrowLeft className="w-4 h-4" />
+
+                            <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading}>
+                                <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => executeCommand('nav_select')}
-                                disabled={isLoading}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => executeCommand('nav_select')} disabled={isLoading}>
                                 Select
                             </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => executeCommand('nav_right')}
-                                disabled={isLoading}
-                            >
-                                <ArrowRight className="w-4 h-4" />
+                            <Button variant="outline" size="sm" onClick={() => executeCommand('nav_right')} disabled={isLoading}>
+                                <ArrowRight className="h-4 w-4" />
                             </Button>
-                            
+
                             <div></div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => executeCommand('nav_down')}
-                                disabled={isLoading}
-                            >
-                                <ArrowDown className="w-4 h-4" />
+                            <Button variant="outline" size="sm" onClick={() => executeCommand('nav_down')} disabled={isLoading}>
+                                <ArrowDown className="h-4 w-4" />
                             </Button>
                             <div></div>
                         </div>
@@ -298,46 +253,34 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Phone className="w-4 h-4" />
+                            <Phone className="h-4 w-4" />
                             Common Buttons
                         </CardTitle>
-                        <CardDescription>
-                            Press common phone buttons
-                        </CardDescription>
+                        <CardDescription>Press common phone buttons</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div className="grid grid-cols-2 gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => executeCommand('settings')}
-                                disabled={isLoading}
-                                className="justify-start"
-                            >
-                                <Settings className="w-4 h-4 mr-2" />
+                            <Button variant="outline" onClick={() => executeCommand('settings')} disabled={isLoading} className="justify-start">
+                                <Settings className="mr-2 h-4 w-4" />
                                 Settings
                             </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => executeCommand('directories')}
-                                disabled={isLoading}
-                                className="justify-start"
-                            >
-                                <BookOpen className="w-4 h-4 mr-2" />
+                            <Button variant="outline" onClick={() => executeCommand('directories')} disabled={isLoading} className="justify-start">
+                                <BookOpen className="mr-2 h-4 w-4" />
                                 Directories
                             </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => executeCommand('services')}
                                 disabled={isLoading}
-                                className="justify-start col-span-2"
+                                className="col-span-2 justify-start"
                             >
-                                <Globe className="w-4 h-4 mr-2" />
+                                <Globe className="mr-2 h-4 w-4" />
                                 Services
                             </Button>
                         </div>
-                        
+
                         <Separator />
-                        
+
                         <div className="grid grid-cols-4 gap-2">
                             {[1, 2, 3, 4].map((num) => (
                                 <Button
@@ -358,9 +301,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 <Card>
                     <CardHeader>
                         <CardTitle>Line Buttons</CardTitle>
-                        <CardDescription>
-                            Press line buttons on the phone
-                        </CardDescription>
+                        <CardDescription>Press line buttons on the phone</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-4 gap-2">
@@ -383,12 +324,10 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <MessageSquare className="w-4 h-4" />
+                            <MessageSquare className="h-4 w-4" />
                             Display Message
                         </CardTitle>
-                        <CardDescription>
-                            Send a text message to the phone screen
-                        </CardDescription>
+                        <CardDescription>Send a text message to the phone screen</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div>
@@ -411,17 +350,16 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            <Button
-                                onClick={handleDisplayMessage}
-                                disabled={isLoading}
-                            >
-                                <MessageSquare className="w-4 h-4 mr-2" />
+                            <Button onClick={handleDisplayMessage} disabled={isLoading}>
+                                <MessageSquare className="mr-2 h-4 w-4" />
                                 Send Message
                             </Button>
                             <Button
-                                onClick={() => executeCommand('display_alert', { 
-                                    message: messageText || messageTitle || 'Test Alert' 
-                                })}
+                                onClick={() =>
+                                    executeCommand('display_alert', {
+                                        message: messageText || messageTitle || 'Test Alert',
+                                    })
+                                }
                                 disabled={isLoading}
                                 variant="outline"
                             >
@@ -429,9 +367,11 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             </Button>
                         </div>
                         <Button
-                            onClick={() => executeCommand('display_menu', { 
-                                title: messageTitle || 'Test Menu' 
-                            })}
+                            onClick={() =>
+                                executeCommand('display_menu', {
+                                    title: messageTitle || 'Test Menu',
+                                })
+                            }
                             disabled={isLoading}
                             variant="outline"
                             className="w-full"
@@ -445,21 +385,14 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4" />
+                            <AlertTriangle className="h-4 w-4" />
                             System Actions
                         </CardTitle>
-                        <CardDescription>
-                            Perform system-level operations (use with caution)
-                        </CardDescription>
+                        <CardDescription>Perform system-level operations (use with caution)</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowRebootConfirm(true)}
-                            disabled={isLoading}
-                            className="w-full justify-start"
-                        >
-                            <RotateCcw className="w-4 h-4 mr-2" />
+                        <Button variant="outline" onClick={() => setShowRebootConfirm(true)} disabled={isLoading} className="w-full justify-start">
+                            <RotateCcw className="mr-2 h-4 w-4" />
                             Reboot Phone
                         </Button>
                         <Button
@@ -468,7 +401,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             disabled={isLoading}
                             className="w-full justify-start text-red-600 hover:text-red-700"
                         >
-                            <AlertTriangle className="w-4 h-4 mr-2" />
+                            <AlertTriangle className="mr-2 h-4 w-4" />
                             Factory Reset
                         </Button>
                     </CardContent>
@@ -478,12 +411,10 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Terminal className="w-4 h-4" />
+                            <Terminal className="h-4 w-4" />
                             Custom Command
                         </CardTitle>
-                        <CardDescription>
-                            Execute a custom CGI/Execute command (advanced users)
-                        </CardDescription>
+                        <CardDescription>Execute a custom CGI/Execute command (advanced users)</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div>
@@ -497,13 +428,8 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                 className="font-mono text-sm"
                             />
                         </div>
-                        <Button
-                            onClick={handleCustomCommand}
-                            disabled={isLoading}
-                            variant="outline"
-                            className="w-full"
-                        >
-                            <Terminal className="w-4 h-4 mr-2" />
+                        <Button onClick={handleCustomCommand} disabled={isLoading} variant="outline" className="w-full">
+                            <Terminal className="mr-2 h-4 w-4" />
                             Execute Command
                         </Button>
                     </CardContent>
