@@ -82,6 +82,7 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
     };
 
     const loadTableDetails = async (table: DataDictionaryTable) => {
+        console.log('loadTableDetails function called with table:', table);
         try {
             setLoadingFields(true);
             setSelectedTable(table);
@@ -185,7 +186,10 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => loadTableDetails(table)}
+                                            onClick={() => {
+                                                console.log('View Details clicked for table:', table.name);
+                                                loadTableDetails(table);
+                                            }}
                                             className="flex items-center gap-2"
                                         >
                                             View Details
