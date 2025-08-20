@@ -437,32 +437,28 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                         <span className="ml-2">Loading data dictionary...</span>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 gap-2">
                         {filteredTables.map((table) => (
-                            <Card
+                            <div
                                 key={table.name}
-                                className="cursor-pointer transition-shadow hover:shadow-md"
+                                className="cursor-pointer rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
                                 onClick={() => loadTableDetails(table)}
                             >
-                                <CardContent className="p-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center space-x-2 mb-1">
-                                                <span className="font-mono font-medium">{table.name}</span>
-                                                <Badge variant="outline" className="text-xs">{table.field_count} fields</Badge>
-                                                {table.table_id && (
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        {table.table_id}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            {table.description && (
-                                                <div className="text-sm text-muted-foreground">{table.description}</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                <div className="flex items-center space-x-2">
+                                    <span className="font-mono font-medium">{table.name}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                        {table.field_count} fields
+                                    </Badge>
+                                    {table.table_id && (
+                                        <Badge variant="secondary" className="text-xs">
+                                            {table.table_id}
+                                        </Badge>
+                                    )}
+                                </div>
+                                {table.description && (
+                                    <div className="mt-1 text-sm text-muted-foreground">{table.description}</div>
+                                )}
+                            </div>
                         ))}
                     </div>
                 )}
