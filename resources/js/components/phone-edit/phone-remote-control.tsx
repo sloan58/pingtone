@@ -168,7 +168,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                 <Phone className="h-4 w-4" />
                                 Live Phone Screen
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => captureScreenshot(true)} disabled={isCapturing}>
+                            <Button variant="outline" size="sm" onClick={() => captureScreenshot(false)} disabled={isCapturing}>
                                 {isCapturing ? 'Capturing...' : 'Refresh'}
                             </Button>
                         </CardTitle>
@@ -181,7 +181,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                     <Phone className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                                     <p className="mb-2 text-sm text-muted-foreground">Screen capture failed</p>
                                     <p className="text-xs text-red-500">{captureError}</p>
-                                    <Button variant="outline" size="sm" onClick={() => captureScreenshot(true)} className="mt-2">
+                                    <Button variant="outline" size="sm" onClick={() => captureScreenshot(false)} className="mt-2">
                                         Try Again
                                     </Button>
                                 </div>
@@ -221,12 +221,12 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                         <CardDescription>Navigate through phone menus and screens</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="mx-auto flex flex-col items-center gap-2 w-fit">
+                        <div className="mx-auto flex w-fit flex-col items-center gap-2">
                             {/* Top button */}
                             <Button variant="outline" size="sm" onClick={() => executeCommand('nav_up')} disabled={isLoading}>
                                 <ArrowUp className="h-4 w-4" />
                             </Button>
-                            
+
                             {/* Middle row with left, select, right */}
                             <div className="flex items-center gap-2">
                                 <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading}>
@@ -236,7 +236,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                     variant="outline"
                                     onClick={() => executeCommand('nav_select')}
                                     disabled={isLoading}
-                                    className="rounded-full h-14 w-14 p-0 text-sm font-medium flex items-center justify-center"
+                                    className="flex h-14 w-14 items-center justify-center rounded-full p-0 text-sm font-medium"
                                 >
                                     Select
                                 </Button>
@@ -244,7 +244,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                     <ArrowRight className="h-4 w-4" />
                                 </Button>
                             </div>
-                            
+
                             {/* Bottom button */}
                             <Button variant="outline" size="sm" onClick={() => executeCommand('nav_down')} disabled={isLoading}>
                                 <ArrowDown className="h-4 w-4" />
@@ -418,7 +418,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             <Terminal className="h-4 w-4" />
                             Custom Command
                         </CardTitle>
-                        <CardDescription>Execute a custom CGI/Execute command (advanced users)</CardDescription>
+                        <CardDescription>Execute a custom CGI/Execute command</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div>
