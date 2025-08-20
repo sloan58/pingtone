@@ -82,19 +82,12 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
     };
 
     const loadTableDetails = async (table: DataDictionaryTable) => {
-        console.log('loadTableDetails function called with table:', table);
         try {
             setLoadingFields(true);
             setSelectedTable(table);
-            console.log('Loading table details for:', table.name, 'version:', version);
-            const url = `/ucm-clusters/${ucmId}/data-dictionary/tables/${table.name}?version=${version}`;
-            console.log('API URL:', url);
-            const response = await fetch(url);
-            console.log('Response status:', response.status);
+            const response = await fetch(`/ucm-clusters/${ucmId}/data-dictionary/tables/${table.name}?version=${version}`);
             const data = await response.json();
-            console.log('Table details response:', data);
             setFields(data.fields || []);
-            console.log('Fields set:', data.fields?.length || 0, 'fields');
         } catch (error) {
             console.error('Failed to load table details:', error);
             setFields([]);
@@ -201,29 +194,22 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                     </div>
                                 </div>
                             ) : (
-                                <div className="max-h-[400px] overflow-auto border-4 border-blue-500 bg-blue-100 p-4">
+                                <div className="max-h-[400px] overflow-auto">
                                     <div className="space-y-3">
-                                        {console.log('Rendering fields:', fields.length, 'fields') || null}
-                                        {console.log('First field object:', fields[0]) || null}
                                         {fields.length === 0 ? (
                                             <div className="text-center py-8">
                                                 <p className="text-muted-foreground">No fields found for this table</p>
                                             </div>
                                         ) : (
-                                            fields.map((field, index) => {
-                                                console.log(`Rendering field ${index}:`, field);
-                                                return (
-                                            <div key={`${field.name}-${index}`} className="border-2 border-red-500 rounded-lg p-4 bg-red-100">
-                                                <div className="text-lg font-bold text-red-800">
-                                                    TEST FIELD: {field.name || 'NO NAME'} - {field.data_type || 'NO TYPE'}
-                                                </div>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <Type className="h-4 w-4 text-blue-600" />
-                                                        <span className="font-mono font-medium">{field.name}</span>
+                                            fields.map((field, index) => (
+                                                <div key={`${field.name}-${index}`} className="border rounded-lg p-4 bg-muted/30">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Type className="h-4 w-4 text-blue-600" />
+                                                            <span className="font-mono font-medium">{field.name}</span>
+                                                        </div>
+                                                        <Badge variant="outline">{field.data_type}</Badge>
                                                     </div>
-                                                    <Badge variant="outline">{field.data_type}</Badge>
-                                                </div>
                                                 
                                                 {field.description && (
                                                     <p className="text-sm text-muted-foreground mb-3">{field.description}</p>
@@ -275,8 +261,7 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                                     </div>
                                                 )}
                                             </div>
-                                                );
-                                            })
+                                        ))
                                         )}
                                     </div>
                                 </div>
@@ -314,10 +299,7 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => {
-                                                console.log('View Details clicked for table:', table.name);
-                                                loadTableDetails(table);
-                                            }}
+                                            onClick={() => loadTableDetails(table)}
                                             className="flex items-center gap-2"
                                         >
                                             View Details
