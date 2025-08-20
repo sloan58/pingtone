@@ -460,7 +460,7 @@ class PhoneControlService
                     '3' => 'Error in file',
                     '4' => 'Error in authentication',
                     '5' => 'Error in request',
-                    '6' => 'Error in internal data',
+                    '6' => 'URI not found (command not supported on this phone model)',
                     '7' => 'Error in authentication or user not associated with device',
                     '8' => 'Error in XML parsing',
                 ];
@@ -538,6 +538,8 @@ class PhoneControlService
      */
     public function rebootPhone(Phone $phone): array
     {
+        // Note: Reboot functionality is not supported on all phone models (e.g., CP-8845)
+        // This will return an error if the phone doesn't support reboot via CGI/Execute
         return $this->executeCommand($phone, "<CiscoIPPhoneExecute><ExecuteItem Priority=\"0\" URL=\"Init:Reboot\"/></CiscoIPPhoneExecute>");
     }
 
@@ -551,6 +553,22 @@ class PhoneControlService
     public function factoryResetPhone(Phone $phone): array
     {
         return $this->executeCommand($phone, "<CiscoIPPhoneExecute><ExecuteItem Priority=\"0\" URL=\"Init:Reset\"/></CiscoIPPhoneExecute>");
+    }
+
+    /**
+     * Dial a phone number
+     *
+     * @param Phone $phone
+     * @param string $number Phone number to dial
+     * @return array Response data
+     * @throws Exception
+     */
+    public function dialNumber(Phone $phone, string $number): array
+    {
+        // Clean the number (remove spaces, dashes, etc.)
+        $cleanNumber = preg_replace('/[^0-9*#+]/', '', $number);
+        
+        return $this->executeCommand($phone, "<CiscoIPPhoneExecute><ExecuteItem Priority=\"0\" URL=\"Dial:{$cleanNumber}\"/></CiscoIPPhoneExecute>");
     }
 
     /**

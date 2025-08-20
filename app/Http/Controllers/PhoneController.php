@@ -388,6 +388,9 @@ class PhoneController extends Controller
                 'reboot' => $this->phoneControlService->rebootPhone($phone),
                 'factory_reset' => $this->phoneControlService->factoryResetPhone($phone),
                 
+                // Dial function
+                'dial_number' => $this->phoneControlService->dialNumber($phone, $parameters['number'] ?? ''),
+                
                 // Display message
                 'display_message' => $this->phoneControlService->displayMessage(
                     $phone,

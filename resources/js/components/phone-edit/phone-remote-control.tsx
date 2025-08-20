@@ -18,6 +18,7 @@ import {
     MessageSquare,
     MousePointer,
     Phone,
+    PhoneCall,
     RotateCcw,
     Settings,
     Terminal,
@@ -39,6 +40,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
     const [messageTitle, setMessageTitle] = useState('');
     const [messageText, setMessageText] = useState('');
     const [customCommand, setCustomCommand] = useState('');
+    const [dialNumber, setDialNumber] = useState('');
 
     // Live screen capture state
     const [currentScreenCapture, setCurrentScreenCapture] = useState<string | null>(null);
@@ -132,6 +134,17 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
 
         executeCommand('custom_command', {
             command: customCommand,
+        });
+    };
+
+    const handleDialNumber = () => {
+        if (!dialNumber.trim()) {
+            toast.error('Please enter a phone number');
+            return;
+        }
+
+        executeCommand('dial_number', {
+            number: dialNumber,
         });
     };
 
@@ -383,6 +396,37 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                 #
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Dial Number */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <PhoneCall className="h-4 w-4" />
+                            Dial Number
+                        </CardTitle>
+                        <CardDescription>Enter a complete phone number to dial</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div>
+                            <Label htmlFor="dial-number">Phone Number</Label>
+                            <Input
+                                id="dial-number"
+                                placeholder="e.g., 1234, *67, #123"
+                                value={dialNumber}
+                                onChange={(e) => setDialNumber(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleDialNumber();
+                                    }
+                                }}
+                            />
+                        </div>
+                        <Button onClick={handleDialNumber} disabled={isLoading} className="w-full">
+                            <PhoneCall className="mr-2 h-4 w-4" />
+                            Dial
+                        </Button>
                     </CardContent>
                 </Card>
 
