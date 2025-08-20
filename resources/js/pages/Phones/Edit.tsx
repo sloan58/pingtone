@@ -743,7 +743,7 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Phone - ${data.name}`} />
             <div className="p-0">
-                <div className="space-y-4 p-6">
+                <div className="space-y-4">
                     {/* Consolidated Header with Tabs */}
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
