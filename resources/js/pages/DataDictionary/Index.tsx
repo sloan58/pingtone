@@ -85,9 +85,15 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
         try {
             setLoadingFields(true);
             setSelectedTable(table);
-            const response = await fetch(`/ucm-clusters/${ucmId}/data-dictionary/tables/${table.name}?version=${version}`);
+            console.log('Loading table details for:', table.name, 'version:', version);
+            const url = `/ucm-clusters/${ucmId}/data-dictionary/tables/${table.name}?version=${version}`;
+            console.log('API URL:', url);
+            const response = await fetch(url);
+            console.log('Response status:', response.status);
             const data = await response.json();
+            console.log('Table details response:', data);
             setFields(data.fields || []);
+            console.log('Fields set:', data.fields?.length || 0, 'fields');
         } catch (error) {
             console.error('Failed to load table details:', error);
             setFields([]);

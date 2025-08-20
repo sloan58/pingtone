@@ -136,7 +136,7 @@ class DataDictionaryController extends Controller
 
             return response()->json([
                 'table' => $table,
-                'fields' => $fields,
+                'fields' => $fields->toArray(), // Ensure proper serialization
                 'total_fields' => $fields->count(),
             ]);
 
