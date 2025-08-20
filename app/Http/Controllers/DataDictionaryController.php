@@ -62,6 +62,29 @@ class DataDictionaryController extends Controller
                 $table->field_count = $fieldCounts[$table->name] ?? 0;
             });
 
+            // Debug: Check specific table before sending response
+            $debugTable = $tables->firstWhere('name', 'aarneighborhood');
+            if ($debugTable) {
+                Log::info("Debug aarneighborhood before response", [
+                    'constraints' => $debugTable->uniqueness_constraints,
+                    'toArray_constraints' => $debugTable->toArray()['uniqueness_constraints'] ?? 'NOT_FOUND',
+                ]);
+            }
+
+            $responseData = [
+                'version' => $version,
+                'tables' => $tables->toArray(), // Convert to array to ensure proper serialization
+                'total_tables' => $tables->count(),
+            ];
+
+            // Debug: Check the actual response data
+            $responseAarTable = collect($responseData['tables'])->firstWhere('name', 'aarneighborhood');
+            if ($responseAarTable) {
+                Log::info("Debug aarneighborhood in response data", [
+                    'constraints' => $responseAarTable['uniqueness_constraints'] ?? 'NOT_FOUND',
+                ]);
+            }
+
             Log::info("Retrieved data dictionary for UCM cluster", [
                 'cluster_id' => $ucmCluster->id,
                 'version' => $version,
@@ -69,11 +92,7 @@ class DataDictionaryController extends Controller
                 'search_term' => $searchTerm,
             ]);
 
-            return response()->json([
-                'version' => $version,
-                'tables' => $tables->toArray(), // Convert to array to ensure proper serialization
-                'total_tables' => $tables->count(),
-            ]);
+            return response()->json($responseData);
 
         } catch (\Exception $e) {
             Log::error('Failed to retrieve data dictionary', [
