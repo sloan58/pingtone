@@ -8,7 +8,6 @@ use App\Models\MohAudioSource;
 use App\Models\Phone;
 use App\Models\PhoneButtonTemplate;
 use App\Models\PhoneScreenCapture;
-use App\Models\PhoneStatus;
 use App\Models\ServiceAreaDeviceLink;
 use App\Services\PhoneScreenCaptureService;
 use Exception;
@@ -148,14 +147,10 @@ class PhoneController extends Controller
     public function edit(Phone $phone)
     {
         $phone->load('ucmCluster');
+        $phone->append('latestStatus');
+
         // Load service areas using custom relationship
         $phone->service_areas = $phone->serviceAreas()->get();
-
-        // Get the latest RisPort status for this phone
-        $latestStatus = PhoneStatus::where('phone_name', $phone->name)
-            ->where('ucm_cluster_id', $phone->ucm_cluster_id)
-            ->orderBy('timestamp', 'desc')
-            ->first() ?? [];
 
         // Ensure we get the template from the same UCM as the phone
         // We need the template details on page load to build the button UI
@@ -211,10 +206,7 @@ class PhoneController extends Controller
         }
 
         return Inertia::render('Phones/Edit', [
-            'phone' => $phoneData + [
-                    'latestStatus' => $latestStatus,
-                    'canScreenCapture' => $canScreenCapture,
-                ],
+            'phone' => $phoneData + ['canScreenCapture' => $canScreenCapture],
             'globalLineData' => $globalLineData,
             'phoneButtonTemplate' => $phoneButtonTemplate,
             'mohAudioSources' => $mohAudioSources,

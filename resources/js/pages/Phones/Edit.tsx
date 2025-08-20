@@ -8,6 +8,7 @@ import { FormSection } from '@/components/ui/form-section';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Toggle } from '@/components/ui/toggle';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import AppLayout from '@/layouts/app-layout';
 import { ChevronRight, MapPin, Phone, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';

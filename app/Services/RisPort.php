@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use Exception;
-use SoapFault;
-use SoapClient;
 use App\Models\UcmNode;
+use Exception;
 use Illuminate\Support\Facades\Log;
+use SoapClient;
+use SoapFault;
 
 /**
  * RisPort SOAP Client for Cisco Unified Communications Manager
@@ -44,7 +44,7 @@ class RisPort extends SoapClient
      */
     public function queryPhoneStatus(?array $phones = null): array
     {
-        $phoneList = count($phones) ? $phones : $this->ucm->phones()->pluck('name')->toArray();
+        $phoneList = count($phones) ? $phones : $this->ucm->ucmCluster->phones()->pluck('name')->toArray();
 
         Log::info("Querying phone status from RisPort", [
             'ucm' => $this->ucm->name,
@@ -264,8 +264,8 @@ class RisPort extends SoapClient
         return [
             'trace' => true,                    // Essential for debugging
             'exceptions' => true,               // Let exceptions bubble up
-            'login' => $this->ucm->username,    // Basic authentication
-            'password' => $this->ucm->password,
+            'login' => $this->ucm->ucmCluster->username,    // Basic authentication
+            'password' => $this->ucm->ucmCluster->password,
             'cache_wsdl' => WSDL_CACHE_NONE,   // Always use fresh WSDL
             'connection_timeout' => 30,         // Reasonable timeout
             'features' => SOAP_SINGLE_ELEMENT_ARRAYS, // Critical for XML parsing

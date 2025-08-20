@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Log;
 use Carbon\Carbon;
-use MongoDB\BSON\UTCDateTime;
-use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Log;
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Laravel\Eloquent\Model;
 
 class PhoneStatus extends Model
 {
@@ -114,14 +114,14 @@ class PhoneStatus extends Model
      * Get the latest status for a specific phone
      *
      * @param string $phoneName
-     * @param UcmNode $ucm
+     * @param UcmCluster $ucmCluster
      * @return self|null
      */
-    public static function getLatestForPhone(string $phoneName, UcmNode $ucm): ?self
+    public static function getLatestForPhone(string $phoneName, UcmCluster $ucmCluster): ?self
     {
         return self::where([
             'phone_name' => $phoneName,
-            'ucm_cluster_id' => $ucm->id,
+            'ucm_cluster_id' => $ucmCluster->id,
         ])
         ->orderBy('timestamp', 'desc')
         ->first();
@@ -135,7 +135,7 @@ class PhoneStatus extends Model
      * @param int $limit
      * @return Collection
      */
-    public static function getHistoryForPhone(string $phoneName, UcmNode $ucm, int $limit = 100)
+    public static function getHistoryForPhone(string $phoneName, UcmNode $ucm, int $limit = 100): Collection
     {
         return self::where([
             'phone_name' => $phoneName,
@@ -154,7 +154,7 @@ class PhoneStatus extends Model
      * @param Carbon $endTime
      * @return Collection
      */
-    public static function getForUcmInTimeRange(UcmNode $ucm, $startTime, $endTime)
+    public static function getForUcmInTimeRange(UcmNode $ucm, $startTime, $endTime): Collection
     {
         return self::where([
             'ucm_cluster_id' => $ucm->id,
@@ -171,7 +171,7 @@ class PhoneStatus extends Model
      * @param Carbon|null $since
      * @return array
      */
-    public static function getSummaryForUcm(UcmNode $ucm, $since = null): array
+    public static function getSummaryForUcm(UcmNode $ucm, ?Carbon $since = null): array
     {
         $query = self::where('ucm_cluster_id', $ucm->id);
 

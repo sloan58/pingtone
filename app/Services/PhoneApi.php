@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use Exception;
 use App\Models\Phone;
 use App\Models\PhoneStatus;
-use MongoDB\BSON\UTCDateTime;
-use Illuminate\Support\Facades\Log;
+use Exception;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use MongoDB\BSON\UTCDateTime;
 
 /**
  * Phone API Client for Cisco IP Phones
@@ -222,7 +222,7 @@ class PhoneApi
     private function getPhoneIpAddress(Phone $phone): ?string
     {
         // Get the latest phone status to check for IP address
-        $latestStatus = PhoneStatus::getLatestForPhone($phone->name, $phone->ucm);
+        $latestStatus = PhoneStatus::getLatestForPhone($phone->name, $phone->ucmCluster);
 
         return $latestStatus?->device_data['IPAddress']['item'][0]['IP'] ?? null;
     }

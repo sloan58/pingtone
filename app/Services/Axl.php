@@ -67,14 +67,16 @@ class Axl extends SoapClient
 
         // Create a temporary UCM node instance for API testing (not saved to database)
 
-        $ucmCluster = new UcmCluster();
+        $ucmCluster = new UcmCluster([
+            'name' => $connectionDetails['hostname'],
+            'username' => $connectionDetails['username'],
+            'password' => $connectionDetails['password'],
+            'schema_version' => $connectionDetails['schema_version'],
+        ]);
 
         $tempUcmNode = new UcmNode([
             'name' => 'temp-discovery',
             'hostname' => $connectionDetails['hostname'],
-            'username' => $connectionDetails['username'],
-            'password' => $connectionDetails['password'],
-            'schema_version' => $connectionDetails['schema_version'],
         ]);
 
         // Test API connection and get version
@@ -332,7 +334,7 @@ class Axl extends SoapClient
         $path = storage_path("axl/{$this->ucmCluster->schema_version}/AXLAPI.wsdl");
 
         if (!file_exists($path)) {
-            throw new Exception("WSDL file not found for version {$this->ucmNode->schema_version}");
+            throw new Exception("WSDL file not found for version {$path}");
         }
 
         return $path;

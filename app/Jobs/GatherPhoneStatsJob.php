@@ -2,17 +2,17 @@
 
 namespace App\Jobs;
 
-use SoapFault;
-use Exception;
 use App\Models\Phone;
-use App\Services\Axl;
 use App\Models\UcmNode;
+use App\Services\Axl;
+use Exception;
 use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use SoapFault;
 
 class GatherPhoneStatsJob implements ShouldQueue
 {
@@ -32,7 +32,7 @@ class GatherPhoneStatsJob implements ShouldQueue
         Log::info("Starting phone stats gathering for UCM {$this->ucm->name}");
 
         try {
-            $axlClient = new Axl($this->ucm);
+            $axlClient = new Axl($this->ucm->ucmCluster);
 
             // Execute the registrationdynamic query
             $sql = "SELECT UPPER(fkdevice) as uuid, lastactive, lastseen, lastknownucm FROM registrationdynamic";

@@ -63,9 +63,7 @@ class Phone extends Device
      */
     public function getCurrentIpAddressAttribute(): ?string
     {
-        $latestStatus = $this->statuses()
-            ->orderBy('timestamp', 'desc')
-            ->first();
+        $latestStatus = $this->latest_status;
 
         if (!$latestStatus || !isset($latestStatus->device_data['IPAddress']['item'])) {
             return null;
@@ -77,6 +75,13 @@ class Phone extends Device
         }
 
         return null;
+    }
+
+    public function getLatestStatusAttribute(): ?PhoneStatus
+    {
+        return $this->statuses()
+            ->orderBy('timestamp', 'desc')
+            ->first();
     }
 
     /**
@@ -116,7 +121,7 @@ class Phone extends Device
                 'updateOne' => [
                     [
                         'uuid' => "{{$stat['uuid']}}",
-                        'ucm_cluster_id' => $ucm->id,
+                        'ucm_cluster_id' => $ucm->ucmCluster->id,
                         'class' => static::getDeviceClass()
                     ],
                     [
@@ -129,7 +134,7 @@ class Phone extends Device
         $result = self::raw()->bulkWrite($operations);
 
         Log::info("Bulk updated device stats", [
-            'ucm_cluster_id' => $ucm->id,
+            'ucm_cluster_id' => $ucm->ucmCluster->id,
             'device_class' => static::getDeviceClass(),
             'matched_count' => $result->getMatchedCount(),
             'modified_count' => $result->getModifiedCount(),
