@@ -233,10 +233,10 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             </Button>
                             <Button 
                                 variant="outline" 
-                                size="default" 
+                                size="lg" 
                                 onClick={() => executeCommand('nav_select')} 
                                 disabled={isLoading}
-                                className="rounded-full px-4 py-2 font-medium"
+                                className="rounded-full px-6 py-3 font-medium text-base"
                             >
                                 Select
                             </Button>
