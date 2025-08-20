@@ -282,17 +282,17 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                         <div className="grid grid-cols-2 gap-4">
                             {/* Keypad */}
                             <div className="flex flex-col items-center">
-                                <h4 className="mb-3 text-sm font-medium">Keypad</h4>
-                                <div className="grid grid-cols-3 gap-2 w-fit">
+                                <h4 className="mb-4 text-sm font-medium">Keypad</h4>
+                                <div className="grid grid-cols-3 gap-3 w-fit">
                                     {/* Row 1: 1, 2, 3 */}
                                     {[1, 2, 3].map((num) => (
                                         <Button
                                             key={num}
                                             variant="outline"
-                                            size="sm"
+                                            size="lg"
                                             onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
                                             disabled={isLoading}
-                                            className="h-8 w-8 p-0 text-sm font-semibold"
+                                            className="h-12 w-12 p-0 text-lg font-semibold"
                                         >
                                             {num}
                                         </Button>
@@ -303,10 +303,10 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                         <Button
                                             key={num}
                                             variant="outline"
-                                            size="sm"
+                                            size="lg"
                                             onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
                                             disabled={isLoading}
-                                            className="h-8 w-8 p-0 text-sm font-semibold"
+                                            className="h-12 w-12 p-0 text-lg font-semibold"
                                         >
                                             {num}
                                         </Button>
@@ -317,10 +317,10 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                         <Button
                                             key={num}
                                             variant="outline"
-                                            size="sm"
+                                            size="lg"
                                             onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
                                             disabled={isLoading}
-                                            className="h-8 w-8 p-0 text-sm font-semibold"
+                                            className="h-12 w-12 p-0 text-lg font-semibold"
                                         >
                                             {num}
                                         </Button>
@@ -329,28 +329,28 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                     {/* Row 4: *, 0, # */}
                                     <Button
                                         variant="outline"
-                                        size="sm"
+                                        size="lg"
                                         onClick={() => executeCommand('press_button', { button: 'KeyPadStar' })}
                                         disabled={isLoading}
-                                        className="h-8 w-8 p-0 text-sm font-semibold"
+                                        className="h-12 w-12 p-0 text-lg font-semibold"
                                     >
                                         *
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        size="sm"
+                                        size="lg"
                                         onClick={() => executeCommand('press_button', { button: 'KeyPad0' })}
                                         disabled={isLoading}
-                                        className="h-8 w-8 p-0 text-sm font-semibold"
+                                        className="h-12 w-12 p-0 text-lg font-semibold"
                                     >
                                         0
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        size="sm"
+                                        size="lg"
                                         onClick={() => executeCommand('press_button', { button: 'KeyPadPound' })}
                                         disabled={isLoading}
-                                        className="h-8 w-8 p-0 text-sm font-semibold"
+                                        className="h-12 w-12 p-0 text-lg font-semibold"
                                     >
                                         #
                                     </Button>
@@ -359,34 +359,34 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
 
                             {/* Navigation */}
                             <div className="flex flex-col items-center">
-                                <h4 className="mb-3 text-sm font-medium">Navigation</h4>
-                                <div className="flex flex-col items-center gap-1">
+                                <h4 className="mb-4 text-sm font-medium">Navigation</h4>
+                                <div className="flex flex-col items-center gap-2">
                                     {/* Top button */}
-                                    <Button variant="outline" size="sm" onClick={() => executeCommand('nav_up')} disabled={isLoading} className="h-8 w-8 p-0">
-                                        <ArrowUp className="h-3 w-3" />
+                                    <Button variant="outline" size="lg" onClick={() => executeCommand('nav_up')} disabled={isLoading} className="h-12 w-12 p-0">
+                                        <ArrowUp className="h-5 w-5" />
                                     </Button>
 
                                     {/* Middle row with left, select, right */}
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="sm" onClick={() => executeCommand('nav_left')} disabled={isLoading} className="h-8 w-8 p-0">
-                                            <ArrowLeft className="h-3 w-3" />
+                                    <div className="flex items-center gap-2">
+                                        <Button variant="outline" size="lg" onClick={() => executeCommand('nav_left')} disabled={isLoading} className="h-12 w-12 p-0">
+                                            <ArrowLeft className="h-5 w-5" />
                                         </Button>
                                         <Button
                                             variant="outline"
                                             onClick={() => executeCommand('nav_select')}
                                             disabled={isLoading}
-                                            className="h-10 w-10 p-0 flex items-center justify-center rounded-full text-xs font-medium"
+                                            className="h-14 w-14 p-0 flex items-center justify-center rounded-full text-sm font-medium"
                                         >
                                             OK
                                         </Button>
-                                        <Button variant="outline" size="sm" onClick={() => executeCommand('nav_right')} disabled={isLoading} className="h-8 w-8 p-0">
-                                            <ArrowRight className="h-3 w-3" />
+                                        <Button variant="outline" size="lg" onClick={() => executeCommand('nav_right')} disabled={isLoading} className="h-12 w-12 p-0">
+                                            <ArrowRight className="h-5 w-5" />
                                         </Button>
                                     </div>
 
                                     {/* Bottom button */}
-                                    <Button variant="outline" size="sm" onClick={() => executeCommand('nav_down')} disabled={isLoading} className="h-8 w-8 p-0">
-                                        <ArrowDown className="h-3 w-3" />
+                                    <Button variant="outline" size="lg" onClick={() => executeCommand('nav_down')} disabled={isLoading} className="h-12 w-12 p-0">
+                                        <ArrowDown className="h-5 w-5" />
                                     </Button>
                                 </div>
                             </div>
