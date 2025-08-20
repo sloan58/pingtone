@@ -409,6 +409,13 @@ class PhoneControlService
             throw new Exception('Phone UCM credentials are not configured.');
         }
 
+        // Assign phone to app user if needed (required for CGI/Execute commands)
+        $this->assignPhoneToAppUser($phone);
+
+        if ($this->phoneViewError) {
+            throw new Exception('Failed to associate user with phone for remote control.');
+        }
+
         Log::info("Executing CGI command on phone", [
             'phone' => $phone->name,
             'ip' => $ipAddress,
