@@ -95,9 +95,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                 parameters,
             });
 
-            if (response.data.success) {
-                toast.success(response.data.toast?.message || 'Command executed successfully');
-
+                        if (response.data.success) {
                 // Auto-capture screenshot after successful command (with small delay)
                 setTimeout(() => {
                     captureScreenshot(false);
