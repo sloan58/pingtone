@@ -44,6 +44,8 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
     const [fields, setFields] = useState<DataDictionaryField[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [useRegex, setUseRegex] = useState(false);
+    const [fieldSearchTerm, setFieldSearchTerm] = useState('');
+    const [fieldUseRegex, setFieldUseRegex] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadingFields, setLoadingFields] = useState(false);
 
@@ -62,6 +64,28 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
         const term = searchTerm.toLowerCase();
         return table.name.toLowerCase().includes(term) || 
                (table.description && table.description.toLowerCase().includes(term));
+    });
+
+    const filteredFields = fields.filter(field => {
+        if (!fieldSearchTerm) return true;
+        
+        if (fieldUseRegex) {
+            try {
+                const regex = new RegExp(fieldSearchTerm, 'i');
+                return regex.test(field.name) || 
+                       regex.test(field.data_type) ||
+                       (field.description && regex.test(field.description)) ||
+                       (field.remarks && regex.test(field.remarks));
+            } catch {
+                return false;
+            }
+        }
+        
+        const term = fieldSearchTerm.toLowerCase();
+        return field.name.toLowerCase().includes(term) ||
+               field.data_type.toLowerCase().includes(term) ||
+               (field.description && field.description.toLowerCase().includes(term)) ||
+               (field.remarks && field.remarks.toLowerCase().includes(term));
     });
 
     useEffect(() => {
@@ -85,6 +109,7 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
         try {
             setLoadingFields(true);
             setSelectedTable(table);
+            setFieldSearchTerm(''); // Clear field search when loading new table
             const response = await fetch(`/ucm-clusters/${ucmId}/data-dictionary/tables/${table.name}?version=${version}`);
             const data = await response.json();
             setFields(data.fields || []);
@@ -186,6 +211,36 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                         </CardHeader>
                         
                         <CardContent className="pt-6">
+                            {/* Field Search */}
+                            <div className="mb-4 space-y-3">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search fields..."
+                                        value={fieldSearchTerm}
+                                        onChange={(e) => setFieldSearchTerm(e.target.value)}
+                                        className="pl-10"
+                                    />
+                                </div>
+                                
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <Switch
+                                            id="field-regex-mode"
+                                            checked={fieldUseRegex}
+                                            onCheckedChange={setFieldUseRegex}
+                                        />
+                                        <label htmlFor="field-regex-mode" className="text-sm font-medium">
+                                            Regex
+                                        </label>
+                                    </div>
+                                    <Badge variant="outline" className="flex items-center gap-1">
+                                        <Type className="h-3 w-3" />
+                                        {filteredFields.length} fields
+                                    </Badge>
+                                </div>
+                            </div>
+
                             {loadingFields ? (
                                 <div className="flex items-center justify-center py-8">
                                     <div className="text-center">
@@ -196,12 +251,14 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                             ) : (
                                 <div className="max-h-[400px] overflow-auto">
                                     <div className="space-y-3">
-                                        {fields.length === 0 ? (
+                                        {filteredFields.length === 0 ? (
                                             <div className="text-center py-8">
-                                                <p className="text-muted-foreground">No fields found for this table</p>
+                                                <p className="text-muted-foreground">
+                                                    {fields.length === 0 ? 'No fields found for this table' : 'No fields match your search'}
+                                                </p>
                                             </div>
                                         ) : (
-                                            fields.map((field, index) => (
+                                            filteredFields.map((field, index) => (
                                                 <div key={`${field.name}-${index}`} className="border rounded-lg p-4 bg-muted/30">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <div className="flex items-center gap-2">
