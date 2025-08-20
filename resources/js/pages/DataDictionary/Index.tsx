@@ -290,7 +290,13 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                             ) : (
                                 <ScrollArea className="h-[400px]">
                                     <div className="space-y-3">
-                                        {fields.map((field, index) => (
+                                        {console.log('Rendering fields:', fields.length, 'fields') || null}
+                                        {fields.length === 0 ? (
+                                            <div className="text-center py-8">
+                                                <p className="text-muted-foreground">No fields found for this table</p>
+                                            </div>
+                                        ) : (
+                                            fields.map((field, index) => (
                                             <div key={`${field.name}-${index}`} className="border rounded-lg p-4 bg-muted/30">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <div className="flex items-center gap-2">
@@ -350,7 +356,8 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                                     </div>
                                                 )}
                                             </div>
-                                        ))}
+                                        ))
+                                        )}
                                     </div>
                                 </ScrollArea>
                             )}
