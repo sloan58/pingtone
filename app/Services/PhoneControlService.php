@@ -420,15 +420,14 @@ class PhoneControlService
         try {
             $url = "http://{$ipAddress}/CGI/Execute";
 
-            // Build query parameters
-            $queryParams = array_merge(['XML' => $command], $parameters);
-
             $response = Http::timeout($this->timeout)
                 ->withBasicAuth($phone->ucmCluster->username, $phone->ucmCluster->password)
                 ->withHeaders([
                     'User-Agent' => 'PingTone/1.0',
+                    'Content-Type' => 'text/xml',
                 ])
-                ->get($url, $queryParams);
+                ->withBody($command)
+                ->post($url);
 
             if (!$response->successful()) {
                 $statusCode = $response->status();
@@ -444,6 +443,8 @@ class PhoneControlService
             Log::info("CGI command executed successfully", [
                 'phone' => $phone->name,
                 'command' => $command,
+                'response' => $response->body(),
+                'code' => $response->status(),
             ]);
 
             return [
@@ -529,7 +530,7 @@ class PhoneControlService
         // XML escape the content to prevent parsing issues
         $title = htmlspecialchars($title, ENT_XML1, 'UTF-8');
         $text = htmlspecialchars($text, ENT_XML1, 'UTF-8');
-        
+
         $xml = "<CiscoIPPhoneText>";
         $xml .= "<Title>{$title}</Title>";
         $xml .= "<Text>{$text}</Text>";
@@ -551,7 +552,7 @@ class PhoneControlService
     public function displayAlert(Phone $phone, string $message): array
     {
         $message = htmlspecialchars($message, ENT_XML1, 'UTF-8');
-        
+
         $xml = "<CiscoIPPhoneText>";
         $xml .= "<Title>Alert</Title>";
         $xml .= "<Text>{$message}</Text>";
@@ -573,11 +574,11 @@ class PhoneControlService
     public function displayMenu(Phone $phone, string $title, array $items = []): array
     {
         $title = htmlspecialchars($title, ENT_XML1, 'UTF-8');
-        
+
         $xml = "<CiscoIPPhoneMenu>";
         $xml .= "<Title>{$title}</Title>";
         $xml .= "<Prompt>Select an option:</Prompt>";
-        
+
         if (empty($items)) {
             $items = [
                 'Test Item 1' => 'SoftKey:Exit',
@@ -585,12 +586,12 @@ class PhoneControlService
                 'Exit' => 'SoftKey:Exit'
             ];
         }
-        
+
         foreach ($items as $name => $url) {
             $name = htmlspecialchars($name, ENT_XML1, 'UTF-8');
             $xml .= "<MenuItem><Name>{$name}</Name><URL>{$url}</URL></MenuItem>";
         }
-        
+
         $xml .= "</CiscoIPPhoneMenu>";
 
         return $this->executeCommand($phone, $xml);
