@@ -224,6 +224,24 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                     </CardContent>
                 </Card>
 
+                {/* Softkey Buttons - Aligned under phone screen */}
+                <div className="px-6">
+                    <div className="grid grid-cols-4 gap-2">
+                        {[1, 2, 3, 4].map((num) => (
+                            <Button
+                                key={num}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => executeCommand('press_button', { button: `Soft${num}` })}
+                                disabled={isLoading}
+                                className="text-xs"
+                            >
+                                Soft {num}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Phone Controls */}
                 <Card>
                     <CardHeader>
@@ -237,9 +255,9 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                         {/* Keypad and Navigation Side by Side */}
                         <div className="grid grid-cols-2 gap-4">
                             {/* Keypad */}
-                            <div>
-                                <h4 className="mb-3 text-sm font-medium text-center">Keypad</h4>
-                                <div className="grid grid-cols-3 gap-1">
+                            <div className="flex flex-col items-center">
+                                <h4 className="mb-3 text-sm font-medium">Keypad</h4>
+                                <div className="grid grid-cols-3 gap-2 w-fit">
                                     {/* Row 1: 1, 2, 3 */}
                                     {[1, 2, 3].map((num) => (
                                         <Button
@@ -248,7 +266,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                             size="sm"
                                             onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
                                             disabled={isLoading}
-                                            className="aspect-square text-xs font-semibold"
+                                            className="h-8 w-8 p-0 text-sm font-semibold"
                                         >
                                             {num}
                                         </Button>
@@ -262,7 +280,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                             size="sm"
                                             onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
                                             disabled={isLoading}
-                                            className="aspect-square text-xs font-semibold"
+                                            className="h-8 w-8 p-0 text-sm font-semibold"
                                         >
                                             {num}
                                         </Button>
@@ -276,7 +294,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                             size="sm"
                                             onClick={() => executeCommand('press_button', { button: `KeyPad${num}` })}
                                             disabled={isLoading}
-                                            className="aspect-square text-xs font-semibold"
+                                            className="h-8 w-8 p-0 text-sm font-semibold"
                                         >
                                             {num}
                                         </Button>
@@ -288,7 +306,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                         size="sm"
                                         onClick={() => executeCommand('press_button', { button: 'KeyPadStar' })}
                                         disabled={isLoading}
-                                        className="aspect-square text-xs font-semibold"
+                                        className="h-8 w-8 p-0 text-sm font-semibold"
                                     >
                                         *
                                     </Button>
@@ -297,7 +315,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                         size="sm"
                                         onClick={() => executeCommand('press_button', { button: 'KeyPad0' })}
                                         disabled={isLoading}
-                                        className="aspect-square text-xs font-semibold"
+                                        className="h-8 w-8 p-0 text-sm font-semibold"
                                     >
                                         0
                                     </Button>
@@ -306,7 +324,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                         size="sm"
                                         onClick={() => executeCommand('press_button', { button: 'KeyPadPound' })}
                                         disabled={isLoading}
-                                        className="aspect-square text-xs font-semibold"
+                                        className="h-8 w-8 p-0 text-sm font-semibold"
                                     >
                                         #
                                     </Button>
@@ -314,8 +332,8 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             </div>
 
                             {/* Navigation */}
-                            <div>
-                                <h4 className="mb-3 text-sm font-medium text-center">Navigation</h4>
+                            <div className="flex flex-col items-center">
+                                <h4 className="mb-3 text-sm font-medium">Navigation</h4>
                                 <div className="flex flex-col items-center gap-1">
                                     {/* Top button */}
                                     <Button variant="outline" size="sm" onClick={() => executeCommand('nav_up')} disabled={isLoading} className="h-8 w-8 p-0">
@@ -353,8 +371,8 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                         {/* Line Buttons */}
                         <div>
                             <h4 className="mb-3 text-sm font-medium">Line Buttons</h4>
-                            <div className="grid grid-cols-2 gap-2">
-                                {[1, 2, 3, 4].map((num) => (
+                            <div className="grid grid-cols-4 gap-2">
+                                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                                     <Button
                                         key={num}
                                         variant="outline"
@@ -405,21 +423,7 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             </Button>
                         </div>
 
-                        <Separator />
 
-                        <div className="grid grid-cols-4 gap-2">
-                            {[1, 2, 3, 4].map((num) => (
-                                <Button
-                                    key={num}
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => executeCommand('press_soft_key', { soft_key_number: num })}
-                                    disabled={isLoading}
-                                >
-                                    Soft {num}
-                                </Button>
-                            ))}
-                        </div>
                     </CardContent>
                 </Card>
 
