@@ -369,6 +369,19 @@ class PhoneController extends Controller
                     $parameters['duration'] ?? 0
                 ),
                 
+                // Display alert (simpler alternative)
+                'display_alert' => $this->phoneControlService->displayAlert(
+                    $phone,
+                    $parameters['message'] ?? 'Alert'
+                ),
+                
+                // Display menu (for testing)
+                'display_menu' => $this->phoneControlService->displayMenu(
+                    $phone,
+                    $parameters['title'] ?? 'Test Menu',
+                    $parameters['items'] ?? []
+                ),
+                
                 // Custom command
                 'custom_command' => $this->phoneControlService->executeCommand($phone, $parameters['command'], $parameters['params'] ?? []),
                 

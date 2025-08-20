@@ -414,6 +414,7 @@ class PhoneControlService
             'ip' => $ipAddress,
             'command' => $command,
             'parameters' => $parameters,
+            'url' => "http://{$ipAddress}/CGI/Execute",
         ]);
 
         try {
@@ -525,13 +526,72 @@ class PhoneControlService
      */
     public function displayMessage(Phone $phone, string $title, string $text, int $duration = 0): array
     {
+        // XML escape the content to prevent parsing issues
+        $title = htmlspecialchars($title, ENT_XML1, 'UTF-8');
+        $text = htmlspecialchars($text, ENT_XML1, 'UTF-8');
+        
         $xml = "<CiscoIPPhoneText>";
         $xml .= "<Title>{$title}</Title>";
         $xml .= "<Text>{$text}</Text>";
-        if ($duration > 0) {
-            $xml .= "<SoftKeyItem><Name>OK</Name><URL>SoftKey:Exit</URL><Position>1</Position></SoftKeyItem>";
-        }
+        // Always add a soft key for dismissing the message
+        $xml .= "<SoftKeyItem><Name>Exit</Name><URL>SoftKey:Exit</URL><Position>1</Position></SoftKeyItem>";
         $xml .= "</CiscoIPPhoneText>";
+
+        return $this->executeCommand($phone, $xml);
+    }
+
+    /**
+     * Display a simple alert message on the phone screen (alternative method)
+     *
+     * @param Phone $phone
+     * @param string $message The message to display
+     * @return array Response data
+     * @throws Exception
+     */
+    public function displayAlert(Phone $phone, string $message): array
+    {
+        $message = htmlspecialchars($message, ENT_XML1, 'UTF-8');
+        
+        $xml = "<CiscoIPPhoneText>";
+        $xml .= "<Title>Alert</Title>";
+        $xml .= "<Text>{$message}</Text>";
+        $xml .= "<SoftKeyItem><Name>OK</Name><URL>SoftKey:Exit</URL><Position>1</Position></SoftKeyItem>";
+        $xml .= "</CiscoIPPhoneText>";
+
+        return $this->executeCommand($phone, $xml);
+    }
+
+    /**
+     * Push a simple menu to the phone (useful for testing display capabilities)
+     *
+     * @param Phone $phone
+     * @param string $title Menu title
+     * @param array $items Menu items
+     * @return array Response data
+     * @throws Exception
+     */
+    public function displayMenu(Phone $phone, string $title, array $items = []): array
+    {
+        $title = htmlspecialchars($title, ENT_XML1, 'UTF-8');
+        
+        $xml = "<CiscoIPPhoneMenu>";
+        $xml .= "<Title>{$title}</Title>";
+        $xml .= "<Prompt>Select an option:</Prompt>";
+        
+        if (empty($items)) {
+            $items = [
+                'Test Item 1' => 'SoftKey:Exit',
+                'Test Item 2' => 'SoftKey:Exit',
+                'Exit' => 'SoftKey:Exit'
+            ];
+        }
+        
+        foreach ($items as $name => $url) {
+            $name = htmlspecialchars($name, ENT_XML1, 'UTF-8');
+            $xml .= "<MenuItem><Name>{$name}</Name><URL>{$url}</URL></MenuItem>";
+        }
+        
+        $xml .= "</CiscoIPPhoneMenu>";
 
         return $this->executeCommand($phone, $xml);
     }

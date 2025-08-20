@@ -299,13 +299,33 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                                 rows={3}
                             />
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button
+                                onClick={handleDisplayMessage}
+                                disabled={isLoading}
+                            >
+                                <MessageSquare className="w-4 h-4 mr-2" />
+                                Send Message
+                            </Button>
+                            <Button
+                                onClick={() => executeCommand('display_alert', { 
+                                    message: messageText || messageTitle || 'Test Alert' 
+                                })}
+                                disabled={isLoading}
+                                variant="outline"
+                            >
+                                Send Alert
+                            </Button>
+                        </div>
                         <Button
-                            onClick={handleDisplayMessage}
+                            onClick={() => executeCommand('display_menu', { 
+                                title: messageTitle || 'Test Menu' 
+                            })}
                             disabled={isLoading}
+                            variant="outline"
                             className="w-full"
                         >
-                            <MessageSquare className="w-4 h-4 mr-2" />
-                            Send Message
+                            Send Test Menu
                         </Button>
                     </CardContent>
                 </Card>
