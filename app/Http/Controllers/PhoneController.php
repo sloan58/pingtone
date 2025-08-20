@@ -331,6 +331,80 @@ class PhoneController extends Controller
     }
 
     /**
+     * Execute a remote control command on the phone.
+     */
+    public function remoteControl(Request $request, Phone $phone)
+    {
+        try {
+            $action = $request->input('action');
+            $parameters = $request->input('parameters', []);
+
+            $result = match ($action) {
+                // Button presses
+                'press_button' => $this->phoneControlService->pressButton($phone, $parameters['button']),
+                'press_line' => $this->phoneControlService->pressLineButton($phone, $parameters['line_number']),
+                'press_soft_key' => $this->phoneControlService->pressSoftKey($phone, $parameters['soft_key_number']),
+                
+                // Navigation
+                'nav_up' => $this->phoneControlService->pressNavigationUp($phone),
+                'nav_down' => $this->phoneControlService->pressNavigationDown($phone),
+                'nav_left' => $this->phoneControlService->pressNavigationLeft($phone),
+                'nav_right' => $this->phoneControlService->pressNavigationRight($phone),
+                'nav_select' => $this->phoneControlService->pressNavigationSelect($phone),
+                
+                // Common buttons
+                'settings' => $this->phoneControlService->pressSettingsButton($phone),
+                'directories' => $this->phoneControlService->pressDirectoriesButton($phone),
+                'services' => $this->phoneControlService->pressServicesButton($phone),
+                
+                // System actions
+                'reboot' => $this->phoneControlService->rebootPhone($phone),
+                'factory_reset' => $this->phoneControlService->factoryResetPhone($phone),
+                
+                // Display message
+                'display_message' => $this->phoneControlService->displayMessage(
+                    $phone,
+                    $parameters['title'] ?? 'Message',
+                    $parameters['text'] ?? '',
+                    $parameters['duration'] ?? 0
+                ),
+                
+                // Custom command
+                'custom_command' => $this->phoneControlService->executeCommand($phone, $parameters['command'], $parameters['params'] ?? []),
+                
+                default => throw new Exception("Unknown action: {$action}")
+            };
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Remote control command executed successfully',
+                'toast' => [
+                    'type' => 'success',
+                    'message' => 'Command executed successfully'
+                ],
+                'result' => $result
+            ]);
+
+        } catch (Exception $e) {
+            Log::error('Phone remote control failed', [
+                'phone_id' => $phone->_id,
+                'phone_name' => $phone->name,
+                'action' => $request->input('action'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Remote control command failed: ' . $e->getMessage(),
+                'toast' => [
+                    'type' => 'error',
+                    'message' => 'Command failed: ' . $e->getMessage()
+                ]
+            ], 500);
+        }
+    }
+
+    /**
      * Show the form for editing a specific button on a phone.
      */
     public function editButton(Request $request, Phone $phone, int $buttonIndex)

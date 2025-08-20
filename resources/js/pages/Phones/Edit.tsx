@@ -1,5 +1,6 @@
 import { PhoneApiData } from '@/components/phone-edit/phone-api-data';
 import { PhoneButtonLayout } from '@/components/phone-edit/phone-button-layout';
+import { PhoneRemoteControl } from '@/components/phone-edit/phone-remote-control';
 import { PhoneScreenCaptures } from '@/components/phone-edit/phone-screen-captures';
 import { PhoneStats } from '@/components/phone-edit/phone-stats';
 import { Button } from '@/components/ui/button';
@@ -758,8 +759,9 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
                                         {data.model} • {(phone as any).ucm?.name}
                                     </p>
                                 </div>
-                                <TabsList className="grid w-full grid-cols-3">
+                                <TabsList className="grid w-full grid-cols-4">
                                     <TabsTrigger value="configuration">Configuration</TabsTrigger>
+                                    <TabsTrigger value="remote-control">Remote Control</TabsTrigger>
                                     <TabsTrigger value="api-data">API Data</TabsTrigger>
                                     <TabsTrigger value="screen-captures">Screen Captures</TabsTrigger>
                                 </TabsList>
@@ -2347,6 +2349,18 @@ export default function Edit({ phone, globalLineData, phoneButtonTemplate, mohAu
                                             </FormSection>
                                         </form>
                                     </div>
+                                </div>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="remote-control" className="mt-6">
+                            <div className="overflow-hidden rounded-lg border bg-card shadow">
+                                <div className="p-6">
+                                    <PhoneRemoteControl
+                                        phoneId={data.id}
+                                        phoneName={data.name}
+                                        canRemoteControl={(phone as any).canScreenCapture}
+                                    />
                                 </div>
                             </div>
                         </TabsContent>

@@ -60,11 +60,8 @@ Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/suggestions', [DataDictio
     // Phone API data gathering
     Route::get('/phones/{phone}/gather-api-data', [PhoneApiController::class, 'gatherData'])->name('phones.gather-api-data');
 
-    // Phone control routes (CGI/Execute API)
-    Route::post('/phones/{phone}/press-button', [PhoneController::class, 'pressButton'])->name('phones.press-button');
-    Route::post('/phones/{phone}/display-message', [PhoneController::class, 'displayMessage'])->name('phones.display-message');
-    Route::post('/phones/{phone}/push-background', [PhoneController::class, 'pushBackground'])->name('phones.push-background');
-    Route::post('/phones/{phone}/reboot', [PhoneController::class, 'reboot'])->name('phones.reboot');
+    // Phone remote control route (unified CGI/Execute API)
+    Route::post('/phones/{phone}/remote-control', [PhoneController::class, 'remoteControl'])->name('phones.remote-control');
 
     // UCM Node API test route
     Route::post('/ucm-nodes/{ucmNode}/test-connection', [UcmNodeController::class, 'testConnection'])->name('ucm-nodes.test-connection');
