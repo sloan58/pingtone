@@ -441,17 +441,15 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                         {filteredTables.map((table) => (
                             <div
                                 key={table.name}
-                                className="cursor-pointer rounded border bg-card pl-2 pr-3 py-2 transition-colors hover:bg-accent"
+                                className="cursor-pointer rounded border bg-card py-2 pr-3 pl-1 transition-colors hover:bg-accent"
                                 onClick={() => loadTableDetails(table)}
                             >
                                 <div className="flex items-center justify-between">
                                     <div className="min-w-0 flex-1">
-                                        <div className="font-mono text-sm font-medium truncate">{table.name}</div>
-                                        <div className="flex items-center gap-2 mt-0.5">
+                                        <div className="truncate font-mono text-sm font-medium">{table.name}</div>
+                                        <div className="mt-0.5 flex items-center gap-2">
                                             <span className="text-xs text-muted-foreground">{table.field_count} fields</span>
-                                            {table.table_id && (
-                                                <span className="text-xs text-muted-foreground">• {table.table_id}</span>
-                                            )}
+                                            {table.table_id && <span className="text-xs text-muted-foreground">• {table.table_id}</span>}
                                         </div>
                                     </div>
                                 </div>
