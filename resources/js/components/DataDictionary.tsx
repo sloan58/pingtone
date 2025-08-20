@@ -441,29 +441,19 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                         {filteredTables.map((table) => (
                             <div
                                 key={table.name}
-                                className="cursor-pointer rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
+                                className="cursor-pointer rounded border bg-card px-3 py-2 transition-colors hover:bg-accent"
                                 onClick={() => loadTableDetails(table)}
                             >
-                                <div className="space-y-1">
-                                    <div className="text-sm text-muted-foreground">Name:</div>
-                                    <div className="font-mono font-medium text-sm">{table.name}</div>
-                                    
-                                    <div className="text-sm text-muted-foreground">Fields:</div>
-                                    <div className="text-sm">{table.field_count}</div>
-                                    
-                                    {table.table_id && (
-                                        <>
-                                            <div className="text-sm text-muted-foreground">Table ID:</div>
-                                            <div className="text-sm">{table.table_id}</div>
-                                        </>
-                                    )}
-                                    
-                                    {table.description && (
-                                        <>
-                                            <div className="text-sm text-muted-foreground">Description:</div>
-                                            <div className="text-xs text-muted-foreground">{table.description}</div>
-                                        </>
-                                    )}
+                                <div className="flex items-center justify-between">
+                                    <div className="min-w-0 flex-1">
+                                        <div className="font-mono text-sm font-medium truncate">{table.name}</div>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-xs text-muted-foreground">{table.field_count} fields</span>
+                                            {table.table_id && (
+                                                <span className="text-xs text-muted-foreground">• {table.table_id}</span>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}
