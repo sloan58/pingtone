@@ -174,7 +174,8 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Live Screen Capture */}
-                <Card>
+                <div className="space-y-3">
+                    <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -222,23 +223,48 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
                             )}
                         </div>
                     </CardContent>
-                </Card>
+                    </Card>
 
-                {/* Softkey Buttons - Aligned under phone screen */}
-                <div className="px-6">
-                    <div className="grid grid-cols-4 gap-2">
-                        {[1, 2, 3, 4].map((num) => (
+                    {/* Softkey Buttons - Aligned under phone screen to match display */}
+                    <div className="flex justify-center">
+                        <div className="grid grid-cols-4 gap-2" style={{ maxWidth: '400px', width: '100%' }}>
                             <Button
-                                key={num}
                                 variant="outline"
                                 size="sm"
-                                onClick={() => executeCommand('press_button', { button: `Soft${num}` })}
+                                onClick={() => executeCommand('press_button', { button: 'Soft1' })}
                                 disabled={isLoading}
                                 className="text-xs"
                             >
-                                Soft {num}
+                                Soft 1
                             </Button>
-                        ))}
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => executeCommand('press_button', { button: 'Soft2' })}
+                                disabled={isLoading}
+                                className="text-xs"
+                            >
+                                Soft 2
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => executeCommand('press_button', { button: 'Soft3' })}
+                                disabled={isLoading}
+                                className="text-xs"
+                            >
+                                Soft 3
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => executeCommand('press_button', { button: 'Soft4' })}
+                                disabled={isLoading}
+                                className="text-xs"
+                            >
+                                Soft 4
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
