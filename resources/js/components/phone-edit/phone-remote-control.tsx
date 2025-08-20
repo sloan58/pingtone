@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,47 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
     const [messageTitle, setMessageTitle] = useState('');
     const [messageText, setMessageText] = useState('');
     const [customCommand, setCustomCommand] = useState('');
+    
+    // Live screen capture state
+    const [currentScreenCapture, setCurrentScreenCapture] = useState<string | null>(null);
+    const [isCapturing, setIsCapturing] = useState(false);
+    const [captureError, setCaptureError] = useState<string | null>(null);
+
+    // Function to capture a new screenshot
+    const captureScreenshot = async (showToast: boolean = false) => {
+        if (!canRemoteControl) return;
+        
+        setIsCapturing(true);
+        setCaptureError(null);
+        
+        try {
+            const response = await axios.post(`/phones/${phoneId}/capture-screenshot`);
+            
+            if (response.data.success && response.data.screenCapture) {
+                setCurrentScreenCapture(response.data.screenCapture.image_url);
+                if (showToast) {
+                    toast.success('Screen captured successfully');
+                }
+            } else {
+                throw new Error(response.data.message || 'Failed to capture screenshot');
+            }
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || 'Failed to capture screenshot';
+            setCaptureError(errorMessage);
+            if (showToast) {
+                toast.error(errorMessage);
+            }
+        } finally {
+            setIsCapturing(false);
+        }
+    };
+
+    // Load initial screen capture when component mounts
+    useEffect(() => {
+        if (canRemoteControl) {
+            captureScreenshot(false);
+        }
+    }, [phoneId, canRemoteControl]);
 
     const executeCommand = async (action: string, parameters: any = {}) => {
         if (!canRemoteControl) {
@@ -56,6 +97,11 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
 
             if (response.data.success) {
                 toast.success(response.data.toast?.message || 'Command executed successfully');
+                
+                // Auto-capture screenshot after successful command (with small delay)
+                setTimeout(() => {
+                    captureScreenshot(false);
+                }, 500);
             } else {
                 toast.error(response.data.toast?.message || 'Command failed');
             }
@@ -120,6 +166,71 @@ export function PhoneRemoteControl({ phoneId, phoneName, canRemoteControl = true
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Live Screen Capture */}
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4" />
+                                Live Phone Screen
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => captureScreenshot(true)}
+                                disabled={isCapturing}
+                            >
+                                {isCapturing ? 'Capturing...' : 'Refresh'}
+                            </Button>
+                        </CardTitle>
+                        <CardDescription>
+                            Real-time view of {phoneName} - updates automatically after each command
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex justify-center">
+                            {captureError ? (
+                                <div className="text-center py-8">
+                                    <Phone className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                    <p className="text-sm text-muted-foreground mb-2">Screen capture failed</p>
+                                    <p className="text-xs text-red-500">{captureError}</p>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => captureScreenshot(true)}
+                                        className="mt-2"
+                                    >
+                                        Try Again
+                                    </Button>
+                                </div>
+                            ) : currentScreenCapture ? (
+                                <div className="relative">
+                                    <img
+                                        src={currentScreenCapture}
+                                        alt={`${phoneName} screen capture`}
+                                        className="max-w-full h-auto border rounded-lg shadow-lg"
+                                        style={{ maxHeight: '400px' }}
+                                    />
+                                    {isCapturing && (
+                                        <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center">
+                                            <div className="bg-white/90 px-3 py-1 rounded text-sm">
+                                                Updating...
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <Phone className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                    <p className="text-sm text-muted-foreground">
+                                        {isCapturing ? 'Capturing screen...' : 'No screen capture available'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Navigation Controls */}
                 <Card>
                     <CardHeader>
