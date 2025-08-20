@@ -418,10 +418,6 @@ class PhoneController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Remote control command executed successfully',
-                'toast' => [
-                    'type' => 'success',
-                    'message' => 'Command executed successfully'
-                ],
                 'result' => $result
             ]);
 
