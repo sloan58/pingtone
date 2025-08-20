@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
-import { ChevronDown, ChevronRight, Database, Layers, Loader2, Play, Trash2 } from 'lucide-react';
+import { Book, ChevronDown, ChevronRight, Loader2, Play, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import DataDictionary from './DataDictionary';
@@ -30,7 +30,7 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
     const [results, setResults] = useState<QueryResults | null>(null);
     const [loading, setLoading] = useState(false);
     const [showSamples, setShowSamples] = useState(false);
-    const [activeSubTab, setActiveSubTab] = useState('query-editor');
+    const [showDataDictionary, setShowDataDictionary] = useState(false);
     useToast(); // For handling server flash messages
 
     const handleExecuteQuery = async () => {
@@ -116,88 +116,84 @@ const SqlQueryInterface: React.FC<SqlQueryInterfaceProps> = ({ ucmId, version })
 
     return (
         <div className="space-y-6">
-            <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="query-editor" className="flex items-center gap-2">
-                        <Database className="h-4 w-4" />
-                        Query Editor
-                    </TabsTrigger>
-                    <TabsTrigger value="schema-browser" className="flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
-                        Schema Browser
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="query-editor" className="space-y-6">
-                    <Card>
-                        <CardHeader>
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
                             <CardTitle>SQL Query Interface</CardTitle>
                             <CardDescription>
                                 Execute SQL queries directly against the UCM database using the AXL executeSQLQuery method. Use standard SQL syntax to query
-                                UCM tables. Check the Schema Browser tab to explore available tables and fields.
+                                UCM tables.
                             </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-4">
-                                <QueryEditor value={query} onChange={setQuery} placeholder="SELECT * FROM device WHERE name LIKE 'SEP%' LIMIT 10" />
+                        </div>
+                        <Dialog open={showDataDictionary} onOpenChange={setShowDataDictionary}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                                    <Book className="h-4 w-4" />
+                                    <span>Schema Reference</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+                                <DialogHeader>
+                                    <DialogTitle>UCM Database Schema Reference</DialogTitle>
+                                </DialogHeader>
+                                <div className="overflow-auto max-h-[calc(90vh-120px)]">
+                                    <DataDictionary ucmId={ucmId} version={version} />
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                        <QueryEditor value={query} onChange={setQuery} placeholder="SELECT * FROM device WHERE name LIKE 'SEP%' LIMIT 10" />
 
-                                <div className="flex space-x-2">
-                                    <Button onClick={handleExecuteQuery} disabled={loading || !query.trim()} className="flex items-center space-x-2">
-                                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                                        <span>{loading ? 'Executing...' : 'Execute Query'}</span>
-                                    </Button>
+                        <div className="flex space-x-2">
+                            <Button onClick={handleExecuteQuery} disabled={loading || !query.trim()} className="flex items-center space-x-2">
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                                <span>{loading ? 'Executing...' : 'Execute Query'}</span>
+                            </Button>
 
-                                    <Button variant="outline" onClick={handleClearQuery} className="flex items-center space-x-2">
-                                        <Trash2 className="h-4 w-4" />
-                                        <span>Clear</span>
-                                    </Button>
+                            <Button variant="outline" onClick={handleClearQuery} className="flex items-center space-x-2">
+                                <Trash2 className="h-4 w-4" />
+                                <span>Clear</span>
+                            </Button>
+                        </div>
+                    </div>
 
-                                    <Button variant="outline" onClick={() => setActiveSubTab('schema-browser')} className="flex items-center space-x-2">
-                                        <Layers className="h-4 w-4" />
-                                        <span>Browse Schema</span>
-                                    </Button>
+                    {/* Sample Queries */}
+                    <div className="mt-6">
+                        <button
+                            onClick={() => setShowSamples(!showSamples)}
+                            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            {showSamples ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            Sample Queries
+                        </button>
+
+                        {showSamples && (
+                            <div className="mt-3 grid gap-2 text-sm">
+                                <div className="rounded-md bg-muted p-3">
+                                    <div className="mb-1 font-medium text-muted-foreground">List all phones:</div>
+                                    <code className="text-xs">SELECT name, description FROM device WHERE tkclass = 1 LIMIT 10</code>
+                                </div>
+                                <div className="rounded-md bg-muted p-3">
+                                    <div className="mb-1 font-medium text-muted-foreground">Find users by department:</div>
+                                    <code className="text-xs">
+                                        SELECT userid, firstname, lastname, department FROM enduser WHERE department IS NOT NULL LIMIT 10
+                                    </code>
+                                </div>
+                                <div className="rounded-md bg-muted p-3">
+                                    <div className="mb-1 font-medium text-muted-foreground">Show device pools:</div>
+                                    <code className="text-xs">SELECT name, dateformat, timeformat FROM devicepool</code>
                                 </div>
                             </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
-                            {/* Sample Queries */}
-                            <div className="mt-6">
-                                <button
-                                    onClick={() => setShowSamples(!showSamples)}
-                                    className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                                >
-                                    {showSamples ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                    Sample Queries
-                                </button>
-
-                                {showSamples && (
-                                    <div className="mt-3 grid gap-2 text-sm">
-                                        <div className="rounded-md bg-muted p-3">
-                                            <div className="mb-1 font-medium text-muted-foreground">List all phones:</div>
-                                            <code className="text-xs">SELECT name, description FROM device WHERE tkclass = 1 LIMIT 10</code>
-                                        </div>
-                                        <div className="rounded-md bg-muted p-3">
-                                            <div className="mb-1 font-medium text-muted-foreground">Find users by department:</div>
-                                            <code className="text-xs">
-                                                SELECT userid, firstname, lastname, department FROM enduser WHERE department IS NOT NULL LIMIT 10
-                                            </code>
-                                        </div>
-                                        <div className="rounded-md bg-muted p-3">
-                                            <div className="mb-1 font-medium text-muted-foreground">Show device pools:</div>
-                                            <code className="text-xs">SELECT name, dateformat, timeformat FROM devicepool</code>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {results && <ResultsTable results={results} onExport={handleExportResults} />}
-                </TabsContent>
-
-                <TabsContent value="schema-browser">
-                    <DataDictionary ucmId={ucmId} version={version} />
-                </TabsContent>
-            </Tabs>
+            {results && <ResultsTable results={results} onExport={handleExportResults} />}
         </div>
     );
 };
