@@ -441,23 +441,18 @@ const DataDictionary: React.FC<DataDictionaryProps> = ({ ucmId, version }) => {
                         {filteredTables.map((table) => (
                             <div
                                 key={table.name}
-                                className="cursor-pointer rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
+                                className="cursor-pointer rounded border bg-card py-2 pr-3 pl-1 transition-colors hover:bg-accent"
                                 onClick={() => loadTableDetails(table)}
                             >
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3">
-                                        <span className="font-mono font-medium">{table.name}</span>
-                                        <Badge variant="outline" className="text-xs">
-                                            {table.field_count} fields
-                                        </Badge>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate font-mono text-sm font-medium">{table.name}</div>
+                                        <div className="mt-0.5 flex items-center gap-2">
+                                            <span className="text-xs text-muted-foreground">{table.field_count} fields</span>
+                                            {table.table_id && <span className="text-xs text-muted-foreground">• {table.table_id}</span>}
+                                        </div>
                                     </div>
-                                    {table.table_id && (
-                                        <Badge variant="secondary" className="text-xs">
-                                            {table.table_id}
-                                        </Badge>
-                                    )}
                                 </div>
-                                {table.description && <div className="mt-1 text-sm text-muted-foreground">{table.description}</div>}
                             </div>
                         ))}
                     </div>

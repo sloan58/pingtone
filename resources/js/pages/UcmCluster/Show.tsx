@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Database, Layers, Loader2, RefreshCw, Save, Server, Settings, Terminal } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface UcmNode {
     id: number;
@@ -56,7 +56,30 @@ interface Props {
 
 export default function Show({ cluster, apiVersions }: Props) {
     useToast(); // Add toast hook to handle server flash messages
-    const [activeTab, setActiveTab] = useState('cluster-overview');
+    
+    // Initialize tab from URL hash or default to cluster-overview
+    const getInitialTab = () => {
+        const hash = window.location.hash.replace('#', '');
+        return hash === 'sql-queries' ? 'sql-queries' : 'cluster-overview';
+    };
+    
+    const [activeTab, setActiveTab] = useState(getInitialTab);
+    
+    // Update URL hash when tab changes
+    const handleTabChange = (value: string) => {
+        setActiveTab(value);
+        window.history.replaceState(null, '', `#${value}`);
+    };
+    
+    // Listen for hash changes (back/forward navigation)
+    useEffect(() => {
+        const handleHashChange = () => {
+            setActiveTab(getInitialTab());
+        };
+        
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
 
     const { data, setData, put, processing, errors } = useForm({
         name: cluster.name,
@@ -142,7 +165,7 @@ export default function Show({ cluster, apiVersions }: Props) {
                 </div>
 
                 {/* Main Content with Tabs */}
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="cluster-overview" className="flex items-center gap-2">
                             <Settings className="h-4 w-4" />

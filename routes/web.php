@@ -33,10 +33,11 @@ Route::middleware('auth')->group(function () {
 
     // Data Dictionary routes
     Route::get('/data-dictionary/versions', [DataDictionaryController::class, 'getAvailableVersions'])->name('data-dictionary.versions');
-    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary', [DataDictionaryController::class, 'getDataDictionary'])->name('ucm-clusters.data-dictionary');
-    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/tables/{tableName}', [DataDictionaryController::class, 'getTableDetails'])->name('ucm-clusters.data-dictionary.table');
-    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/search', [DataDictionaryController::class, 'search'])->name('ucm-clusters.data-dictionary.search');
-    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/suggestions', [DataDictionaryController::class, 'getSuggestions'])->name('ucm-clusters.data-dictionary.suggestions');
+    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary', [DataDictionaryController::class, 'index'])->name('ucm-clusters.data-dictionary.index');
+Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/api', [DataDictionaryController::class, 'getDataDictionary'])->name('ucm-clusters.data-dictionary');
+Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/tables/{tableName}', [DataDictionaryController::class, 'getTableDetails'])->name('ucm-clusters.data-dictionary.table');
+Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/search', [DataDictionaryController::class, 'search'])->name('ucm-clusters.data-dictionary.search');
+Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/suggestions', [DataDictionaryController::class, 'getSuggestions'])->name('ucm-clusters.data-dictionary.suggestions');
 
     Route::resource('ucm-clusters', UcmClusterController::class)->except(['edit']);
 
@@ -68,9 +69,14 @@ Route::middleware('auth')->group(function () {
     // UCM Node API test route
     Route::post('/ucm-nodes/{ucmNode}/test-connection', [UcmNodeController::class, 'testConnection'])->name('ucm-nodes.test-connection');
 
+    // Cluster Sync routes
+    Route::post('/ucm-clusters/{ucmCluster}/sync', [SyncHistoryController::class, 'startClusterSync'])->name('ucm-clusters.sync.start');
 
-
-
+    // UCM Node Sync History routes (for individual nodes)
+    Route::get('/ucm-nodes/{ucmNode}/sync-history', [SyncHistoryController::class, 'index'])->name('ucm-nodes.sync-history');
+    Route::post('/ucm-nodes/{ucmNode}/sync', [SyncHistoryController::class, 'startSync'])->name('ucm-nodes.sync.start');
+    Route::patch('/sync-history/{syncHistory}/complete', [SyncHistoryController::class, 'completeSync'])->name('sync-history.complete');
+    Route::patch('/sync-history/{syncHistory}/fail', [SyncHistoryController::class, 'failSync'])->name('sync-history.fail');
 
 
 });

@@ -1,7 +1,6 @@
-
 import LineConfigurationForm from '@/components/LineConfigurationForm';
-import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ChevronRight, Loader2, Phone, Save } from 'lucide-react';
@@ -90,10 +89,10 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
     const [hasChanges, setHasChanges] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [dissociatingDevices, setDissociatingDevices] = useState<Set<string>>(new Set());
-    const [confirmDialog, setConfirmDialog] = useState<{ 
-        open: boolean; 
-        deviceId: string | null; 
-        deviceName: string; 
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        deviceId: string | null;
+        deviceName: string;
     }>({
         open: false,
         deviceId: null,
@@ -117,7 +116,7 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
         }
     };
 
-        const handleDissociateDevice = (deviceId: string, deviceName: string) => {
+    const handleDissociateDevice = (deviceId: string, deviceName: string) => {
         setConfirmDialog({
             open: true,
             deviceId,
@@ -145,7 +144,7 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
                 toast.error('Line ID not found');
                 return;
             }
-            
+
             console.log('Using line ID:', lineId);
 
             const response = await axios.post(`/api/devices/${deviceId}/dissociate-line/${lineId}`);
@@ -170,101 +169,100 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
         <AppLayout>
             <Head title={`Edit Line ${line.pattern}`} />
             <div className="p-0">
-                    <div className="p-6">
-                        {/* Breadcrumbs */}
-                        <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-                            <button
-                                onClick={() => router.visit('/lines')}
-                                className="flex items-center space-x-1 transition-colors hover:text-foreground"
-                            >
-                                <Phone className="h-4 w-4" />
-                                <span>Lines</span>
-                            </button>
-                            <ChevronRight className="h-4 w-4" />
-                            <div className="flex items-center space-x-1 text-foreground">
-                                <span>{line.pattern}</span>
-                            </div>
-                        </nav>
-
-                        {/* Sticky Header */}
-                        <div className="sticky top-0 z-10 mt-4 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                            <div className="flex items-center gap-6">
-                                <div>
-                                    <h1 className="text-2xl font-bold">Edit Line {line.pattern}</h1>
-                                    <p className="text-sm text-muted-foreground">
-                                        {line.description || 'No description'} • {line.usage}
-                                        {associatedDevices.length > 0 && (
-                                            <span>
-                                                {' '}
-                                                • {associatedDevices.length} associated device{associatedDevices.length !== 1 ? 's' : ''}
-                                            </span>
-                                        )}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleSave}
-                                disabled={!hasChanges || isSaving}
-                                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                            >
-                                {isSaving ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="mr-2 h-4 w-4" />
-                                        Save Changes
-                                    </>
-                                )}
-                            </button>
+                <div className="p-6">
+                    {/* Breadcrumbs */}
+                    <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+                        <button
+                            onClick={() => router.visit('/lines')}
+                            className="flex items-center space-x-1 transition-colors hover:text-foreground"
+                        >
+                            <Phone className="h-4 w-4" />
+                            <span>Lines</span>
+                        </button>
+                        <ChevronRight className="h-4 w-4" />
+                        <div className="flex items-center space-x-1 text-foreground">
+                            <span>{line.pattern}</span>
                         </div>
+                    </nav>
 
-                        {/* Line Configuration Form */}
-                        <div className="mt-6">
-                            <LineConfigurationForm
-                                line={currentLine}
-                                onLineChange={setCurrentLine}
-                                onHasChanges={setHasChanges}
-                                associatedDevices={associatedDevices}
-                                onDissociateDevice={handleDissociateDevice}
-                                dissociatingDevices={dissociatingDevices}
-                                showDirectoryNumberField={false} // Don't show directory number field in line edit
-                                showAssociatedDevices={true} // Show associated devices
-                            />
+                    {/* Sticky Header */}
+                    <div className="sticky top-0 z-10 mt-4 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                        <div className="flex items-center gap-6">
+                            <div>
+                                <h1 className="text-2xl font-bold">Edit Line {line.pattern}</h1>
+                                <p className="text-sm text-muted-foreground">
+                                    {line.description || 'No description'} • {line.usage}
+                                    {associatedDevices.length > 0 && (
+                                        <span>
+                                            {' '}
+                                            • {associatedDevices.length} associated device{associatedDevices.length !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
                         </div>
+                        <button
+                            onClick={handleSave}
+                            disabled={!hasChanges || isSaving}
+                            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                        >
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    Save Changes
+                                </>
+                            )}
+                        </button>
+                    </div>
 
-                        {/* Additional Line-Specific Sections */}
-                        <div className="mt-6 space-y-4">
-                            {/* Route Partition Information */}
-                            <div className="overflow-hidden rounded-lg border bg-card shadow">
-                                <div className="border-b p-6">
-                                    <h3 className="text-lg font-semibold">Route Partition Information</h3>
-                                    <p className="text-sm text-muted-foreground">Current route partition assignment</p>
-                                </div>
-                                <div className="p-6">
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Route Partition</label>
-                                            <div className="w-full rounded-md border bg-muted p-2 text-sm">
-                                                {currentLine.routePartitionName?._ || 'None'}
-                                            </div>
-                                            <p className="mt-1 text-xs text-muted-foreground">
-                                                Route partitions control call routing and access. This is set during line creation.
-                                            </p>
+                    {/* Line Configuration Form */}
+                    <div className="mt-6">
+                        <LineConfigurationForm
+                            line={currentLine}
+                            onLineChange={setCurrentLine}
+                            onHasChanges={setHasChanges}
+                            associatedDevices={associatedDevices}
+                            onDissociateDevice={handleDissociateDevice}
+                            dissociatingDevices={dissociatingDevices}
+                            showDirectoryNumberField={false} // Don't show directory number field in line edit
+                            showAssociatedDevices={true} // Show associated devices
+                        />
+                    </div>
+
+                    {/* Additional Line-Specific Sections */}
+                    <div className="mt-6 space-y-4">
+                        {/* Route Partition Information */}
+                        <div className="overflow-hidden rounded-lg border bg-card shadow">
+                            <div className="border-b p-6">
+                                <h3 className="text-lg font-semibold">Route Partition Information</h3>
+                                <p className="text-sm text-muted-foreground">Current route partition assignment</p>
+                            </div>
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Route Partition</label>
+                                        <div className="w-full rounded-md border bg-muted p-2 text-sm">
+                                            {currentLine.routePartitionName?._ || 'None'}
                                         </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-medium">Pattern Usage</label>
-                                            <div className="w-full rounded-md border bg-muted p-2 text-sm">{currentLine.usage}</div>
-                                            <p className="mt-1 text-xs text-muted-foreground">Indicates how this pattern is used in the dial plan.</p>
-                                        </div>
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Route partitions control call routing and access. This is set during line creation.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="mb-1 block text-sm font-medium">Pattern Usage</label>
+                                        <div className="w-full rounded-md border bg-muted p-2 text-sm">{currentLine.usage}</div>
+                                        <p className="mt-1 text-xs text-muted-foreground">Indicates how this pattern is used in the dial plan.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </AppContent>
+                </div>
             </div>
 
             <ConfirmDialog

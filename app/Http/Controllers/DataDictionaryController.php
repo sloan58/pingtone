@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Log;
 
 class DataDictionaryController extends Controller
 {
+    public function index(UcmCluster $ucmCluster)
+    {
+        return inertia('DataDictionary/Index', [
+            'ucmId' => $ucmCluster->id,
+            'version' => $ucmCluster->schema_version ?? 'Unknown',
+            'clusterName' => $ucmCluster->name,
+        ]);
+    }
     /**
      * Get data dictionary for a specific UCM cluster.
      */
@@ -63,7 +71,7 @@ class DataDictionaryController extends Controller
 
             return response()->json([
                 'version' => $version,
-                'tables' => $tables,
+                'tables' => $tables->toArray(), // Convert to array to ensure proper serialization
                 'total_tables' => $tables->count(),
             ]);
 
@@ -128,7 +136,7 @@ class DataDictionaryController extends Controller
 
             return response()->json([
                 'table' => $table,
-                'fields' => $fields,
+                'fields' => $fields->toArray(), // Ensure proper serialization
                 'total_fields' => $fields->count(),
             ]);
 
