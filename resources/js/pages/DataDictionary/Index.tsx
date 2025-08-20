@@ -217,33 +217,21 @@ export default function DataDictionaryIndex({ ucmId, version, clusterName }: Pro
                                         )}
                                     </div>
                                     
-                                    {/* Debug: Always show constraints section for testing */}
-                                    {(table.uniqueness_constraints && table.uniqueness_constraints.length > 0) || table.name === 'aarneighborhood' ? (
+                                    {table.uniqueness_constraints && table.uniqueness_constraints.length > 0 && (
                                         <div className="mt-3 pt-3 border-t">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <Key className="h-4 w-4 text-amber-600" />
-                                                <span className="text-sm font-medium text-amber-700">
-                                                    Uniqueness Constraints 
-                                                    {table.name === 'aarneighborhood' && (
-                                                        <span className="text-xs text-red-600 ml-2">
-                                                            (Debug: {JSON.stringify(table.uniqueness_constraints)})
-                                                        </span>
-                                                    )}
-                                                </span>
+                                                <span className="text-sm font-medium text-amber-700">Uniqueness Constraints</span>
                                             </div>
                                             <div className="flex flex-wrap gap-1">
-                                                {table.uniqueness_constraints && table.uniqueness_constraints.length > 0 ? (
-                                                    table.uniqueness_constraints.map((constraint, i) => (
-                                                        <Badge key={i} variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-800">
-                                                            {constraint}
-                                                        </Badge>
-                                                    ))
-                                                ) : (
-                                                    <span className="text-xs text-red-600">No constraints found in frontend data</span>
-                                                )}
+                                                {table.uniqueness_constraints.map((constraint, i) => (
+                                                    <Badge key={i} variant="outline" className="text-xs bg-amber-50 border-amber-200 text-amber-800">
+                                                        {constraint}
+                                                    </Badge>
+                                                ))}
                                             </div>
                                         </div>
-                                    ) : null}
+                                    )}
                                 </CardContent>
                             </Card>
                         ))}

@@ -71,7 +71,7 @@ class DataDictionaryController extends Controller
 
             return response()->json([
                 'version' => $version,
-                'tables' => $tables,
+                'tables' => $tables->toArray(), // Convert to array to ensure proper serialization
                 'total_tables' => $tables->count(),
             ]);
 
