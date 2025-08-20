@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataDictionaryController;
 use App\Http\Controllers\InfrastructureOptionsController;
 use App\Http\Controllers\LineController;
 use App\Http\Controllers\PhoneApiController;
@@ -30,6 +31,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/ucm-clusters/wizard', [UcmClusterController::class, 'wizard'])->name('ucm-clusters.wizard');
     Route::post('/ucm-clusters/discover', [UcmClusterController::class, 'discover'])->name('ucm-clusters.discover');
     Route::post('/ucm-clusters/{ucmCluster}/sql-query', [UcmClusterController::class, 'executeSqlQuery'])->name('ucm-clusters.sql-query');
+    
+    // Data Dictionary routes
+    Route::get('/data-dictionary/versions', [DataDictionaryController::class, 'getAvailableVersions'])->name('data-dictionary.versions');
+    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary', [DataDictionaryController::class, 'getDataDictionary'])->name('ucm-clusters.data-dictionary');
+    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/tables/{tableName}', [DataDictionaryController::class, 'getTableDetails'])->name('ucm-clusters.data-dictionary.table');
+    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/search', [DataDictionaryController::class, 'search'])->name('ucm-clusters.data-dictionary.search');
+    Route::get('/ucm-clusters/{ucmCluster}/data-dictionary/suggestions', [DataDictionaryController::class, 'getSuggestions'])->name('ucm-clusters.data-dictionary.suggestions');
+    
     Route::resource('ucm-clusters', UcmClusterController::class)->except(['edit']);
 
     // UCM Node routes (for individual node management)

@@ -1,3 +1,4 @@
+import DataDictionary from '@/components/DataDictionary';
 import SqlQueryInterface from '@/components/SqlQueryInterface';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -143,7 +144,7 @@ export default function Show({ cluster, apiVersions }: Props) {
 
                 {/* Main Content with Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="cluster-overview" className="flex items-center gap-2">
                             <Settings className="h-4 w-4" />
                             Cluster Overview
@@ -151,6 +152,10 @@ export default function Show({ cluster, apiVersions }: Props) {
                         <TabsTrigger value="sql-queries" className="flex items-center gap-2">
                             <Database className="h-4 w-4" />
                             SQL Queries
+                        </TabsTrigger>
+                        <TabsTrigger value="data-dictionary" className="flex items-center gap-2">
+                            <Layers className="h-4 w-4" />
+                            Data Dictionary
                         </TabsTrigger>
                     </TabsList>
 
@@ -367,6 +372,10 @@ export default function Show({ cluster, apiVersions }: Props) {
 
                     <TabsContent value="sql-queries">
                         <SqlQueryInterface ucmId={cluster.id} />
+                    </TabsContent>
+
+                    <TabsContent value="data-dictionary">
+                        <DataDictionary ucmId={cluster.id} version={cluster.schema_version || 'Unknown'} />
                     </TabsContent>
                 </Tabs>
             </div>
