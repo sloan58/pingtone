@@ -169,7 +169,7 @@ export default function LineEdit({ line, associatedDevices = [] }: Props) {
         <AppLayout>
             <Head title={`Edit Line ${line.pattern}`} />
             <div className="p-0">
-                <div className="p-6">
+                <div>
                     {/* Breadcrumbs */}
                     <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
                         <button
