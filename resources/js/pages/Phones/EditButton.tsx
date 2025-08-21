@@ -394,7 +394,6 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                         </div>
                     </div>
                 </div>
-                </div>
             </div>
 
             <ConfirmDialog
