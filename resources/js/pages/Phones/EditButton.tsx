@@ -317,9 +317,9 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Button ${buttonIndex} - ${phone.name}`} />
             <div className="p-0">
-                <div>
-                    {/* Sticky Header */}
-                    <div className="sticky top-0 z-10 mt-4 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-10 border-b bg-background/95 px-6 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                    <div className="flex items-center justify-between">
                         <div className="flex items-center gap-6">
                             <div>
                                 <h1 className="text-2xl font-bold">Button {buttonIndex}</h1>
@@ -343,8 +343,10 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                             )}
                         </button>
                     </div>
+                </div>
 
-                    <div className="mt-6">
+                {/* Main Content */}
+                <div className="px-6 py-6">
                         <h2 className="mb-4 text-xl font-semibold">Global Line Configuration</h2>
                         <LineConfigurationForm
                             line={currentLine}
@@ -391,6 +393,7 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
 
