@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
 import axios from 'axios';
 import { ChevronRight, Loader2, Phone, Settings } from 'lucide-react';
+import { BreadcrumbItem } from '@/types';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -114,6 +115,21 @@ interface Props {
 }
 
 export default function EditButton({ phone, buttonIndex, buttonType, buttonConfig, line, latestStatus, associatedDevices }: Props) {
+    
+    const breadcrumbs: BreadcrumbItem[] = [
+        {
+            title: 'Phones',
+            href: '/phones',
+        },
+        {
+            title: phone.name || phone.id,
+            href: `/phones/${phone.id}/edit`,
+        },
+        {
+            title: `Button ${buttonIndex}`,
+        },
+    ];
+
     // State for managing phone data changes
     const [phoneData, setPhoneData] = useState(phone);
     const [hasChanges, setHasChanges] = useState(false);
@@ -298,30 +314,10 @@ export default function EditButton({ phone, buttonIndex, buttonType, buttonConfi
     };
 
     return (
-        <AppLayout>
+        <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Button ${buttonIndex} - ${phone.name}`} />
             <div className="p-0">
-                <div className="p-6">
-                    {/* Breadcrumbs */}
-                    <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <button
-                            onClick={() => router.visit('/phones')}
-                            className="flex items-center space-x-1 transition-colors hover:text-foreground"
-                        >
-                            <Phone className="h-4 w-4" />
-                            <span>Phones</span>
-                        </button>
-                        <ChevronRight className="h-4 w-4" />
-                        <button onClick={() => router.visit(`/phones/${phone.id}/edit`)} className="transition-colors hover:text-foreground">
-                            {phone.name || phone.id}
-                        </button>
-                        <ChevronRight className="h-4 w-4" />
-                        <div className="flex items-center space-x-1 text-foreground">
-                            <Settings className="h-4 w-4" />
-                            <span>Button {buttonIndex}</span>
-                        </div>
-                    </nav>
-
+                <div>
                     {/* Sticky Header */}
                     <div className="sticky top-0 z-10 mt-4 flex items-center justify-between border-b bg-background/95 pt-4 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                         <div className="flex items-center gap-6">
